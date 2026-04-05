@@ -6740,7 +6740,7 @@ if (localStorage.getItem('ws_cache_version') !== CACHE_VERSION) {
 // Step 1: Freeze base products FIRST before anything else
 // ADMIN_DELETED — updated by sync, hardcoded list of deleted product URLs/names
 // This is what ensures ALL visitors see the same catalog without any server calls
-const ADMIN_DELETED = ["https://www.seidkarlinn.is/is-is/products/rapunzel-dokkt-70-sukkuladi-m-rapadura-80gr", "https://www.seidkarlinn.is/is-is/products/rapunzel-dokkt-85-sukkuladi-80gr", "https://www.seidkarlinn.is/is-is/products/cc-raspberry-320ml"];
+const ADMIN_DELETED = [];
 
 // ADMIN_DELETED is baked into this file by GitHub Action when admin syncs
 // Admin sees local deletions; everyone else sees the baked-in list
@@ -6755,6 +6755,17 @@ window.PRODUCTS_BASE = PRODUCTS_BASE.filter(p =>
   !_activeDeleted.includes(p.url) && !_activeDeleted.includes(p.name)
 );
 window.PRODUCTS = window.PRODUCTS_BASE.slice();
+
+// DEBUG: Show ADMIN_DELETED count visibly on page
+if (!_isAdmin && ADMIN_DELETED.length > 0) {
+  document.addEventListener('DOMContentLoaded', function() {
+    const banner = document.createElement('div');
+    banner.style.cssText = 'position:fixed;bottom:10px;left:10px;background:green;color:white;padding:8px 14px;border-radius:6px;font-size:13px;z-index:9999;font-family:sans-serif';
+    banner.textContent = '✓ ' + ADMIN_DELETED.length + ' vörur fjarlægðar (ADMIN_DELETED virkt)';
+    document.body.appendChild(banner);
+    setTimeout(() => banner.remove(), 8000);
+  });
+}
 
 // Step 2: Apply theme
 applyTheme(getTheme());
