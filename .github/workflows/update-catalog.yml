@@ -11,7 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Update ADMIN_DELETED in index.html
+      - name: Update catalog
         env:
           STATE_JSON: ${{ toJson(github.event.client_payload.state) }}
         run: |
@@ -21,14 +21,4 @@ jobs:
           deleted = state.get('deleted', [])
           html = open('index.html').read()
           new_val = 'const ADMIN_DELETED = ' + json.dumps(deleted) + ';'
-          html = re.sub(r'const ADMIN_DELETED = \[.*?\];', new_val, html, flags=re.DOTALL)
-          open('index.html', 'w').write(html)
-          print('Done:', len(deleted), 'deleted products')
-          "
-
-      - name: Commit and push
-        run: |
-          git config user.email "sync@seidkarlinn.is"
-          git config user.name "Seidkarlinn Sync"
-          git add index.html
-          git diff --staged --quiet && echo "No changes" || (git commit -m "Catalog sync" && git push)
+          html = re.sub(r'const ADMIN_DELETED = \[.*?\];', new_val, html, flags=re.DOTAL
