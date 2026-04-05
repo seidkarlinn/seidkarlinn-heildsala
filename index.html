@@ -4266,8 +4266,11 @@ function renderGrid() {
   const sort = document.getElementById('sortSel').value;
   const stockOnly = document.getElementById('stockOnly').checked;
 
-  const _renderSrc = (window.PRODUCTS && window.PRODUCTS.length > 0) ? window.PRODUCTS : PRODUCTS;
-  let filtered = _renderSrc.filter(p =>
+  // Always use window.PRODUCTS if available, else fall back to raw PRODUCTS
+  if (!window.PRODUCTS || window.PRODUCTS.length === 0) {
+    window.PRODUCTS = (window.PRODUCTS_BASE || PRODUCTS_BASE || PRODUCTS).slice();
+  }
+  let filtered = window.PRODUCTS.filter(p =>
     (activeFilter==='All' || p.cat===activeFilter)
     && (!q || matchQ(p,q))
     && (!stockOnly || p.inStock)
@@ -5756,7 +5759,7 @@ function renderPricingPanel() {
 function renderCategoryPricingTab() {
   const ov = _pendingPricing || {};
   const globalDisc = parseInt(getTheme().discountPct) || 25;
-  const cats = [...new Set((PRODUCTS_BASE||PRODUCTS).map(p=>p.cat))].sort();
+  const cats = [...new Set((window.PRODUCTS_BASE||PRODUCTS_BASE||PRODUCTS).map(p=>p.cat))].sort();
 
   return `
     <p style="font-size:11px;color:var(--ink3);margin-bottom:1rem">
@@ -5772,7 +5775,7 @@ function renderCategoryPricingTab() {
       </tr></thead>
       <tbody>
         ${cats.map(cat => {
-          const count = (PRODUCTS_BASE||PRODUCTS).filter(p=>p.cat===cat).length;
+          const count = (window.PRODUCTS_BASE||PRODUCTS_BASE||PRODUCTS).filter(p=>p.cat===cat).length;
           const hasOverride = ov.cats && ov.cats[cat] !== undefined;
           const discVal = hasOverride ? ov.cats[cat] : globalDisc;
           return `<tr>
@@ -5804,7 +5807,7 @@ function renderCategoryPricingTab() {
 
 function renderProductPricingTab() {
   const ov = _pendingPricing || {};
-  const allProds = (PRODUCTS_BASE||PRODUCTS);
+  const allProds = (window.PRODUCTS_BASE||PRODUCTS_BASE||PRODUCTS);
   const filtered = allProds.filter(p =>
     !_prodPriceSearch ||
     p.name.toLowerCase().includes(_prodPriceSearch) ||
