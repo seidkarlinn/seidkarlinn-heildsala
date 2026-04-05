@@ -5676,7 +5676,8 @@ function getProdKey(p) { return (p.url || p.name).replace(/[^a-zA-Z0-9íáéóú
 function applyPricingOverrides() {
   const ov = getPricingOverrides();
   const globalDisc = parseInt(getTheme().discountPct) || 25;
-  const _src = (typeof PRODUCTS_BASE !== 'undefined' && PRODUCTS_BASE.length) ? PRODUCTS_BASE : PRODUCTS;
+  // Use window.PRODUCTS_BASE which is already filtered by ADMIN_DELETED
+  const _src = window.PRODUCTS_BASE || (typeof PRODUCTS_BASE !== 'undefined' ? PRODUCTS_BASE : PRODUCTS);
   window.PRODUCTS = _src.map(p => {
     const key = getProdKey(p);
     // Product-level override
@@ -6739,7 +6740,7 @@ if (localStorage.getItem('ws_cache_version') !== CACHE_VERSION) {
 // Step 1: Freeze base products FIRST before anything else
 // ADMIN_DELETED — updated by sync, hardcoded list of deleted product URLs/names
 // This is what ensures ALL visitors see the same catalog without any server calls
-const ADMIN_DELETED = ["https://www.seidkarlinn.is/is-is/products/rapunzel-dokkt-70-sukkuladi-m-rapadura-80gr", "https://www.seidkarlinn.is/is-is/products/rapunzel-dokkt-85-sukkuladi-80gr", "https://www.seidkarlinn.is/is-is/products/cc-raspberry-320ml", "https://www.seidkarlinn.is/is-is/products/cc-lemon-320ml", "https://www.seidkarlinn.is/is-is/products/cc-natural-320ml", "https://www.seidkarlinn.is/is-is/products/cc-sparkling-320ml", "https://www.seidkarlinn.is/is-is/products/rapunzel-kokos-mondlusmjor-med-dodlum-250g", "https://www.seidkarlinn.is/is-is/products/rapunzel-jardhnetusmjor-crunchy-m-salti-250gr-gbm", "https://www.seidkarlinn.is/is-is/products/smoked-sardines-in-extra-virgin-olive-oil-120gr", "https://www.seidkarlinn.is/is-is/products/octopus-in-olive-oil-with-garlic-120gr", "https://www.seidkarlinn.is/is-is/products/rapunzel-olifuolia-fyrsta-kaldpressun-0-5l-m", "https://www.seidkarlinn.is/is-is/products/rapunzel-lifraent-ghee-smjor-250gr"];
+const ADMIN_DELETED = [];
 
 // ADMIN_DELETED is baked into this file by GitHub Action when admin syncs
 // Admin sees local deletions; everyone else sees the baked-in list
