@@ -1,0 +1,47 @@
+bash
+
+cat /home/claude/deploy/.github/workflows/update-catalog.yml
+Output
+
+name: Update Catalog
+on:
+  repository_dispatch:
+    types: [catalog-update]
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Update ADMIN_DELETED in index.html
+        env:
+          STATE_JSON: ${{ toJson(github.event.client_payload.state) }}
+        run: |
+          python3 - << 'PYEOF'
+          import json, re, os
+
+          state = json.loads(os.environ['STATE_JSON'])
+          deleted = state.get('deleted', [])
+
+          with open('index.html', 'r') as f:
+              html = f.read()
+
+          new_val = 'const ADMIN_DELETED = ' + json.dumps(deleted) + ';'
+          html = re.sub(r'const ADMIN_DELETED = \[.*?\];', new_val, html, flags=re.DOTALL)
+
+          with open('index.html', 'w') as f:
+              f.write(html)
+
+          print(f'Done — {len(deleted)} products deleted from catalog')
+          PYEOF
+
+      - name: Commit and push
+        run: |
+          git config user.email "sync@seidkarlinn.is"
+          git config user.name "Seidkarlinn Sync"
+          git add index.html
+          git diff --staged --quiet && echo "No changes to commit" || git commit -m "Catalog sync $(date -u +%Y-%m-%dT%H:%M:%SZ)" && git push
