@@ -4897,7 +4897,10 @@ function restoreProd(key, identifier) {
 }
 function rebuildLiveCatalog() {
   const deleted=getDeletedProducts(), custom=getCustomProducts();
-  const base=(window.PRODUCTS_BASE||PRODUCTS).filter(p=>!deleted.includes(p.url||p.name));
+  // For non-admin users, PRODUCTS_BASE is already filtered by ADMIN_DELETED at init
+  // For admin, use their local deleted list
+  const srcBase = window.PRODUCTS_BASE || PRODUCTS;
+  const base = srcBase.filter(p => !deleted.includes(p.url||p.name) && !deleted.includes(p.name));
   window.PRODUCTS=[...base,...custom].map(p=>{
     const v=p.wholesale||(p.price?Math.round(parseInt((p.price||'').replace(/[^\d]/g,''))*0.75).toLocaleString('is-IS')+' ISK':'');
     return {...p,wholesale:v};
@@ -6736,7 +6739,7 @@ if (localStorage.getItem('ws_cache_version') !== CACHE_VERSION) {
 // Step 1: Freeze base products FIRST before anything else
 // ADMIN_DELETED — updated by sync, hardcoded list of deleted product URLs/names
 // This is what ensures ALL visitors see the same catalog without any server calls
-const ADMIN_DELETED = ["https://www.seidkarlinn.is/is-is/products/rapunzel-dokkt-70-sukkuladi-m-rapadura-80gr", "https://www.seidkarlinn.is/is-is/products/rapunzel-dokkt-85-sukkuladi-80gr", "https://www.seidkarlinn.is/is-is/products/cc-raspberry-320ml", "https://www.seidkarlinn.is/is-is/products/cc-lemon-320ml", "https://www.seidkarlinn.is/is-is/products/cc-natural-320ml", "https://www.seidkarlinn.is/is-is/products/cc-sparkling-320ml", "https://www.seidkarlinn.is/is-is/products/rapunzel-kokos-mondlusmjor-med-dodlum-250g", "https://www.seidkarlinn.is/is-is/products/rapunzel-jardhnetusmjor-crunchy-m-salti-250gr-gbm", "https://www.seidkarlinn.is/is-is/products/smoked-sardines-in-extra-virgin-olive-oil-120gr", "https://www.seidkarlinn.is/is-is/products/octopus-in-olive-oil-with-garlic-120gr"];
+const ADMIN_DELETED = [];
 
 // ADMIN_DELETED is baked into this file by GitHub Action when admin syncs
 // Admin sees local deletions; everyone else sees the baked-in list
