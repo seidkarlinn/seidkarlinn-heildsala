@@ -4389,6 +4389,21 @@ function showDetail(p) {
   const savedPct = (wsNum && rtNum && rtNum > wsNum)
     ? Math.round((1 - wsNum/rtNum)*100) : null;
 
+  // Build price block — hide if not logged in
+  const priceBlock = disc !== null
+    ? `<div class="dp-price-row">
+        <div class="dp-price-card highlight">
+          <div class="dp-price-lbl">Heildsöluverð</div>
+          <div class="dp-price-amt">${wsStr}</div>
+        </div>
+        ${p.price ? `<div class="dp-price-card"><div class="dp-price-lbl">Smásöluverð</div><div class="dp-price-amt retail">${p.price}</div></div>` : ''}
+      </div>
+      ${savedPct ? `<div class="dp-saving-chip">💰 Heildsölusparnað: ${savedPct}%</div>` : ''}`
+    : `<div style="background:var(--paper2);border:1.5px solid var(--paper3);border-radius:var(--r);padding:1rem;text-align:center;margin-bottom:.875rem">
+        <div style="font-size:13px;color:var(--ink3);margin-bottom:.5rem">🔒 Innskráning krafist til að sjá verð</div>
+        <button onclick="document.getElementById('gate').classList.remove('hidden')" style="background:var(--green);color:#fff;border:none;border-radius:var(--rs);padding:8px 20px;font-size:13px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif">🔑 Innskrá</button>
+      </div>`;
+
   document.getElementById('dpBody').innerHTML = `
     <!-- Hero image -->
     <div class="dp-hero">
@@ -4404,17 +4419,7 @@ function showDetail(p) {
     </div>
 
     <!-- Prices -->
-    <div class="dp-price-row">
-      <div class="dp-price-card highlight">
-        <div class="dp-price-lbl">Heildsöluverð</div>
-        <div class="dp-price-amt">${esc(wsStr)}</div>
-      </div>
-      ${p.price ? `<div class="dp-price-card">
-        <div class="dp-price-lbl">Smásöluverð</div>
-        <div class="dp-price-amt retail">${esc(p.price)}</div>
-      </div>` : ''}
-    </div>
-    ${savedPct ? `<div class="dp-saving-chip">💰 Heildsölusparnað: ${savedPct}%</div>` : ''}
+    ${priceBlock}
 
     <!-- Tags -->
     ${p.tags && p.tags.length ? `<div class="dp-tags-row">
@@ -6782,7 +6787,7 @@ if (localStorage.getItem('ws_cache_version') !== CACHE_VERSION) {
 // Step 1: Freeze base products FIRST before anything else
 // ADMIN_DELETED — updated by sync, hardcoded list of deleted product URLs/names
 // This is what ensures ALL visitors see the same catalog without any server calls
-const ADMIN_DELETED = ["https://www.seidkarlinn.is/is-is/products/rapunzel-dokkt-70-sukkuladi-m-rapadura-80gr", "https://www.seidkarlinn.is/is-is/products/rapunzel-dokkt-85-sukkuladi-80gr", "https://www.seidkarlinn.is/is-is/products/cc-raspberry-320ml", "https://www.seidkarlinn.is/is-is/products/cc-lemon-320ml", "https://www.seidkarlinn.is/is-is/products/cc-natural-320ml", "https://www.seidkarlinn.is/is-is/products/cc-sparkling-320ml", "https://www.seidkarlinn.is/is-is/products/rapunzel-kokos-mondlusmjor-med-dodlum-250g", "https://www.seidkarlinn.is/is-is/products/rapunzel-jardhnetusmjor-crunchy-m-salti-250gr-gbm", "https://www.seidkarlinn.is/is-is/products/smoked-sardines-in-extra-virgin-olive-oil-120gr", "https://www.seidkarlinn.is/is-is/products/octopus-in-olive-oil-with-garlic-120gr", "https://www.seidkarlinn.is/is-is/products/rapunzel-olifuolia-fyrsta-kaldpressun-0-5l-m", "https://www.seidkarlinn.is/is-is/products/rapunzel-lifraent-ghee-smjor-250gr", "https://www.seidkarlinn.is/is-is/products/rapunzel-tomatsosa-m-450ml", "https://www.seidkarlinn.is/is-is/products/rapunzel-thurrkad-mango-m-100gr", "https://www.seidkarlinn.is/is-is/products/rapunzel-parahnetur-brasiliuhnetur-100gr-m", "https://www.seidkarlinn.is/is-is/products/rapunzel-dodlusirop-250gr-m", "https://www.seidkarlinn.is/is-is/products/rapunzel-hlynsirop-grad-c-375ml-m", "https://www.seidkarlinn.is/is-is/products/rapunzel-graskersfraeolia-250ml", "https://www.seidkarlinn.is/is-is/products/rapunzel-bourbon-vanilluduft-15gr", "https://www.seidkarlinn.is/is-is/products/rapunzel-poppmais-glutenlaust-m-500gr", "https://www.seidkarlinn.is/is-is/products/vitamin-d3-k2-180-toflur", "https://www.seidkarlinn.is/is-is/products/magnesium-breakthrough-60-toflur", "https://www.seidkarlinn.is/is-is/products/magnesium-glycinate-eh-120-hylki", "https://www.seidkarlinn.is/is-is/products/candidfee-oregano-zh-60-hylki", "https://www.seidkarlinn.is/is-is/products/seidkarl-i"];
+const ADMIN_DELETED = [];
 
 // ADMIN_DELETED is baked into this file by GitHub Action when admin syncs
 // Admin sees local deletions; everyone else sees the baked-in list
