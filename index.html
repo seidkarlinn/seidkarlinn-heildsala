@@ -6740,7 +6740,7 @@ if (localStorage.getItem('ws_cache_version') !== CACHE_VERSION) {
 // Step 1: Freeze base products FIRST before anything else
 // ADMIN_DELETED — updated by sync, hardcoded list of deleted product URLs/names
 // This is what ensures ALL visitors see the same catalog without any server calls
-const ADMIN_DELETED = ["https://www.seidkarlinn.is/is-is/products/rapunzel-dokkt-70-sukkuladi-m-rapadura-80gr", "https://www.seidkarlinn.is/is-is/products/rapunzel-dokkt-85-sukkuladi-80gr", "https://www.seidkarlinn.is/is-is/products/cc-raspberry-320ml", "https://www.seidkarlinn.is/is-is/products/cc-lemon-320ml", "https://www.seidkarlinn.is/is-is/products/cc-natural-320ml", "https://www.seidkarlinn.is/is-is/products/cc-sparkling-320ml"];
+const ADMIN_DELETED = [];
 
 // ADMIN_DELETED is baked into this file by GitHub Action when admin syncs
 // Admin sees local deletions; everyone else sees the baked-in list
@@ -6756,19 +6756,17 @@ window.PRODUCTS_BASE = PRODUCTS_BASE.filter(p =>
 );
 window.PRODUCTS = window.PRODUCTS_BASE.slice();
 
-// DEBUG
-if (!_isAdmin && ADMIN_DELETED.length > 0) {
-  const firstDeleted = ADMIN_DELETED[0];
-  const firstProduct = PRODUCTS[0];
-  const matched = PRODUCTS.filter(p => ADMIN_DELETED.includes(p.url) || ADMIN_DELETED.includes(p.name));
-  document.addEventListener('DOMContentLoaded', function() {
-    const banner = document.createElement('div');
-    banner.style.cssText = 'position:fixed;bottom:10px;left:10px;background:green;color:white;padding:8px 14px;border-radius:6px;font-size:12px;z-index:9999;font-family:sans-serif;max-width:600px';
-    banner.textContent = 'DELETED:' + ADMIN_DELETED.length + ' MATCHED:' + matched.length + ' | DEL[0]:' + firstDeleted.slice(-40) + ' | PROD[0].url:' + (firstProduct.url||'').slice(-40);
-    document.body.appendChild(banner);
-    setTimeout(() => banner.remove(), 30000);
-  });
-}
+// DEBUG — check if filtering worked
+document.addEventListener('DOMContentLoaded', function() {
+  const banner = document.createElement('div');
+  banner.style.cssText = 'position:fixed;bottom:10px;left:10px;background:darkblue;color:white;padding:8px 14px;border-radius:6px;font-size:12px;z-index:9999;font-family:sans-serif;max-width:700px';
+  const totalBase = PRODUCTS.length;
+  const filteredBase = (window.PRODUCTS_BASE||[]).length;
+  const finalProducts = (window.PRODUCTS||[]).length;
+  banner.textContent = 'TOTAL:' + totalBase + ' | PRODUCTS_BASE:' + filteredBase + ' | window.PRODUCTS:' + finalProducts + ' | ADMIN_DELETED:' + ADMIN_DELETED.length;
+  document.body.appendChild(banner);
+  setTimeout(() => banner.remove(), 30000);
+});
 
 // Step 2: Apply theme
 applyTheme(getTheme());
