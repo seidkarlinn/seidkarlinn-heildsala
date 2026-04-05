@@ -4032,11 +4032,8 @@ function tryLogin() {
 }
 document.getElementById('gPass').addEventListener('keydown', e => { if(e.key==='Enter') tryLogin(); });
 document.getElementById('gUser').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('gPass').focus(); });
-// Restore login state — products visible to all, prices only when logged in
-updateHeaderAuth();
-if (localStorage.getItem('ws_role') === 'admin') {
-  initAdminUI();
-}
+// Restore login state — called again properly during full init
+// (early call removed to prevent before-initialization errors)
 
 function logout() {
   localStorage.removeItem('ws_auth');
@@ -6610,11 +6607,14 @@ function vmUpdateDiscPreview() {
 function getMyDiscount() {
   const u = localStorage.getItem('ws_auth');
   if (!u) return 25;
-  if (ADMIN_ACCOUNTS[u]) return parseInt(getTheme().discountPct) || 25;
-  // Use stored personal discount (set at login)
+  // Safe theme read — THEME_DEFAULTS may not be defined yet if called early
+  const safeDisc = () => {
+    try { return parseInt((typeof getTheme === 'function' ? getTheme() : {discountPct:25}).discountPct) || 25; }
+    catch(e) { return 25; }
+  };
+  if (ADMIN_ACCOUNTS && ADMIN_ACCOUNTS[u]) return safeDisc();
   const stored = localStorage.getItem('ws_my_discount');
   if (stored !== null && stored !== '') return parseInt(stored);
-  // Fall back to account object in localStorage
   try {
     const accs = JSON.parse(localStorage.getItem('ws_buyer_accounts') || 'null');
     const acc = accs && accs[u];
@@ -6622,7 +6622,7 @@ function getMyDiscount() {
       return parseInt(acc.discount);
     }
   } catch(e) {}
-  return parseInt(getTheme().discountPct) || 25;
+  return safeDisc();
 }
 
 function getMyWsPriceStr(p) {
@@ -6749,7 +6749,7 @@ if (localStorage.getItem('ws_cache_version') !== CACHE_VERSION) {
 // Step 1: Freeze base products FIRST before anything else
 // ADMIN_DELETED — updated by sync, hardcoded list of deleted product URLs/names
 // This is what ensures ALL visitors see the same catalog without any server calls
-const ADMIN_DELETED = ["https://www.seidkarlinn.is/is-is/products/rapunzel-dokkt-70-sukkuladi-m-rapadura-80gr", "https://www.seidkarlinn.is/is-is/products/rapunzel-dokkt-85-sukkuladi-80gr"];
+const ADMIN_DELETED = [];
 
 // ADMIN_DELETED is baked into this file by GitHub Action when admin syncs
 // Admin sees local deletions; everyone else sees the baked-in list
