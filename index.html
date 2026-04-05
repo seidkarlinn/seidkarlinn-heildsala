@@ -6777,13 +6777,15 @@ applyTheme(getTheme());
 // Step 3: Set panel
 currentPanel = 'catalog';
 
-// Step 4: Apply pricing overrides (needs PRODUCTS_BASE)
-applyPricingOverrides();
+// Step 4-6: Init with error catching
+try {
+  applyPricingOverrides();
+} catch(e) { console.error('applyPricingOverrides failed:', e); }
 
-// Step 5: Rebuild catalog (applies deletions, syncs PRODUCTS, renders grid)
-rebuildLiveCatalog();
+try {
+  rebuildLiveCatalog();
+} catch(e) { console.error('rebuildLiveCatalog failed:', e); }
 
-// Step 6: Update UI state
 updateCartCount();
 renderCartBody();
 updateHeaderAuth();
