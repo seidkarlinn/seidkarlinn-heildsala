@@ -22,6 +22,10 @@ jobs:
           html = open('index.html').read()
           new_val = 'const ADMIN_DELETED = ' + json.dumps(deleted) + ';'
           html = re.sub(r'const ADMIN_DELETED = \[.*?\];', new_val, html, flags=re.DOTALL)
+          html = html.replace(
+            'const _src = (typeof PRODUCTS_BASE !== \'undefined\' && PRODUCTS_BASE.length) ? PRODUCTS_BASE : PRODUCTS;',
+            'const _src = window.PRODUCTS_BASE || (typeof PRODUCTS_BASE !== \'undefined\' ? PRODUCTS_BASE : PRODUCTS);'
+          )
           open('index.html', 'w').write(html)
           print('Done:', len(deleted), 'deleted')
           "
@@ -31,4 +35,4 @@ jobs:
           git config user.email "sync@seidkarlinn.is"
           git config user.name "Sync"
           git add index.html
-          git diff --staged --quiet && echo "No changes" || (git commit -m "sync" && git push)
+          git diff --staged --quiet && echo "ok" || (git commit -m "sync" && git push)
