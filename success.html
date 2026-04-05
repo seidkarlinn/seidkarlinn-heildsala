@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="is">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pöntun móttekin — Seiðkarlinn Heildsala</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root{--green:#2A5C2A;--green-l:#E6F0E6;--gold:#B8860B;--ink:#1A1710;--ink2:#5C5848;--paper:#FAF8F3;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'DM Sans',sans-serif;background:var(--paper);color:var(--ink);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:2rem;}
+  .card{background:#fff;border-radius:16px;padding:3rem 2.5rem;width:min(480px,100%);text-align:center;box-shadow:0 4px 32px rgba(0,0,0,.08);}
+  .icon{font-size:56px;margin-bottom:1rem;}
+  h1{font-family:'Playfair Display',serif;font-size:26px;color:var(--green);margin-bottom:.75rem;}
+  p{font-size:14px;color:var(--ink2);line-height:1.7;margin-bottom:.5rem;}
+  .order-id{font-size:12px;background:var(--green-l);color:var(--green);padding:6px 14px;border-radius:99px;display:inline-block;margin:1rem 0;font-weight:500;}
+  .back-btn{display:inline-block;margin-top:1.5rem;padding:10px 24px;background:var(--green);color:#fff;border-radius:8px;text-decoration:none;font-size:14px;font-weight:500;}
+  .back-btn:hover{background:#1e431e;}
+  .note{font-size:11px;color:#999;margin-top:1rem;}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="icon">✅</div>
+  <h1>Pöntun móttekin!</h1>
+  <p>Greiðslan tókst. Við munum hafa samband við þig fljótlega til að staðfesta heildsölupöntunina þína.</p>
+  <p>Kvittun hefur verið send á netfangið þitt.</p>
+  <div class="order-id" id="orderId">Pöntunarnúmer: —</div>
+  <br>
+  <a href="/index.html" class="back-btn">← Til baka í verslun</a>
+  <p class="note">Spurningar? Sendu okkur tölvupóst á <a href="mailto:seidkarlinn@seidkarlinn.is" style="color:var(--green)">seidkarlinn@seidkarlinn.is</a></p>
+</div>
+<script>
+  const params = new URLSearchParams(window.location.search);
+  const orderId = params.get('order');
+  if (orderId) document.getElementById('orderId').textContent = 'Pöntunarnúmer: ' + orderId;
+</script>
+</body>
+</html>
