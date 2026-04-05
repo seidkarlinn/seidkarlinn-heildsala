@@ -4673,6 +4673,11 @@ function updatePendingBadge() {
 // ── Panel switching ───────────────────────────────────
 let currentPanel = 'catalog';
 function showPanel(panel) {
+  if (localStorage.getItem('ws_role') === 'admin' && panel !== 'catalog') {
+    localStorage.setItem('ws_last_panel', panel);
+  } else {
+    localStorage.removeItem('ws_last_panel');
+  }
   ['catalog','orders','products','theme','pricing','vidskm'].forEach(p => {
     const el = document.getElementById('panel' + p.charAt(0).toUpperCase() + p.slice(1));
     if (el) el.classList.toggle('active', p === panel);
@@ -6741,7 +6746,7 @@ if (localStorage.getItem('ws_cache_version') !== CACHE_VERSION) {
 // Step 1: Freeze base products FIRST before anything else
 // ADMIN_DELETED — updated by sync, hardcoded list of deleted product URLs/names
 // This is what ensures ALL visitors see the same catalog without any server calls
-const ADMIN_DELETED = ["https://www.seidkarlinn.is/is-is/products/rapunzel-dokkt-70-sukkuladi-m-rapadura-80gr", "https://www.seidkarlinn.is/is-is/products/rapunzel-dokkt-85-sukkuladi-80gr"];
+const ADMIN_DELETED = [];
 
 // ADMIN_DELETED is baked into this file by GitHub Action when admin syncs
 // Admin sees local deletions; everyone else sees the baked-in list
@@ -6781,6 +6786,12 @@ renderCartBody();
 updateHeaderAuth();
 initAdminUI();
 updateFloatBtn();
+
+// Restore last admin panel if admin refreshed
+if (localStorage.getItem('ws_role') === 'admin') {
+  const lastPanel = localStorage.getItem('ws_last_panel');
+  if (lastPanel) setTimeout(() => showPanel(lastPanel), 50);
+}
 
 // Step 7: Safety net — ensure window.PRODUCTS is always populated
 if (!window.PRODUCTS || window.PRODUCTS.length === 0) {
