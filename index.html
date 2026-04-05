@@ -4266,7 +4266,8 @@ function renderGrid() {
   const sort = document.getElementById('sortSel').value;
   const stockOnly = document.getElementById('stockOnly').checked;
 
-  let filtered = (window.PRODUCTS||PRODUCTS).filter(p =>
+  const _renderSrc = (window.PRODUCTS && window.PRODUCTS.length > 0) ? window.PRODUCTS : PRODUCTS;
+  let filtered = _renderSrc.filter(p =>
     (activeFilter==='All' || p.cat===activeFilter)
     && (!q || matchQ(p,q))
     && (!stockOnly || p.inStock)
@@ -6781,7 +6782,12 @@ updateHeaderAuth();
 initAdminUI();
 updateFloatBtn();
 
-// Step 7: Catalog already pulled synchronously above before init
+// Step 7: Safety net — ensure window.PRODUCTS is always populated
+if (!window.PRODUCTS || window.PRODUCTS.length === 0) {
+  window.PRODUCTS = (window.PRODUCTS_BASE || PRODUCTS_BASE || PRODUCTS).slice();
+  renderGrid();
+  buildSidebar();
+}
 
 
 
