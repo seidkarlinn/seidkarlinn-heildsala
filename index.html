@@ -4543,6 +4543,7 @@ function showDetail(p) {
     </div>
 
     <!-- Add to cart -->
+    ${disc !== null ? `
     <div class="dp-qty-section">
       <div class="dp-qty-lbl">Bæta í körfu</div>
       <div class="dp-qty-row2">
@@ -4563,7 +4564,13 @@ function showDetail(p) {
         style="margin-top:.75rem" ${!p.inStock?'disabled':''}>
         ${p.inStock ? '🛒 Bæta í körfu' : '✕ Uppselt'}
       </button>
-    </div>
+    </div>` : `
+    <div style="margin-bottom:1rem">
+      <button onclick="document.getElementById('gate').classList.remove('hidden')"
+        style="width:100%;padding:11px;background:var(--green);color:#fff;border:none;border-radius:var(--rs);font-size:13px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif">
+        🔑 Innskrá til að kaupa
+      </button>
+    </div>`}
 
     <!-- Info table -->
     <table class="info-table">
