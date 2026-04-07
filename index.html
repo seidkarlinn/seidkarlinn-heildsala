@@ -5324,13 +5324,26 @@ const SELLER = {
 
 // VSK categories — 0% for edible/ingestible, 24% for non-edible
 const VSK_EXEMPT_CATS = new Set([
+  // 0% VSK — currently none, placeholder
+]);
+
+// 11% VSK — food, edible, natural health products
+const VSK_11_CATS = new Set([
   'Hunangsafurðir','Frostþurrkaðir ávextir','Kakó','Drykkir','Matvörur',
   'Ólífuolíur','Niðursuðudósir','Fæðubótarefni','Shilajit','Sveppir','Pakkatilboð',
 ]);
-const VSK_RATE = 0.24;
+
+// 24% VSK — non-edible: soaps, creams, hair, skin products
+const VSK_24_CATS = new Set([
+  'Hreinlætisvörur','Húðvörur','Hárvörur',
+]);
+
+const VSK_RATE = 0.11; // default rate is 11% for most products
 
 function getVskRate(cat) {
-  return VSK_EXEMPT_CATS.has(cat) ? 0 : VSK_RATE;
+  if (VSK_EXEMPT_CATS.has(cat)) return 0;
+  if (VSK_24_CATS.has(cat)) return 0.24;
+  return 0.11; // default: food/natural products at 11%
 }
 
 // Invoice number — sequential, stored in localStorage
@@ -6926,8 +6939,8 @@ function exportReglaCSV() {
       const lineExVsk = lineGross - lineVsk;
 
       // Debit: Viðskiptakröfur (7600) — full amount incl VSK
-      // Credit: Sala vöru (1200 if 24% VSK, 1220 if 0%)
-      const creditAccount = vskRate > 0 ? '1200' : '1220';
+      // Credit: 1213 = 11% VSK (food/natural), 1200 = 24% VSK (non-edible), 1220 = 0% VSK exempt
+      const creditAccount = vskRate === 0 ? '1220' : vskRate === 0.24 ? '1200' : '1213';
 
       rows.push([
         dateFmt,                          // Dagsetning
