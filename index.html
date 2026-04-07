@@ -842,9 +842,9 @@ aside.detail{
 
 
 
-    <div class="ws-info">
+    <div class="ws-info" id="wsInfoBox" style="display:none">
       <div class="ws-info-title">⚡ Heildsöluskilmálar</div>
-      <div class="ws-info-text">
+      <div class="ws-info-text" id="wsInfoText">
         25% afsláttur af smásöluverði á allar vörur.<br>
         Lágmarksverðmæti pöntunar: <span id="sbMoqAmt">50.000 ISK</span>.
       </div>
@@ -4064,7 +4064,7 @@ function addToCart(productName, qty) {
     const _disc = typeof getMyDiscount === 'function' ? getMyDiscount() : 25;
     const _retail = parseInt((p.price||'').replace(/[^\d]/g,'')) || 0;
     const _wsNum = _retail ? Math.round(_retail * (1 - _disc/100)) : 0;
-    const _wsStr = _wsNum ? _wsNum.toLocaleString('de-DE') + ' ISK' : (p.wholesale || p.price);
+    const _wsStr = _wsNum ? fmtISK(_wsNum) : (p.wholesale || p.price);
     cart.push({
       name: p.name, price: p.price, wholesale: _wsStr,
       img: p.img, qty, variantId: null
@@ -4114,7 +4114,7 @@ function renderCartBody() {
     const wsV = parseISK(item.wholesale);
     const rtV = parseISK(item.price);
     const lineWs = wsV * item.qty;
-    const fmt = v => v.toLocaleString('de-DE') + ' ISK';
+    const fmt = v => fmtISK(v);
     return `<div class="cart-item">
       <img class="ci-img" src="${item.img}" onerror="this.style.display='none'" loading="lazy">
       <div>
@@ -4298,7 +4298,7 @@ function renderGrid() {
       const discL = liL ? (typeof getMyDiscount==='function' ? getMyDiscount() : 25) : 25;
       const retailL = p.price ? parseInt(p.price.replace(/[^\d]/g,'')) : 0;
       const myWsL = liL && retailL && discL !== null
-        ? Math.round(retailL * (1 - discL/100)).toLocaleString('de-DE') + ' ISK'
+        ? fmtISK(Math.round(retailL * (1 - discL/100)))
         : (p.wholesale || p.price);
       const wsText = liL ? myWsL : '🔒';
       return `<div class="prow${p.name===selectedName?' sel':''}" style="animation-delay:${delay}s" data-idx="${i}">
@@ -4326,7 +4326,7 @@ function renderGrid() {
       const disc = li ? (typeof getMyDiscount==='function' ? getMyDiscount() : 25) : 25;
       const retail = p.price ? parseInt(p.price.replace(/[^\d]/g,'')) : 0;
       const myWs = li && retail
-        ? Math.round(retail * (1 - disc/100)).toLocaleString('de-DE') + ' ISK'
+        ? fmtISK(Math.round(retail * (1 - disc/100)))
         : (p.wholesale || p.price || '');
       const wsText = li ? myWs : null;
       const saving = li && retail ? `Sparar ${disc}%` : '';
@@ -4390,7 +4390,7 @@ function showDetail(p) {
   const wsNum  = (rtNum && disc !== null)
     ? Math.round(rtNum * (1 - disc/100))
     : parsePrice(p.wholesale || p.price);
-  const wsStr  = wsNum ? wsNum.toLocaleString('de-DE') + ' ISK' : (p.wholesale || p.price || '—');
+  const wsStr  = wsNum ? fmtISK(wsNum) : (p.wholesale || p.price || '—');
   const savedPct = (wsNum && rtNum && rtNum > wsNum)
     ? Math.round((1 - wsNum/rtNum)*100) : null;
 
@@ -4472,7 +4472,7 @@ function showDetail(p) {
           <button onclick="dpStepQty(1)">+</button>
         </div>
         <div class="dp-subtotal" id="dpSubtotal">
-          ${wsNum ? `Samtals: <strong>${wsNum.toLocaleString('de-DE')} ISK</strong>` : ''}
+          ${wsNum ? `Samtals: <strong>${fmtNum(wsNum)} ISK</strong>` : ''}
         </div>
       </div>
       <div style="margin-top:8px;font-size:10px;color:var(--ink3)">
@@ -4520,7 +4520,7 @@ function dpUpdateSubtotal(wsNum) {
   const qty = parseInt(document.getElementById('dpQty')?.value) || 1;
   const sub = document.getElementById('dpSubtotal');
   if (sub && wsNum) {
-    sub.innerHTML = `Samtals: <strong>${(wsNum * qty).toLocaleString('de-DE')} ISK</strong>`;
+    sub.innerHTML = `Samtals: <strong>${fmtNum(wsNum * qty)} ISK</strong>`;
   }
 }
 
@@ -4651,7 +4651,7 @@ function logOrder(orderId, total, cartItems, buyerName, buyerEmail, buyerUser, n
       const _disc = typeof getMyDiscount === 'function' ? getMyDiscount() : 25;
       const _retail = parseInt((i.price||'').replace(/[^\d]/g,'')) || 0;
       const _wsNum = _retail ? Math.round(_retail * (1 - _disc/100)) : 0;
-      const _wsStr = _wsNum ? _wsNum.toLocaleString('de-DE') + ' ISK' : (i.wholesale||i.price);
+      const _wsStr = _wsNum ? fmtISK(_wsNum) : (i.wholesale||i.price);
       return {name:i.name, qty:i.qty, price:_wsStr};
     }),
   });
@@ -4726,7 +4726,7 @@ function renderOrdersPanel() {
   const pending  = orders.filter(o=>o.status==='pending').length;
   const fulfilled= orders.filter(o=>o.status==='fulfilled').length;
   const todayN   = orders.filter(o=>new Date(o.date).toDateString()===new Date().toDateString()).length;
-  const fmt      = v => Math.round(v).toLocaleString('de-DE')+' ISK';
+  const fmt = fmtISK;
 
   const pill = s => {
     const labels={pending:'⏳ Í bið',fulfilled:'✓ Sent',cancelled:'✕ Hætt',processing:'⚙ Meðhöndlun'};
@@ -4805,7 +4805,7 @@ function renderOrdersPanel() {
                   <div class="od-info-row"><span class="od-info-key">Staða</span><span class="od-info-val">${pill(o.status)}</span></div>
                   ${o.note?`<div class="od-note">📝 ${esc(o.note)}</div>`:''}
                   ${o.teyaSessionId?`<div class="od-note" style="color:var(--ink3)">🔑 Teya: ${esc(o.teyaSessionId.substring(0,20))}…</div>`:'<div class="od-note" style="color:var(--ink3)">⚠️ Enginn Teya session ID — endurgreiðsla ekki möguleg</div>'}
-                  ${(o.refunds||[]).length?`<div class="od-note" style="color:var(--red)">↩ Endurgreiðslur: ${(o.refunds||[]).map(r=>r.amount.toLocaleString('de-DE')+' ISK').join(', ')}</div>`:''}
+                  ${(o.refunds||[]).length?`<div class="od-note" style="color:var(--red)">↩ Endurgreiðslur: ${(o.refunds||[]).map(r=>r.fmtNum(amount)+' ISK').join(', ')}</div>`:''}
                   <div style="margin-top:10px">
                     <button class="adm-btn primary" data-orderid="${esc(o.id)}" onclick="downloadOrderPDF(this.dataset.orderid)" style="width:100%">📄 Sækja reikning í PDF</button>
                   </div>
@@ -4881,7 +4881,7 @@ function renderProductsPanel() {
     </div>
     <div class="adm-prod-grid">
       ${visible.map(p=>{
-        const ws = p.wholesale || (p.price?Math.round(parseInt((p.price||'').replace(/[^\d]/g,''))*0.75).toLocaleString('de-DE')+' ISK':'');
+        const ws = p.wholesale || (p.price?Math.round(parseInt((p.price||'').replace(/[^\d]/g,''))*0.75)+' ISK':'');
         const key = `${p._src}:${p._idx}`;
         return `<div class="adm-pcard${p._removed?' removed':''}" style="cursor:pointer"
             onclick="admShowProduct(event, '${esc(p.name)}')">
@@ -4931,7 +4931,7 @@ function rebuildLiveCatalog() {
   const srcBase = window.PRODUCTS_BASE || PRODUCTS;
   const base = srcBase.filter(p => !deleted.includes(p.url||p.name) && !deleted.includes(p.name));
   window.PRODUCTS=[...base,...custom].map(p=>{
-    const v=p.wholesale||(p.price?Math.round(parseInt((p.price||'').replace(/[^\d]/g,''))*0.75).toLocaleString('de-DE')+' ISK':'');
+    const v=p.wholesale||(p.price?Math.round(parseInt((p.price||'').replace(/[^\d]/g,''))*0.75)+' ISK':'');
     return {...p,wholesale:v};
   });
   if (!currentPanel || currentPanel==='catalog') { buildSidebar(); renderGrid(); }
@@ -4973,7 +4973,7 @@ function saveProd() {
   const wsV=price?Math.round(parseInt(price.replace(/[^\d]/g,''))*0.75):0;
   const prod={
     name, cat:document.getElementById('mCat').value,
-    price, wholesale:wsV?wsV.toLocaleString('de-DE')+' ISK':'',
+    price, wholesale:wsV?fmtNum(wsV)+' ISK':'',
     img:document.getElementById('mImg').value.trim(),
     desc:document.getElementById('mDesc').value.trim(),
     tags:document.getElementById('mTags').value.split(',').map(t=>t.trim()).filter(Boolean),
@@ -5074,14 +5074,12 @@ function applyTheme(t) {
   // Sidebar info box
   const wsTitle = document.querySelector('.ws-info-title');
   if (wsTitle) wsTitle.textContent = '⚡ ' + t.sidebarTitle;
-  const wsText = document.querySelector('.ws-info-text');
+  const wsText = document.getElementById('wsInfoText') || document.querySelector('.ws-info-text');
   if (wsText) wsText.innerHTML = `${t.discountPct}% afsláttur af smásöluverði á allar vörur.<br>Lágmarksverðmæti pöntunar: ${t.moqAmount}.`;
   const sbMoq = document.getElementById('sbMoqAmt');
   if (sbMoq) sbMoq.textContent = t.moqAmount || '50.000 ISK';
   const sbBadge = document.getElementById('sbMoqBadge');
   if (sbBadge) sbBadge.textContent = 'MOQ: ' + (t.moqAmount || '50.000 ISK');
-  const moqBadge = document.querySelector('.moq-badge');
-  if (moqBadge) moqBadge.textContent = `MOQ: ${t.moqAmount}`;
 }
 
 // ── Render theme panel ────────────────────────────────
@@ -5185,7 +5183,7 @@ function renderThemePanel() {
           onkeypress="return /[0-9]/.test(event.key)"
           onblur="
             const raw = parseInt(this.value.replace(/[^0-9]/g,'')) || 0;
-            const formatted = raw.toLocaleString('de-DE') + ' ISK';
+            const formatted = fmtISK(raw);
             this.value = formatted;
             liveTheme('moqAmount', formatted);
           ">
@@ -5199,7 +5197,7 @@ function renderThemePanel() {
 let _liveThemeTimer;
 function fmtISK(val) {
   const n = parseInt(String(val).replace(/[^\d]/g, '')) || 0;
-  return n.toLocaleString('de-DE') + ' ISK';
+  return fmtISK(n);
 }
 
 function liveTheme(key, value) {
@@ -5395,18 +5393,18 @@ function generateInvoicePDF(data) {
     <tr>
       <td style="padding:7px 8px;border-bottom:1px solid #eee;font-size:11px">${esc(l.name)}</td>
       <td style="padding:7px 8px;border-bottom:1px solid #eee;font-size:11px;text-align:center">${l.qty}</td>
-      <td style="padding:7px 8px;border-bottom:1px solid #eee;font-size:11px;text-align:right">${l.unit.toLocaleString('de-DE')}</td>
+      <td style="padding:7px 8px;border-bottom:1px solid #eee;font-size:11px;text-align:right">${l.fmtNum(unit)}</td>
       <td style="padding:7px 8px;border-bottom:1px solid #eee;font-size:11px;text-align:center">${fmtPct(l.vskRate)}</td>
-      <td style="padding:7px 8px;border-bottom:1px solid #eee;font-size:11px;text-align:right;font-weight:500">${l.total.toLocaleString('de-DE')}</td>
+      <td style="padding:7px 8px;border-bottom:1px solid #eee;font-size:11px;text-align:right;font-weight:500">${l.fmtNum(total)}</td>
     </tr>`).join('');
 
   const vskSummary = totalVsk24 > 0 ? `
     <tr><td colspan="4" style="padding:4px 8px;font-size:11px;color:#555">Samtals án VSK</td>
-        <td style="padding:4px 8px;font-size:11px;text-align:right">${totalExVsk.toLocaleString('de-DE')}</td></tr>
+        <td style="padding:4px 8px;font-size:11px;text-align:right">${fmtNum(totalExVsk)}</td></tr>
     <tr><td colspan="4" style="padding:4px 8px;font-size:11px;color:#555">VSK 24%</td>
-        <td style="padding:4px 8px;font-size:11px;text-align:right">${totalVsk24.toLocaleString('de-DE')}</td></tr>
+        <td style="padding:4px 8px;font-size:11px;text-align:right">${fmtNum(totalVsk24)}</td></tr>
     ${totalVsk0 > 0 ? `<tr><td colspan="4" style="padding:4px 8px;font-size:11px;color:#555">VSK 0% (undanþegin)</td>
-        <td style="padding:4px 8px;font-size:11px;text-align:right">${totalVsk0.toLocaleString('de-DE')}</td></tr>` : ''}` : `
+        <td style="padding:4px 8px;font-size:11px;text-align:right">${fmtNum(totalVsk0)}</td></tr>` : ''}` : `
     <tr><td colspan="4" style="padding:4px 8px;font-size:11px;color:#555">VSK 0% (matvæli/undanþegin)</td>
         <td style="padding:4px 8px;font-size:11px;text-align:right">0</td></tr>`;
 
@@ -5619,7 +5617,7 @@ async function submitRefund() {
   const remaining = (o.total||0) - totalRefunded;
 
   if (amount > remaining) {
-    showToast(`⚠️ Hámark endurgreiðsla: ${remaining.toLocaleString('de-DE')} ISK`);
+    showToast(`⚠️ Hámark endurgreiðsla: ${fmtNum(remaining)} ISK`);
     return;
   }
 
@@ -5666,10 +5664,10 @@ async function submitRefund() {
     saveOrders(orders);
 
     statusEl.style.color = 'var(--green)';
-    statusEl.textContent = `✓ Endurgreiðsla tókst! ${amount.toLocaleString('de-DE')} ISK endurgreitt. ID: ${data.refundId}`;
+    statusEl.textContent = `✓ Endurgreiðsla tókst! ${fmtNum(amount)} ISK endurgreitt. ID: ${data.refundId}`;
     btn.textContent = '✓ Tókst!';
 
-    showToast(`✓ ${amount.toLocaleString('de-DE')} ISK endurgreitt`);
+    showToast(`✓ ${fmtNum(amount)} ISK endurgreitt`);
 
     // Refresh orders panel after 1.5s and close modal
     setTimeout(() => {
@@ -5718,8 +5716,8 @@ function applyPricingOverrides() {
       const o = ov.prods[key];
       const ws = o.ws || p.wholesale;
       return {...p,
-        wholesale: typeof ws === 'number' ? ws.toLocaleString('de-DE') + ' ISK' : ws,
-        price: o.retail ? o.retail.toLocaleString('de-DE') + ' ISK' : p.price,
+        wholesale: typeof ws === 'number' ? fmtISK(ws) : ws,
+        price: o.retail ? o.fmtISK(retail) : p.price,
         _priceOverridden: true,
       };
     }
@@ -5729,14 +5727,14 @@ function applyPricingOverrides() {
       const retail = parseInt((p.price||'').replace(/[^\d]/g,'')) || 0;
       const ws = retail > 0 ? Math.round(retail * (1 - disc/100)) : 0;
       return {...p,
-        wholesale: ws > 0 ? ws.toLocaleString('de-DE') + ' ISK' : p.wholesale,
+        wholesale: ws > 0 ? fmtISK(ws) : p.wholesale,
         _catOverridden: true,
       };
     }
     // Global discount
     const retail = parseInt((p.price||'').replace(/[^\d]/g,'')) || 0;
     const ws = retail > 0 ? Math.round(retail * (1 - globalDisc/100)) : 0;
-    return {...p, wholesale: ws > 0 ? ws.toLocaleString('de-DE') + ' ISK' : p.wholesale};
+    return {...p, wholesale: ws > 0 ? fmtISK(ws) : p.wholesale};
   });
 }
 
@@ -6624,7 +6622,7 @@ function vmUpdateDiscPreview() {
     preview.style.color = 'var(--ink3)';
   } else {
     const d = parseInt(disc);
-    const example = Math.round(10000 * (1 - d/100)).toLocaleString('de-DE');
+    const example = fmtNum(Math.round(10000 * (1 - d/100)));
     preview.textContent = '✓ Sérsniðinn afsláttur: ' + d + '% — dæmi: 10.000 ISK vara kostar ' + example + ' ISK';
     preview.style.color = 'var(--green)';
   }
@@ -6656,7 +6654,7 @@ function getMyWsPriceStr(p) {
   const retail = p.price ? parseInt(p.price.replace(/[^\d]/g,'')) : 0;
   if (!retail) return p.wholesale || p.price || '—';
   const disc = getMyDiscount();
-  return Math.round(retail * (1 - disc/100)).toLocaleString('de-DE') + ' ISK';
+  return fmtISK(Math.round(retail * (1 - disc/100)));
 }
 
 
@@ -6722,7 +6720,7 @@ async function silentCatalogPull() {
       ...custom
     ].map(p => {
       const retail = parseInt((p.price||'').replace(/[^\d]/g,'')) || 0;
-      const ws = retail ? Math.round(retail * 0.75).toLocaleString('de-DE') + ' ISK' : p.wholesale;
+      const ws = retail ? fmtISK(retail * 0.75) : p.wholesale;
       return {...p, wholesale: ws};
     });
 
@@ -6785,6 +6783,15 @@ function bulkDeleteSelected() {
   });
   renderProductsPanel();
   showToast(cbs.length + ' vörur fjarlægðar');
+}
+
+
+// Number formatter — always uses . as thousand separator regardless of browser locale
+function fmtISK(n) {
+  return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ' ISK';
+}
+function fmtNum(n) {
+  return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 }
 
 // ── INIT ──
