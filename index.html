@@ -791,6 +791,49 @@ aside.detail{
 .vm-history-item:last-child{border-bottom:none;}
 .vm-empty{text-align:center;padding:3rem;color:var(--ink3);font-size:13px;}
 
+
+/* ─── VÖRUSTJÓRNUN TABLE ─── */
+.vst-wrap{display:flex;gap:0;height:calc(100vh - 130px);overflow:hidden;}
+.vst-table-wrap{flex:1;overflow-y:auto;min-width:0;}
+.vst-detail{width:380px;min-width:380px;border-left:1.5px solid var(--paper3);overflow-y:auto;
+  background:var(--sf);display:none;flex-direction:column;}
+.vst-detail.open{display:flex;}
+.vst-tbl{width:100%;border-collapse:collapse;font-size:12px;}
+.vst-tbl th{background:var(--ink);color:#fff;padding:8px 10px;text-align:left;
+  font-size:10px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;
+  position:sticky;top:0;z-index:2;white-space:nowrap;}
+.vst-tbl th input[type=checkbox]{accent-color:var(--gold);}
+.vst-tbl td{padding:7px 10px;border-bottom:1px solid var(--paper3);vertical-align:middle;
+  white-space:nowrap;max-width:200px;overflow:hidden;text-overflow:ellipsis;}
+.vst-tbl tr:hover td{background:var(--paper2);cursor:pointer;}
+.vst-tbl tr.selected td{background:var(--green-l);}
+.vst-tbl tr.removed td{opacity:.4;}
+.vst-num{text-align:right!important;}
+.vst-badge{display:inline-block;padding:1px 7px;border-radius:99px;font-size:10px;font-weight:500;}
+.vst-badge.instock{background:#dcfce7;color:#166534;}
+.vst-badge.outstock{background:#fee2e2;color:#991b1b;}
+/* Detail panel */
+.vst-dp-hdr{padding:1rem 1.125rem;border-bottom:1.5px solid var(--paper3);
+  background:var(--ink);color:#fff;}
+.vst-dp-hdr-title{font-size:13px;font-weight:600;margin-bottom:2px;}
+.vst-dp-hdr-sub{font-size:11px;opacity:.6;}
+.vst-dp-tabs{display:flex;border-bottom:1.5px solid var(--paper3);}
+.vst-dp-tab{flex:1;padding:8px 4px;border:none;background:transparent;font-size:11px;
+  font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--ink3);
+  border-bottom:2px solid transparent;margin-bottom:-1.5px;}
+.vst-dp-tab.active{color:var(--green);border-bottom-color:var(--green);}
+.vst-dp-body{padding:1rem;flex:1;}
+.vst-field{margin-bottom:.75rem;}
+.vst-field label{display:block;font-size:10px;font-weight:500;color:var(--ink2);
+  text-transform:uppercase;letter-spacing:.07em;margin-bottom:3px;}
+.vst-field input,.vst-field select,.vst-field textarea{
+  width:100%;padding:7px 10px;border:1.5px solid var(--paper3);border-radius:var(--rs);
+  font-size:12px;font-family:'DM Sans',sans-serif;background:var(--paper);color:var(--ink);}
+.vst-field input:focus,.vst-field select:focus{outline:none;border-color:var(--green);}
+.vst-2col{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.vst-dp-footer{padding:.75rem 1rem;border-top:1.5px solid var(--paper3);
+  display:flex;gap:8px;background:var(--sf);}
+
 </style>
 </head>
 <body>
@@ -4899,15 +4942,16 @@ function renderProductsPanel() {
     (showRemoved || !p._removed) &&
     (!prodSearch || p.name.toLowerCase().includes(prodSearch) || p.cat.toLowerCase().includes(prodSearch))
   );
+  const ov = getPricingOverrides();
 
   document.getElementById('panelProducts').innerHTML = `
-    <div class="cat-hdr">
+    <div class="cat-hdr" style="flex-wrap:wrap;gap:8px">
       <div>
         <div class="cat-title">📦 Vörustjórnun</div>
-        <div class="cat-sub">${visible.length} vörur sýndar · ${getCustomProducts().length} sérsniðnar</div>
+        <div class="cat-sub">${visible.length} vörur sýndar</div>
       </div>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-        <button class="adm-btn primary" onclick="openProdModal(null)">+ Bæta við vöru</button>
+        <button class="adm-btn primary" onclick="openProdModal(null)">+ Stofna vöru</button>
         <button id="syncCatalogBtn" onclick="syncCatalogToAll()"
           style="display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--rs);
                  border:1.5px solid #2A5C2A;background:#E6F0E6;color:#2A5C2A;font-size:12px;
@@ -4916,11 +4960,9 @@ function renderProductsPanel() {
         </button>
         <button id="bulkDeleteBtn" onclick="bulkDeleteSelected()" style="display:none;
           padding:7px 14px;border-radius:var(--rs);border:1.5px solid #dc2626;
-          background:#fee2e2;color:#dc2626;font-size:12px;font-weight:500;
-          cursor:pointer;font-family:'DM Sans',sans-serif">
+          background:#fee2e2;color:#dc2626;font-size:12px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif">
           🗑 Eyða völdum (<span id="bulkCount">0</span>)
         </button>
-
         <input class="adm-search" placeholder="Leita…" value="${prodSearch}"
           oninput="prodSearch=this.value.toLowerCase();renderProductsPanel()">
         <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--ink3);cursor:pointer">
@@ -4929,34 +4971,271 @@ function renderProductsPanel() {
         </label>
       </div>
     </div>
-    <div class="adm-prod-grid">
-      ${visible.map(p=>{
-        const ws = p.wholesale || (p.price?Math.round(parseInt((p.price||'').replace(/[^\d]/g,''))*0.75)+' ISK':'');
-        const key = `${p._src}:${p._idx}`;
-        return `<div class="adm-pcard${p._removed?' removed':''}" style="cursor:pointer"
-            onclick="admShowProduct(event, '${esc(p.name)}')">
-          <img class="apc-img" src="${esc(p.img||'')}" onerror="this.style.display='none'" loading="lazy">
-          ${!p.inStock?'<span class="out-badge">Uppselt</span>':''}
-          <div class="apc-body">
-            <div class="apc-name">${esc(p.name)}</div>
-            <div class="apc-cat">${esc(p.cat)}</div>
-            <div class="apc-price">${esc(ws)}<span class="apc-retail">${esc(p.price||'')}</span></div>
-            <div class="apc-btns" onclick="event.stopPropagation()">
-              <button class="apc-btn edit" onclick="openProdModal('${esc(key)}')">✏ Breyta</button>
-              ${p._removed
-                ?`<button class="apc-btn restore" onclick="restoreProd('${esc(key)}','${esc(p.url||p.name)}')">↺</button>`
-                :`<button class="apc-btn del" onclick="deleteProd('${esc(key)}','${esc(p.url||p.name)}')">🗑</button>`}
-          <input type="checkbox" class="prod-select-cb"
-            data-key="${esc(key)}" data-id="${esc(p.url||p.name)}"
-            onchange="updateBulkBar()"
-            style="position:absolute;top:8px;left:8px;width:17px;height:17px;cursor:pointer;accent-color:var(--green);z-index:2">
-            </div>
-          </div>
-        </div>`;
-      }).join('')}
+
+    <div class="vst-wrap" id="vstWrap">
+      <div class="vst-table-wrap">
+        <table class="vst-tbl">
+          <thead><tr>
+            <th style="width:32px"><input type="checkbox" id="vstSelectAll" onchange="vstToggleAll(this.checked)"></th>
+            <th style="width:50px">Vara</th>
+            <th>Heiti</th>
+            <th>Vörunúmer</th>
+            <th>Flokkur</th>
+            <th class="vst-num">Verð án vsk.</th>
+            <th class="vst-num">Verð m. vsk.</th>
+            <th class="vst-num">Heildsöluverð</th>
+            <th>VSK</th>
+            <th>Staða</th>
+            <th>Aðgerðir</th>
+          </tr></thead>
+          <tbody>
+          ${visible.map((p,i) => {
+            const key = `${p._src}:${p._idx}`;
+            const retail = parseInt((p.price||'').replace(/[^\d]/g,'')) || 0;
+            const vskRate = getVskRate(p.cat);
+            const exVsk = vskRate > 0 ? Math.round(retail / (1 + vskRate)) : retail;
+            const wsNum = retail ? Math.round(retail * (1 - ((parseInt(getTheme().discountPct)||25)/100))) : 0;
+            const wsStr = wsNum ? wsNum.toLocaleString('de-DE') + ' ISK' : '—';
+            return `<tr class="${p._removed?'removed':''}" onclick="vstSelectRow(event,'${esc(p.name)}','${esc(key)}')" data-key="${esc(key)}">
+              <td onclick="event.stopPropagation()">
+                <input type="checkbox" class="prod-select-cb" data-key="${esc(key)}" data-id="${esc(p.url||p.name)}" onchange="updateBulkBar()">
+              </td>
+              <td><img src="${esc(p.img||'')}" style="width:36px;height:36px;object-fit:cover;border-radius:4px;background:var(--paper2)" onerror="this.style.display='none'"></td>
+              <td style="max-width:220px;white-space:normal;line-height:1.3">${esc(p.name)}</td>
+              <td style="color:var(--ink3)">${esc(p.sku||'—')}</td>
+              <td><span style="font-size:10px;background:var(--paper2);padding:1px 6px;border-radius:99px">${esc(p.cat)}</span></td>
+              <td class="vst-num">${exVsk ? exVsk.toLocaleString('de-DE') : '—'}</td>
+              <td class="vst-num">${retail ? retail.toLocaleString('de-DE') : '—'}</td>
+              <td class="vst-num" style="color:var(--green);font-weight:500">${wsStr}</td>
+              <td style="font-size:10px">${vskRate === 0.24 ? '24%' : vskRate === 0.11 ? '11%' : '0%'}</td>
+              <td><span class="vst-badge ${p.inStock?'instock':'outstock'}">${p.inStock?'Til á lager':'Uppselt'}</span></td>
+              <td onclick="event.stopPropagation()">
+                ${p._removed
+                  ? `<button class="apc-btn restore" onclick="restoreProd('${esc(key)}')">↺</button>`
+                  : `<button class="apc-btn del" onclick="deleteProd('${esc(key)}','${esc(p.url||p.name)}')">🗑</button>`}
+              </td>
+            </tr>`;
+          }).join('')}
+          </tbody>
+        </table>
+      </div>
+      <!-- Right detail panel -->
+      <div class="vst-detail" id="vstDetail"></div>
     </div>
   `;
 }
+
+function vstToggleAll(checked) {
+  document.querySelectorAll('.prod-select-cb').forEach(cb => { cb.checked = checked; });
+  updateBulkBar();
+}
+
+let _vstSelected = null;
+
+function vstSelectRow(e, name, key) {
+  if (e.target.closest('button') || e.target.type === 'checkbox') return;
+  _vstSelected = { name, key };
+  // Highlight row
+  document.querySelectorAll('.vst-tbl tr').forEach(r => r.classList.remove('selected'));
+  e.currentTarget.classList.add('selected');
+  // Open detail panel
+  vstOpenDetail(name, key);
+}
+
+function vstOpenDetail(name, key) {
+  const detail = document.getElementById('vstDetail');
+  if (!detail) return;
+  detail.classList.add('open');
+
+  const all = allAdmProducts();
+  const p = (window.PRODUCTS_BASE||PRODUCTS||[]).find(x=>x.name===name)
+         || all.find(x=>x.name===name);
+  if (!p) return;
+
+  const retail = parseInt((p.price||'').replace(/[^\d]/g,'')) || 0;
+  const vskRate = getVskRate(p.cat);
+  const exVsk = vskRate > 0 ? Math.round(retail / (1 + vskRate)) : retail;
+  const wsNum = retail ? Math.round(retail * (1 - ((parseInt(getTheme().discountPct)||25)/100))) : 0;
+  const vskLabel = vskRate === 0.24 ? '24% — Efra þrep' : vskRate === 0.11 ? '11% — Neðra þrep' : '0% — Undanþeginn';
+  const cats = [...new Set((window.PRODUCTS_BASE||PRODUCTS||[]).map(p=>p.cat))].sort();
+
+  detail.innerHTML = `
+    <div class="vst-dp-hdr">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+          <div class="vst-dp-hdr-title">${esc(p.name)}</div>
+          <div class="vst-dp-hdr-sub">${esc(p.cat)}</div>
+        </div>
+        <button onclick="document.getElementById('vstDetail').classList.remove('open')"
+          style="background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:4px;
+          padding:3px 8px;cursor:pointer;font-size:14px">✕</button>
+      </div>
+    </div>
+
+    <div class="vst-dp-tabs">
+      <button class="vst-dp-tab active" onclick="vstTab(this,'vst-tab-vara')">Vara</button>
+      <button class="vst-dp-tab" onclick="vstTab(this,'vst-tab-birg')">Birgðir</button>
+      <button class="vst-dp-tab" onclick="vstTab(this,'vst-tab-innk')">Innkaup</button>
+    </div>
+
+    <div class="vst-dp-body" id="vst-tab-vara">
+      <div style="text-align:center;margin-bottom:1rem">
+        <img src="${esc(p.img||'')}" style="width:80px;height:80px;object-fit:cover;border-radius:8px;background:var(--paper2)" onerror="this.style.display='none'">
+      </div>
+      <div class="vst-field">
+        <label>Vörunúmer</label>
+        <input value="${esc(p.sku||'')}" placeholder="t.d. SK-1001" id="vdSku">
+      </div>
+      <div class="vst-field">
+        <label>Vara (heiti)</label>
+        <input value="${esc(p.name)}" id="vdName">
+      </div>
+      <div class="vst-field">
+        <label>Vöruflokkur</label>
+        <select id="vdCat">
+          ${cats.map(c=>`<option value="${esc(c)}" ${c===p.cat?'selected':''}>${esc(c)}</option>`).join('')}
+        </select>
+      </div>
+      <div class="vst-field">
+        <label>Mynt</label>
+        <select id="vdCurr"><option value="ISK" selected>ISK</option></select>
+      </div>
+      <div class="vst-field">
+        <label>VSK</label>
+        <select id="vdVsk">
+          <option value="0.11" ${vskRate===0.11?'selected':''}>11% — Neðra þrep (matvörur)</option>
+          <option value="0.24" ${vskRate===0.24?'selected':''}>24% — Efra þrep (þjónusta/aðrar)</option>
+          <option value="0" ${vskRate===0?'selected':''}>0% — Undanþeginn</option>
+        </select>
+      </div>
+      <div class="vst-2col">
+        <div class="vst-field">
+          <label>Verð án vsk.</label>
+          <input type="number" value="${exVsk||''}" id="vdExVsk" oninput="vstCalcPrice()">
+        </div>
+        <div class="vst-field">
+          <label>Verð með vsk.</label>
+          <input type="number" value="${retail||''}" id="vdRetail" readonly style="background:var(--paper2)">
+        </div>
+      </div>
+      <div class="vst-2col">
+        <div class="vst-field">
+          <label>Heildsöluverð án vsk.</label>
+          <input type="number" value="${wsNum && vskRate>0 ? Math.round(wsNum/(1+vskRate)) : wsNum||''}" id="vdWsExVsk" readonly style="background:var(--paper2)">
+        </div>
+        <div class="vst-field">
+          <label>Heildsöluverð með vsk.</label>
+          <input type="number" value="${wsNum||''}" id="vdWs" readonly style="background:var(--paper2)">
+        </div>
+      </div>
+      <div class="vst-field">
+        <label>Staða</label>
+        <select id="vdStock">
+          <option value="1" ${p.inStock?'selected':''}>Til á lager</option>
+          <option value="0" ${!p.inStock?'selected':''}>Uppselt</option>
+        </select>
+      </div>
+      <div class="vst-field">
+        <label>Mynd (URL)</label>
+        <input value="${esc(p.img||'')}" id="vdImg" placeholder="https://...">
+      </div>
+      <div class="vst-field">
+        <label>Athugasemd</label>
+        <textarea id="vdNote" rows="2" style="resize:vertical">${esc(p.desc||'')}</textarea>
+      </div>
+    </div>
+
+    <div class="vst-dp-body" id="vst-tab-birg" style="display:none">
+      <div class="vst-field">
+        <label>Staðsetning á lager</label>
+        <input value="" placeholder="t.d. Hillur A3" id="vdLoc">
+      </div>
+      <div class="vst-field">
+        <label>Magn á lager</label>
+        <input type="number" value="" placeholder="0" id="vdQty">
+      </div>
+      <div class="vst-field">
+        <label>Lágmarksmagn</label>
+        <input type="number" value="" placeholder="0" id="vdMinQty">
+      </div>
+    </div>
+
+    <div class="vst-dp-body" id="vst-tab-innk" style="display:none">
+      <div class="vst-field">
+        <label>Birgi</label>
+        <input value="" placeholder="Nafn birgja" id="vdSupplier">
+      </div>
+      <div class="vst-field">
+        <label>Vörunúmer birgja</label>
+        <input value="" placeholder="" id="vdSupplierSku">
+      </div>
+      <div class="vst-field">
+        <label>Kostnaðarverð</label>
+        <input type="number" value="${p.cost||''}" placeholder="0" id="vdCost">
+      </div>
+    </div>
+
+    <div class="vst-dp-footer">
+      <button class="adm-btn primary" onclick="vstSaveProduct('${esc(key)}')" style="flex:1">✓ Vista</button>
+      <button class="adm-btn" onclick="openProdModal('${esc(key)}')" style="flex:1">✏ Breyta</button>
+      <button class="adm-btn danger" onclick="deleteProd('${esc(key)}','${esc(p.url||p.name)}')">🗑</button>
+    </div>
+  `;
+}
+
+function vstTab(btn, tabId) {
+  btn.closest('.vst-detail').querySelectorAll('.vst-dp-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  ['vst-tab-vara','vst-tab-birg','vst-tab-innk'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = id === tabId ? 'block' : 'none';
+  });
+}
+
+function vstCalcPrice() {
+  const exVsk = parseFloat(document.getElementById('vdExVsk')?.value) || 0;
+  const vskRate = parseFloat(document.getElementById('vdVsk')?.value) || 0;
+  const retail = Math.round(exVsk * (1 + vskRate));
+  const disc = parseInt(getTheme().discountPct) || 25;
+  const ws = Math.round(retail * (1 - disc/100));
+  const wsEx = vskRate > 0 ? Math.round(ws / (1 + vskRate)) : ws;
+  if (document.getElementById('vdRetail')) document.getElementById('vdRetail').value = retail || '';
+  if (document.getElementById('vdWs')) document.getElementById('vdWs').value = ws || '';
+  if (document.getElementById('vdWsExVsk')) document.getElementById('vdWsExVsk').value = wsEx || '';
+}
+
+function vstSaveProduct(key) {
+  // Update product fields
+  const name = document.getElementById('vdName')?.value.trim();
+  const cat  = document.getElementById('vdCat')?.value;
+  const retail = parseInt(document.getElementById('vdRetail')?.value) || 0;
+  const inStock = document.getElementById('vdStock')?.value === '1';
+  const img  = document.getElementById('vdImg')?.value.trim();
+  const desc = document.getElementById('vdNote')?.value.trim();
+
+  if (!name) { showToast('Vantar heiti vöru', 2000); return; }
+
+  const [src, idx] = key.split(':');
+  if (src === 'custom') {
+    const c = getCustomProducts();
+    if (c[parseInt(idx)]) {
+      c[parseInt(idx)] = {...c[parseInt(idx)], name, cat, price: retail ? retail.toLocaleString('de-DE') + ' ISK' : '', inStock, img, desc};
+      saveCustomProducts(c);
+    }
+  }
+  // For base products, save as pricing override
+  const ov = getPricingOverrides();
+  if (!ov.prods) ov.prods = {};
+  const prodKey = name;
+  ov.prods[prodKey] = {...(ov.prods[prodKey]||{}), retail, inStock};
+  savePricingOverrides(ov);
+
+  applyPricingOverrides();
+  rebuildLiveCatalog();
+  renderProductsPanel();
+  showToast('✓ Vara vistuð', 2000);
+}
+
 
 function deleteProd(key, identifier, silent=false) {
   if (!silent && !confirm('Fjarlægja vöru úr verslun?')) return;
