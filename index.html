@@ -503,6 +503,13 @@ aside.detail{
 .out-badge{position:absolute;top:6px;right:6px;font-size:8px;background:#FDECEA;
   color:var(--red);padding:2px 5px;border-radius:3px;font-weight:500;}
 
+/* Product modal tabs */
+.adm-modal-tab{padding:8px 16px;border:none;background:transparent;font-size:12px;font-weight:500;
+  color:var(--ink3);cursor:pointer;font-family:'DM Sans',sans-serif;border-bottom:2px solid transparent;
+  margin-bottom:-1.5px;transition:all .15s;}
+.adm-modal-tab:hover{color:var(--ink);}
+.adm-modal-tab.active{color:var(--green);border-bottom-color:var(--green);}
+
 /* Product modal */
 .adm-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:900;
   display:flex;align-items:center;justify-content:center;padding:1rem;}
@@ -1238,47 +1245,120 @@ aside.detail{
 
 <!-- Product edit modal -->
 <div class="adm-modal-overlay hidden" id="prodModal">
-  <div class="adm-modal">
+  <div class="adm-modal" style="width:min(560px,100%)">
     <div class="adm-modal-hdr">
-      <div class="adm-modal-title" id="modalTitle">Bæta við vöru</div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <img id="mImgThumb" src="" onerror="this.style.display='none'" style="width:40px;height:40px;object-fit:cover;border-radius:6px;background:var(--paper2);display:none">
+        <div>
+          <div class="adm-modal-title" id="modalTitle">Bæta við vöru</div>
+          <div id="modalSubtitle" style="font-size:11px;color:var(--ink3)"></div>
+        </div>
+      </div>
       <button class="adm-modal-close" onclick="closeProdModal()">✕</button>
     </div>
+    <!-- Tabs -->
+    <div style="display:flex;border-bottom:1.5px solid var(--paper3);padding:0 1.5rem">
+      <button class="adm-modal-tab active" id="mtabVara" onclick="switchProdTab('vara')">Vara</button>
+      <button class="adm-modal-tab" id="mtabBirgdir" onclick="switchProdTab('birgdir')">Birgðir</button>
+      <button class="adm-modal-tab" id="mtabVerд" onclick="switchProdTab('verd')">Verð</button>
+    </div>
     <div class="adm-modal-body">
-      <div class="adm-form-row">
-        <label class="adm-form-label">Vöruheiti *</label>
-        <input class="adm-form-input" id="mName" placeholder="t.d. Seiðkarlinn hunang 1kg">
-      </div>
-      <div class="adm-form-row-2">
-        <div>
-          <label class="adm-form-label">Flokkur *</label>
+
+      <!-- TAB: Vara -->
+      <div id="mtabContentVara">
+        <div class="adm-form-row">
+          <label class="adm-form-label">Vörunúmer (SKU)</label>
+          <input class="adm-form-input" id="mSku" placeholder="t.d. SK-1001">
+        </div>
+        <div class="adm-form-row">
+          <label class="adm-form-label">Vara (Heiti) *</label>
+          <input class="adm-form-input" id="mName" placeholder="t.d. Seiðkarlinn hunang 1kg">
+        </div>
+        <div class="adm-form-row">
+          <label class="adm-form-label">Vöruflokkur *</label>
           <select class="adm-form-select" id="mCat"></select>
         </div>
-        <div>
-          <label class="adm-form-label">Smásöluverð (ISK)</label>
-          <input class="adm-form-input" id="mPrice" placeholder="t.d. 4.990 ISK">
+        <div class="adm-form-row">
+          <label class="adm-form-label">Mynd (URL)</label>
+          <input class="adm-form-input" id="mImg" placeholder="https://..." oninput="prodModalImgPreview(this.value)">
+        </div>
+        <div class="adm-form-row">
+          <label class="adm-form-label">Merki (kommu-aðskilin)</label>
+          <input class="adm-form-input" id="mTags" placeholder="t.d. hunang, lífrænt, hrátt">
+        </div>
+        <div class="adm-form-row">
+          <label class="adm-form-label">Hlekkur á seidkarlinn.is</label>
+          <input class="adm-form-input" id="mUrl" placeholder="https://www.seidkarlinn.is/is-is/products/…">
+        </div>
+        <div class="adm-form-row">
+          <label class="adm-form-label">Athugasemd</label>
+          <textarea class="adm-form-input" id="mDesc" rows="3" placeholder="Stutt lýsing á vörunni…" style="resize:vertical"></textarea>
         </div>
       </div>
-      <div class="adm-form-row">
-        <label class="adm-form-label">Mynd URL</label>
-        <input class="adm-form-input" id="mImg" placeholder="https://...">
+
+      <!-- TAB: Birgðir -->
+      <div id="mtabContentBirgdir" style="display:none">
+        <div class="adm-form-row">
+          <label class="adm-form-label">Staða</label>
+          <select class="adm-form-select" id="mStock2">
+            <option value="1">Til á lager</option>
+            <option value="0">Uppselt</option>
+          </select>
+        </div>
+        <div class="adm-form-row">
+          <label class="adm-form-check">
+            <input type="checkbox" id="mStock" checked> Til á lager (gömul)
+          </label>
+        </div>
       </div>
-      <div class="adm-form-row">
-        <label class="adm-form-label">Lýsing</label>
-        <input class="adm-form-input" id="mDesc" placeholder="Stutt lýsing á vörunni…">
+
+      <!-- TAB: Verð -->
+      <div id="mtabContentVerd" style="display:none">
+        <div class="adm-form-row-2">
+          <div>
+            <label class="adm-form-label">Mynt</label>
+            <select class="adm-form-select" id="mCurr">
+              <option value="ISK">ISK</option>
+              <option value="EUR">EUR</option>
+              <option value="USD">USD</option>
+            </select>
+          </div>
+          <div>
+            <label class="adm-form-label">VSK</label>
+            <select class="adm-form-select" id="mVsk" onchange="prodModalCalcPrices()">
+              <option value="0.11">11% — Neðra þrep (matvörur)</option>
+              <option value="0.24">24% — Efra þrep</option>
+              <option value="0">0% — Undanþegið</option>
+            </select>
+          </div>
+        </div>
+        <div class="adm-form-row-2">
+          <div>
+            <label class="adm-form-label">Verð án VSK.</label>
+            <input class="adm-form-input" id="mPriceEx" type="number" placeholder="0" oninput="prodModalCalcFromEx()">
+          </div>
+          <div>
+            <label class="adm-form-label">Verð með VSK.</label>
+            <input class="adm-form-input" id="mPriceInc" type="number" placeholder="0" oninput="prodModalCalcFromInc()">
+          </div>
+        </div>
+        <div class="adm-form-row-2">
+          <div>
+            <label class="adm-form-label">Heildsöluverð án VSK.</label>
+            <input class="adm-form-input" id="mWsEx" type="number" placeholder="0" oninput="prodModalCalcWsFromEx()">
+          </div>
+          <div>
+            <label class="adm-form-label">Heildsöluverð með VSK.</label>
+            <input class="adm-form-input" id="mWsInc" type="number" placeholder="0" oninput="prodModalCalcWsFromInc()">
+          </div>
+        </div>
+        <div style="font-size:11px;color:var(--ink3);margin-top:-4px;margin-bottom:.875rem">
+          Breyttu einu gildi — hin reikna sig sjálfkrafa.
+        </div>
+        <!-- Hidden field carries formatted price string for backward compat -->
+        <input type="hidden" id="mPrice">
       </div>
-      <div class="adm-form-row">
-        <label class="adm-form-label">Merki (kommu-aðskilin)</label>
-        <input class="adm-form-input" id="mTags" placeholder="t.d. hunang, lífrænt, hrátt">
-      </div>
-      <div class="adm-form-row">
-        <label class="adm-form-label">Hlekkur á seidkarlinn.is</label>
-        <input class="adm-form-input" id="mUrl" placeholder="https://www.seidkarlinn.is/is-is/products/…">
-      </div>
-      <div class="adm-form-row">
-        <label class="adm-form-check">
-          <input type="checkbox" id="mStock" checked> Til á lager
-        </label>
-      </div>
+
     </div>
     <div class="adm-modal-footer">
       <button class="adm-btn secondary" onclick="closeProdModal()">Hætta við</button>
@@ -4578,6 +4658,12 @@ function showDetail(p) {
       <tr><td>Flokkur</td><td>${esc(p.cat)}</td></tr>
       <tr><td>Birgðastaða</td><td style="color:${p.inStock?'var(--green)':'var(--red)'}">
         ${p.inStock ? '✓ Til á lager' : '✕ Uppselt'}</td></tr>
+      ${p.sku ? `<tr><td>Vörunúmer</td><td style="font-family:monospace;font-size:11px">${esc(p.sku)}</td></tr>` : ''}
+      ${disc !== null && p.curr ? `<tr><td>Mynt</td><td>${esc(p.curr)}</td></tr>` : ''}
+      ${disc !== null && p.vskRate !== undefined ? `<tr><td>VSK</td><td>${p.vskRate===0?'0% — Undanþegið':p.vskRate===0.11?'11% — Matvörur':'24% — Efra þrep'}</td></tr>` : ''}
+      ${disc !== null && p.priceEx ? `<tr><td>Verð án VSK</td><td>${fmtISK(p.priceEx)}</td></tr>` : ''}
+      ${disc !== null && p.wsEx ? `<tr><td>Heildsöluverð án VSK</td><td style="color:var(--green)">${fmtISK(p.wsEx)}</td></tr>` : ''}
+      ${disc !== null && p.wsInc ? `<tr><td>Heildsöluverð m. VSK</td><td style="color:var(--green);font-weight:600">${fmtISK(p.wsInc)}</td></tr>` : ''}
     </table>
     ${p.url ? `<a href="${esc(p.url)}" target="_blank" class="dp-retail-link">
       <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -5281,24 +5367,108 @@ function openProdModal(key) {
   const cats=[...new Set((window.PRODUCTS_BASE||PRODUCTS).map(p=>p.cat))].sort();
   document.getElementById('mCat').innerHTML = cats.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');
   document.getElementById('modalTitle').textContent = key ? 'Breyta vöru' : 'Bæta við vöru';
+  switchProdTab('vara');
   document.getElementById('prodModal').classList.remove('hidden');
 
-  if (!key) {
-    ['mName','mPrice','mImg','mDesc','mTags','mUrl'].forEach(id=>document.getElementById(id).value='');
-    document.getElementById('mStock').checked=true;
-    return;
-  }
+  const clearFields = () => {
+    ['mSku','mName','mImg','mDesc','mTags','mUrl','mPriceEx','mPriceInc','mWsEx','mWsInc'].forEach(id=>{
+      const el = document.getElementById(id); if(el) el.value='';
+    });
+    document.getElementById('mStock').checked = true;
+    document.getElementById('mStock2').value = '1';
+    document.getElementById('mVsk').value = '0.11';
+    document.getElementById('mPrice').value = '';
+    document.getElementById('mSubtitle') && (document.getElementById('mSubtitle').textContent='');
+    prodModalImgPreview('');
+  };
+
+  if (!key) { clearFields(); return; }
+
   const [src,idx]=key.split(':');
   const p = src==='custom' ? getCustomProducts()[parseInt(idx)] : (window.PRODUCTS_BASE||PRODUCTS)[parseInt(idx)];
   if (!p) return;
+
+  // Basic fields
+  document.getElementById('mSku').value   = p.sku||'';
   document.getElementById('mName').value  = p.name||'';
-  document.getElementById('mPrice').value = p.price||'';
   document.getElementById('mImg').value   = p.img||'';
   document.getElementById('mDesc').value  = p.desc||'';
   document.getElementById('mTags').value  = (p.tags||[]).join(', ');
   document.getElementById('mUrl').value   = p.url||'';
   document.getElementById('mStock').checked = p.inStock!==false;
+  document.getElementById('mStock2').value  = p.inStock!==false ? '1' : '0';
   document.getElementById('mCat').value   = p.cat||cats[0];
+  document.getElementById('modalSubtitle').textContent = p.cat||'';
+  prodModalImgPreview(p.img||'');
+
+  // Price fields — derive from stored values
+  const vskRate = p.vskRate !== undefined ? p.vskRate : getVskRate(p.cat);
+  document.getElementById('mVsk').value = String(vskRate);
+  const priceInc = parseInt((p.price||'').replace(/[^\d]/g,'')) || 0;
+  const wsInc    = parseInt((p.wholesale||'').replace(/[^\d]/g,'')) || 0;
+  document.getElementById('mPriceInc').value = priceInc || '';
+  document.getElementById('mPriceEx').value  = priceInc ? Math.round(priceInc / (1+vskRate)) : '';
+  document.getElementById('mWsInc').value    = wsInc || '';
+  document.getElementById('mWsEx').value     = wsInc ? Math.round(wsInc / (1+vskRate)) : '';
+  document.getElementById('mPrice').value    = p.price||'';
+  document.getElementById('mCurr').value     = p.curr||'ISK';
+}
+
+function switchProdTab(tab) {
+  ['vara','birgdir','verd'].forEach(t => {
+    const btn = document.getElementById('mtab'+t.charAt(0).toUpperCase()+t.slice(1));
+    const content = document.getElementById('mtabContent'+t.charAt(0).toUpperCase()+t.slice(1));
+    if (!btn||!content) return;
+    const active = t===tab;
+    btn.classList.toggle('active', active);
+    content.style.display = active ? 'block' : 'none';
+  });
+  // Fix capitalisation mismatch for Verð tab
+  const btnVerd = document.getElementById('mtabVerд');
+  const contentVerd = document.getElementById('mtabContentVerd');
+  if (btnVerd && contentVerd) {
+    btnVerd.classList.toggle('active', tab==='verd');
+    contentVerd.style.display = tab==='verd' ? 'block' : 'none';
+  }
+}
+
+function prodModalImgPreview(url) {
+  const thumb = document.getElementById('mImgThumb');
+  if (!thumb) return;
+  if (url) { thumb.src=url; thumb.style.display='block'; }
+  else { thumb.style.display='none'; }
+}
+
+function prodModalCalcFromEx() {
+  const ex = parseFloat(document.getElementById('mPriceEx').value)||0;
+  const rate = parseFloat(document.getElementById('mVsk').value)||0;
+  const inc = Math.round(ex*(1+rate));
+  document.getElementById('mPriceInc').value = inc||'';
+  document.getElementById('mPrice').value = inc ? fmtNum(inc)+' ISK' : '';
+}
+function prodModalCalcFromInc() {
+  const inc = parseFloat(document.getElementById('mPriceInc').value)||0;
+  const rate = parseFloat(document.getElementById('mVsk').value)||0;
+  const ex = Math.round(inc/(1+rate));
+  document.getElementById('mPriceEx').value = ex||'';
+  document.getElementById('mPrice').value = inc ? fmtNum(inc)+' ISK' : '';
+}
+function prodModalCalcWsFromEx() {
+  const ex = parseFloat(document.getElementById('mWsEx').value)||0;
+  const rate = parseFloat(document.getElementById('mVsk').value)||0;
+  document.getElementById('mWsInc').value = Math.round(ex*(1+rate))||'';
+}
+function prodModalCalcWsFromInc() {
+  const inc = parseFloat(document.getElementById('mWsInc').value)||0;
+  const rate = parseFloat(document.getElementById('mVsk').value)||0;
+  document.getElementById('mWsEx').value = Math.round(inc/(1+rate))||'';
+}
+function prodModalCalcPrices() {
+  // VSK rate changed — recalc all from ex-vat values
+  const priceEx = parseFloat(document.getElementById('mPriceEx').value)||0;
+  const wsEx    = parseFloat(document.getElementById('mWsEx').value)||0;
+  if (priceEx) prodModalCalcFromEx();
+  if (wsEx)    prodModalCalcWsFromEx();
 }
 function closeProdModal() {
   document.getElementById('prodModal').classList.add('hidden');
@@ -5307,16 +5477,28 @@ function closeProdModal() {
 function saveProd() {
   const name=document.getElementById('mName').value.trim();
   if (!name) { showToast('⚠️ Vöruheiti vantar'); return; }
-  const price=document.getElementById('mPrice').value.trim();
-  const wsV=price?Math.round(parseInt(price.replace(/[^\d]/g,''))*0.75):0;
+  // Derive price from price fields
+  const priceInc = parseInt(document.getElementById('mPriceInc').value)||0;
+  const priceEx  = parseInt(document.getElementById('mPriceEx').value)||0;
+  const wsInc    = parseInt(document.getElementById('mWsInc').value)||0;
+  const wsEx     = parseInt(document.getElementById('mWsEx').value)||0;
+  const vskRate  = parseFloat(document.getElementById('mVsk').value)||0.11;
+  // Fallback: if Verð tab empty, use hidden mPrice (backwards compat)
+  const priceStr = priceInc ? fmtNum(priceInc)+' ISK' : document.getElementById('mPrice').value.trim();
+  const wsStr    = wsInc ? fmtNum(wsInc)+' ISK' : (priceInc ? fmtNum(Math.round(priceInc*0.75))+' ISK' : '');
+  const stockVal = document.getElementById('mStock2').value;
   const prod={
     name, cat:document.getElementById('mCat').value,
-    price, wholesale:wsV?fmtNum(wsV)+' ISK':'',
+    sku: document.getElementById('mSku').value.trim(),
+    price: priceStr,
+    priceEx, priceInc, wsEx, wsInc,
+    vskRate, curr: document.getElementById('mCurr').value||'ISK',
+    wholesale: wsStr,
     img:document.getElementById('mImg').value.trim(),
     desc:document.getElementById('mDesc').value.trim(),
     tags:document.getElementById('mTags').value.split(',').map(t=>t.trim()).filter(Boolean),
     url:document.getElementById('mUrl').value.trim(),
-    inStock:document.getElementById('mStock').checked,
+    inStock: stockVal==='1',
   };
   const custom=getCustomProducts();
   if (!editingKey) {
