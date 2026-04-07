@@ -4774,7 +4774,19 @@ function renderOrdersPanel() {
   document.getElementById('panelOrders').innerHTML = `
     <div class="cat-hdr">
       <div><div class="cat-title">📋 Pantanir</div><div class="cat-sub">${orders.length} pantanir samtals · ${todayN} í dag</div></div>
-      <button class="adm-btn danger" onclick="if(confirm('Eyða öllum?')){saveOrders([]);renderOrdersPanel();}">Hreinsa allar</button>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <select id="exportPeriod" style="padding:6px 10px;border:1.5px solid var(--paper3);border-radius:var(--rs);font-size:12px;font-family:'DM Sans',sans-serif;background:var(--paper);color:var(--ink)">
+          <option value="all">Allar pantanir</option>
+          <option value="today">Í dag</option>
+          <option value="week">Þessi vika</option>
+          <option value="month" selected>Þessi mánuður</option>
+          <option value="last_month">Síðasti mánuður</option>
+        </select>
+        <button class="adm-btn" onclick="exportReglaCSV()" style="background:#1D4ED8;color:#fff;border-color:#1D4ED8;display:flex;align-items:center;gap:5px">
+          📥 Sækja fyrir Reglu.is
+        </button>
+        <button class="adm-btn danger" onclick="if(confirm('Eyða öllum?')){saveOrders([]);renderOrdersPanel();}">Hreinsa allar</button>
+      </div>
     </div>
 
     <div class="stat-grid">
@@ -6853,6 +6865,113 @@ function toggleSidebar() {
     }
     localStorage.setItem('ws_sb_collapsed', hidden ? '1' : '0');
   }
+}
+
+
+function exportReglaCSV() {
+  const orders = getOrders();
+  const period = document.getElementById('exportPeriod')?.value || 'month';
+  const now = new Date();
+
+  // Filter by period
+  const filtered = orders.filter(o => {
+    const d = new Date(o.date);
+    if (period === 'today') {
+      return d.toDateString() === now.toDateString();
+    } else if (period === 'week') {
+      const weekAgo = new Date(now); weekAgo.setDate(now.getDate() - 7);
+      return d >= weekAgo;
+    } else if (period === 'month') {
+      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    } else if (period === 'last_month') {
+      const lm = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      return d.getMonth() === lm.getMonth() && d.getFullYear() === lm.getFullYear();
+    }
+    return true; // all
+  });
+
+  if (!filtered.length) {
+    showToast('Engar pantanir fundust fyrir valið tímabil', 3000);
+    return;
+  }
+
+  // Columns: Dagsetning, Fylgiskjalsnúmer, Lykill debet, Lykill kredit,
+  //          Fjárhæð, Þar af vsk., Færslutexti, Kennitala,
+  //          Vídd 1 (Deild), Vídd 2, Vídd 3, Vídd 4, Reikn.nr., Tilvísun, Dags. reikn.
+  const headers = [
+    'Dagsetning','Fylgiskjalsnúmer','Lykill debet','Lykill kredit',
+    'Fjárhæð','Þar af vsk.','Færslutexti','Kennitala',
+    'Vídd 1 (Deild)','Vídd 2','Vídd 3','Vídd 4','Reikn.nr.','Tilvísun','Dags. reikn.'
+  ];
+
+  const rows = [headers];
+
+  filtered.forEach(o => {
+    const orderDate = new Date(o.date);
+    const dateFmt = orderDate.toLocaleDateString('is-IS', {day:'2-digit',month:'2-digit',year:'numeric'}).replace(/\./g,'/');
+    const invoiceNo = o.id || '';
+    const buyerKt = o.buyerKt || '';
+
+    // Process each line item
+    (o.items || []).forEach(item => {
+      // Find product to get category for VSK
+      const prod = (window.PRODUCTS_BASE || PRODUCTS || []).find(p => p.name === item.name);
+      const cat = prod ? prod.cat : '';
+      const vskRate = getVskRate(cat);
+
+      const unitPrice = parseInt((item.price || '').replace(/[^\d]/g,'')) || 0;
+      const qty = parseInt(item.qty) || 1;
+      const lineGross = unitPrice * qty;
+      const lineVsk = vskRate > 0 ? Math.round(lineGross - lineGross / (1 + vskRate)) : 0;
+      const lineExVsk = lineGross - lineVsk;
+
+      // Debit: Viðskiptakröfur (7600) — full amount incl VSK
+      // Credit: Sala vöru (1200 if 24% VSK, 1220 if 0%)
+      const creditAccount = vskRate > 0 ? '1200' : '1220';
+
+      rows.push([
+        dateFmt,                          // Dagsetning
+        invoiceNo,                        // Fylgiskjalsnúmer
+        '7600',                           // Lykill debet (Viðskiptakröfur)
+        creditAccount,                    // Lykill kredit (Sala vöru)
+        lineGross,                        // Fjárhæð (incl VSK)
+        lineVsk,                          // Þar af vsk.
+        item.name.substring(0, 50),       // Færslutexti
+        buyerKt,                          // Kennitala
+        '',                               // Vídd 1
+        '',                               // Vídd 2
+        '',                               // Vídd 3
+        '',                               // Vídd 4
+        invoiceNo,                        // Reikn.nr.
+        o.buyerName || o.buyerUser || '',  // Tilvísun
+        dateFmt,                          // Dags. reikn.
+      ]);
+    });
+  });
+
+  // Build CSV with semicolon separator (common for Icelandic accounting software)
+  const csv = rows.map(row =>
+    row.map(cell => {
+      const s = String(cell ?? '');
+      return s.includes(';') || s.includes('"') ? '"' + s.replace(/"/g, '""') + '"' : s;
+    }).join(';')
+  ).join('\r\n');
+
+  // Add BOM for Excel UTF-8 compatibility
+  const bom = '\uFEFF';
+  const blob = new Blob([bom + csv], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const periodLabel = { all:'allar', today:'dagurinn', week:'vikan', month:'manudur', last_month:'sidasti_manudur' };
+  const dateStr = now.toISOString().slice(0,10);
+  a.href = url;
+  a.download = 'regla_faerslur_' + (periodLabel[period]||period) + '_' + dateStr + '.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+
+  showToast('✅ CSV tilbúinn — ' + (rows.length - 1) + ' línur fyrir Reglu.is', 4000);
 }
 
 // ── INIT ──
