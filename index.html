@@ -4515,7 +4515,8 @@ function showDetail(p) {
     <!-- Description if exists -->
     ${p.desc ? `<p style="font-size:12px;color:var(--ink2);line-height:1.7;margin-bottom:1rem">${esc(p.desc)}</p>` : ''}
 
-    <!-- AI product info -->
+    <!-- AI product info — only for logged-in users -->
+    ${disc !== null ? `
     <div class="dp-ai-section" id="dpAiSection">
       <div class="dp-ai-header">
         <div class="dp-ai-icon">✦</div>
@@ -4540,7 +4541,7 @@ function showDetail(p) {
       <button class="dp-ai-btn" id="dpAiBtn" onclick="loadProductInfo('${esc(p.name)}','${esc(p.cat)}')" style="display:none">
         ↺ Hlaða aftur
       </button>
-    </div>
+    </div>` : ''}
 
     <!-- Add to cart -->
     ${disc !== null ? `
@@ -4586,13 +4587,14 @@ function showDetail(p) {
     </a>` : ''}
   `;
 
-  // Auto-load AI info
-  // Show edit button immediately for admin
-  const _editBtnImmediate = document.getElementById('dpEditToggle');
-  if (_editBtnImmediate && localStorage.getItem('ws_role') === 'admin') {
-    _editBtnImmediate.style.display = 'block';
+  // Auto-load AI info — only when logged in
+  if (disc !== null) {
+    const _editBtnImmediate = document.getElementById('dpEditToggle');
+    if (_editBtnImmediate && localStorage.getItem('ws_role') === 'admin') {
+      _editBtnImmediate.style.display = 'block';
+    }
+    loadProductInfo(p.name, p.cat);
   }
-  loadProductInfo(p.name, p.cat);
 }
 
 function dpStepQty(delta) {
