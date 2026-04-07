@@ -5524,11 +5524,6 @@ function renderThemePanel() {
 
 // Live preview as user edits
 let _liveThemeTimer;
-function fmtISK(val) {
-  const n = parseInt(String(val).replace(/[^\d]/g, '')) || 0;
-  return fmtISK(n);
-}
-
 function liveTheme(key, value) {
   clearTimeout(_liveThemeTimer);
   _liveThemeTimer = setTimeout(() => {
