@@ -7344,4 +7344,11 @@ if (localStorage.getItem('ws_role') === 'admin') {
 }
 
 // Step 7: Safety net — ensure window.PRODUCTS is always populated
-if (!window.PRODUCTS || window.PRODUCTS.length
+if (!window.PRODUCTS || window.PRODUCTS.length === 0) {
+  window.PRODUCTS = (window.PRODUCTS_BASE || PRODUCTS).slice();
+  buildSidebar();
+  renderGrid();
+}
+</script>
+</body>
+</html>
