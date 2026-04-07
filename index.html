@@ -851,7 +851,7 @@ aside.detail{
     <input class="gate-input" id="gPass" type="password" placeholder="Lykilorð" autocomplete="current-password">
     <button class="gate-btn" onclick="tryLogin()">Innskrá · Login</button>
     <div class="gate-err" id="gErr"></div>
-    <div class="gate-contact">Ertu ekki með aðgang? <a href="mailto:seidkarlinn@seidkarlinn.is">Hafðu samband</a></div>
+    <div class="gate-contact">Ertu ekki með aðgang? <a href="/cdn-cgi/l/email-protection#cfbcaaa6aba4aebda3a6a1a18fbcaaa6aba4aebda3a6a1a1e1a6bc">Hafðu samband</a></div>
   </div>
 </div>
 
@@ -1287,7 +1287,7 @@ aside.detail{
   </div>
 </div>
 
-<script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 const PRODUCTS = [
   {
     "name": "Seiðkarlinn hrátt villiblóma hunang 1kg",
@@ -7349,15 +7349,4 @@ if (localStorage.getItem('ws_role') === 'admin') {
 }
 
 // Step 7: Safety net — ensure window.PRODUCTS is always populated
-if (!window.PRODUCTS || window.PRODUCTS.length === 0) {
-  window.PRODUCTS = (window.PRODUCTS_BASE || PRODUCTS_BASE || PRODUCTS).slice();
-  renderGrid();
-  buildSidebar();
-}
-
-
-
-
-</script>
-</body>
-</html>
+if (!window.PRODUCTS || window.PRODUCTS.length
