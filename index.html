@@ -84,43 +84,49 @@ header{
 .logout-btn:hover{color:rgba(255,255,255,.8);}
 
 /* ─── LAYOUT ─── */
-.layout{display:grid;grid-template-columns:240px 1fr 360px;min-height:calc(100vh - 64px);}
+.layout{display:grid;grid-template-columns:auto 1fr 360px;min-height:calc(100vh - 64px);}
 
 /* ─── SIDEBAR ─── */
 aside.sb{
   background:var(--paper2);border-right:1px solid var(--paper3);
   padding:1.25rem .875rem;overflow-y:auto;
   max-height:calc(100vh - 64px);position:sticky;top:64px;
-  transition:all .25s ease;
-  position:relative;
+  transition:width .25s ease, min-width .25s ease, padding .25s ease;
+  width:240px;min-width:240px;overflow:hidden;
 }
 aside.sb.collapsed{
-  width:32px!important;min-width:32px!important;padding:0;overflow:hidden;
+  width:32px!important;min-width:32px!important;padding:0 0 0 0;
 }
-aside.sb.collapsed .sb-inner{display:none;}
+aside.sb.collapsed .sb-inner{visibility:hidden;opacity:0;}
+.sb-inner{transition:opacity .2s;opacity:1;visibility:visible;}
 .sb-toggle{
-  position:absolute;top:50%;right:-14px;transform:translateY(-50%);
-  width:28px;height:28px;border-radius:50%;
-  background:var(--paper);border:1.5px solid var(--paper3);
+  position:fixed;left:228px;top:50vh;
+  width:20px;height:40px;border-radius:0 6px 6px 0;
+  background:var(--paper2);border:1.5px solid var(--paper3);border-left:none;
   cursor:pointer;display:flex;align-items:center;justify-content:center;
-  font-size:12px;z-index:10;box-shadow:0 1px 4px rgba(0,0,0,.1);
-  transition:transform .2s;
+  font-size:10px;z-index:200;box-shadow:2px 0 4px rgba(0,0,0,.08);
+  transition:left .25s ease;
 }
-aside.sb.collapsed .sb-toggle{right:-14px;}
+aside.sb.collapsed ~ * .sb-toggle,
+.layout.sb-collapsed .sb-toggle{left:20px;}
+@media(max-width:1100px){
+  .sb-toggle{left:188px;}
+}
 @media(max-width:820px){
   aside.sb{
     position:fixed;left:0;top:64px;bottom:0;z-index:100;
-    max-height:calc(100vh - 64px);width:220px!important;
-    transform:translateX(0);transition:transform .25s ease;
+    max-height:calc(100vh - 64px);width:220px!important;min-width:220px!important;
+    transform:translateX(0);transition:transform .25s ease;padding:1.25rem .875rem;
   }
   aside.sb.collapsed{
-    transform:translateX(-220px);width:220px!important;
+    transform:translateX(-220px);width:220px!important;min-width:220px!important;padding:1.25rem .875rem;
   }
-  aside.sb.collapsed .sb-inner{display:block;}
-  .sb-toggle{right:-14px;}
-  aside.sb.collapsed .sb-toggle{right:-14px;}
-  .sb-mobile-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:99;}
-  aside.sb:not(.collapsed) ~ .sb-mobile-overlay{display:block;}
+  aside.sb.collapsed .sb-inner{visibility:visible;opacity:1;}
+  .sb-toggle{position:fixed;left:208px;top:50vh;transition:left .25s ease;}
+  aside.sb.collapsed + * .sb-toggle{left:0px;}
+  .sb-mobile-overlay{
+    display:none;position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:99;
+  }
 }
 .sb-section{font-size:10px;font-weight:500;color:var(--ink3);
   text-transform:uppercase;letter-spacing:.1em;padding:0 8px;margin:14px 0 5px;}
@@ -843,7 +849,6 @@ aside.detail{
 
   <!-- SIDEBAR -->
   <aside class="sb collapsed" id="mainSidebar">
-    <button class="sb-toggle" id="sbToggle" onclick="toggleSidebar()" title="Fela/sýna síðuflipa">◀</button>
     <div class="sb-inner">
     <!-- Admin dropdown — only visible when logged in as admin -->
     <div class="adm-drop" id="admDropWrap" style="display:none">
@@ -891,6 +896,7 @@ aside.detail{
     </div>
     </div><!-- /sb-inner -->
   </aside>
+  <button class="sb-toggle" id="sbToggle" onclick="toggleSidebar()" title="Fela/sýna síðuflipa">▶</button>
   <div class="sb-mobile-overlay" id="sbOverlay" onclick="toggleSidebar()"></div>
 
   <!-- CATALOG + ADMIN PANELS -->
@@ -6842,7 +6848,15 @@ function toggleSidebar() {
   if (!sb) return;
   sb.classList.toggle('collapsed');
   const collapsed = sb.classList.contains('collapsed');
-  if (btn) btn.textContent = collapsed ? '▶' : '◀';
+  if (btn) {
+    btn.textContent = collapsed ? '▶' : '◀';
+    const isMobile = window.innerWidth <= 820;
+    if (isMobile) {
+      btn.style.left = collapsed ? '8px' : '208px';
+    } else {
+      btn.style.left = collapsed ? '20px' : (window.innerWidth <= 1100 ? '188px' : '228px');
+    }
+  }
   localStorage.setItem('ws_sb_collapsed', collapsed ? '1' : '0');
 }
 
@@ -6909,10 +6923,15 @@ updateFloatBtn();
 (function() {
   const sb = document.getElementById('mainSidebar');
   const btn = document.getElementById('sbToggle');
-  const collapsed = localStorage.getItem('ws_sb_collapsed') !== '0'; // default collapsed
+  const collapsed = localStorage.getItem('ws_sb_collapsed') !== '0';
   if (sb) {
-    if (collapsed) { sb.classList.add('collapsed'); if (btn) btn.textContent = '▶'; }
-    else { sb.classList.remove('collapsed'); if (btn) btn.textContent = '◀'; }
+    if (collapsed) {
+      sb.classList.add('collapsed');
+      if (btn) { btn.textContent = '▶'; }
+    } else {
+      sb.classList.remove('collapsed');
+      if (btn) { btn.textContent = '◀'; const isMobile = window.innerWidth <= 820; btn.style.left = isMobile ? '208px' : (window.innerWidth <= 1100 ? '188px' : '228px'); }
+    }
   }
 })();
 
