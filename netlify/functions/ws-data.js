@@ -1,15 +1,8 @@
 const { getStore } = require("@netlify/blobs");
 
 const ALLOWED_KEYS = [
-  "ws_orders",
-  "ws_invoice_seq",
-  "ws_buyer_accounts",
-  "ws_custom_products",
-  "ws_deleted_products",
-  "ws_pricing",
-  "ws_vidskm",
-  "ws_last_order",
-  "ws_cache_version",
+  "ws_orders","ws_invoice_seq","ws_buyer_accounts","ws_custom_products",
+  "ws_deleted_products","ws_pricing","ws_vidskm","ws_last_order","ws_cache_version",
 ];
 
 exports.handler = async (event) => {
@@ -25,7 +18,11 @@ exports.handler = async (event) => {
   }
 
   try {
-    const store = getStore("wholesale-data");
+    const store = getStore({
+      name: "wholesale-data",
+      siteID: process.env.SITE_ID,
+      token: process.env.NETLIFY_API_TOKEN,
+    });
 
     if (event.httpMethod === "GET") {
       const key = event.queryStringParameters?.key;
@@ -70,6 +67,6 @@ exports.handler = async (event) => {
     return { statusCode: 405, headers, body: JSON.stringify({ ok: false, error: "Method not allowed" }) };
   } catch (err) {
     console.error("ws-data error:", err);
-    return { statusCode: 500, headers, body: JSON.stringify({ ok: false, error: "Internal server error" }) };
+    return { statusCode: 500, headers, body: JSON.stringify({ ok: false, error: err.message || "Internal server error" }) };
   }
 };
