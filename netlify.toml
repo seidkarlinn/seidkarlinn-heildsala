@@ -15,3 +15,5 @@
 [[edge_functions]]
   path = "/"
   function = "inject-catalog"
+
+# ws-data sync enabled
