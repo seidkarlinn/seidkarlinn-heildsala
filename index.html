@@ -4209,7 +4209,7 @@ const ADMIN_ACCOUNTS = {
 };
 
 function tryLogin() {
-  const u = document.getElementById('gUser').value.trim();
+  const u = document.getElementById('gUser').value.trim().toLowerCase();
   const p = document.getElementById('gPass').value;
   const err = document.getElementById('gErr');
 
@@ -4229,7 +4229,7 @@ function tryLogin() {
   // Check buyer — support both plain string and object format
   const savedAccounts = (() => { try { return JSON.parse(localStorage.getItem('ws_buyer_accounts') || 'null'); } catch { return null; } })();
   const allAccounts = savedAccounts || ACCOUNTS;
-  const acc = allAccounts[u];
+  const acc = allAccounts[u] || allAccounts[Object.keys(allAccounts).find(k => k.toLowerCase() === u)];
   const pass = acc ? (typeof acc === 'object' ? acc.pass : acc) : null;
 
   if (pass && pass === p) {
