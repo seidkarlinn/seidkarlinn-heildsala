@@ -4551,7 +4551,7 @@ function renderGrid() {
   else if (sort==='price-asc') filtered.sort((a,b) => parsePrice(a.wholesale) - parsePrice(b.wholesale));
   else if (sort==='price-desc') filtered.sort((a,b) => parsePrice(b.wholesale) - parsePrice(a.wholesale));
 
-  document.getElementById('catTitle').textContent = activeFilter==='All' ? 'Allar vörur' : activeFilter;
+  var _cf = document.getElementById('catFilter'); if (_cf) _cf.value = activeFilter === 'All' ? 'All' : activeFilter;
   document.getElementById('catSub').textContent = `${filtered.length} vörur · heildsöluverð sýnt`;
   window._filtered = filtered;
 
