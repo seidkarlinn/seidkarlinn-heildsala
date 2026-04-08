@@ -910,6 +910,26 @@ aside.detail{
   background: #fff !important;
   color: #1A1710 !important;
 }
+
+/* Category filter dropdown */
+.cat-dropdown {
+  appearance: none; -webkit-appearance: none;
+  background: var(--ink) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23fff'/%3E%3C/svg%3E") no-repeat right 12px center;
+  color: #fff;
+  font-family: 'Playfair Display', serif;
+  font-size: 22px;
+  line-height: 1.2;
+  border: none;
+  border-radius: var(--rs);
+  padding: 8px 32px 8px 12px;
+  cursor: pointer;
+  max-width: 100%;
+}
+.cat-dropdown:focus { outline: 2px solid var(--gold); outline-offset: 2px; }
+.cat-dropdown option { font-family: Arial, sans-serif; font-size: 14px; background: #fff; color: var(--ink); }
+@media (max-width: 820px) {
+  .cat-dropdown { font-size: 16px; padding: 6px 28px 6px 10px; }
+}
 </style>
 </head>
 <body>
@@ -1031,7 +1051,22 @@ aside.detail{
     <div class="panel-view active" id="panelCatalog">
     <div class="cat-hdr">
       <div>
-        <div class="cat-title" id="catTitle">Allar vörur</div>
+        <select class="cat-title cat-dropdown" id="catFilter" onchange="setCatFilter(this.value)">
+          <option value="All">Allar vörur</option>
+          <option value="Hunangsafuðir">Hunangsafuðir</option>
+          <option value="Frostþurrkaðir ávextir">Frostþurrkaðir ávextir</option>
+          <option value="Kakó">Kakó</option>
+          <option value="Drykkir">Drykkir</option>
+          <option value="Ólífuolíur">Ólífuolíur</option>
+          <option value="Matvörur">Matvörur</option>
+          <option value="Shilajit">Shilajit</option>
+          <option value="Sveppir">Sveppir</option>
+          <option value="Fæðubótarefni">Fæðubótarefni</option>
+          <option value="Hreinlætisvörur">Hreinlætisvörur</option>
+          <option value="Húðvörur">Húðvörur</option>
+          <option value="Hárvörur">Hárvörur</option>
+          <option value="Pakkatilboð">Pakkatilboð</option>
+        </select>
         <div class="cat-sub" id="catSub"></div>
       </div>
       <div class="cat-controls">
@@ -4488,6 +4523,13 @@ function buildSidebar() {
       <span class="ccount">${cnt}</span>
     </button>`;
   }).join('');
+}
+
+
+function setCatFilter(val) {
+  activeFilter = val === "All" ? "All" : val;
+  var sub = document.getElementById("catSub");
+  renderGrid();
 }
 
 function renderGrid() {
