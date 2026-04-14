@@ -2,7 +2,7 @@ const { getStore } = require("@netlify/blobs");
 
 const ALLOWED_KEYS = [
   "ws_orders","ws_invoice_seq","ws_buyer_accounts","ws_custom_products",
-  "ws_deleted_products","ws_pricing","ws_pricing_users","ws_vidskm","ws_last_order","ws_cache_version",
+  "ws_deleted_products","ws_pricing","ws_pricing_users","ws_vidskm","ws_last_order","ws_cache_version","ws_product_info","ws_theme",
 ];
 
 exports.handler = async (event) => {
