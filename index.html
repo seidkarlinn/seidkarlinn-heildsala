@@ -6380,7 +6380,8 @@ function getProdKey(p) { return (p.url || p.name).replace(/[^a-zA-Z0-9íáéóú
 // Apply all pricing overrides to the live catalog
 function applyPricingOverrides() {
   const ov = getEffectivePricing();
-  const globalDisc = parseInt(getTheme().discountPct) || 25;
+  var _myAfsl = localStorage.getItem('ws_my_discount');
+  const globalDisc = (_myAfsl !== null && _myAfsl !== '') ? parseInt(_myAfsl) : (parseInt(getTheme().discountPct) || 25);
   // Use window.PRODUCTS_BASE which is already filtered by ADMIN_DELETED
   const _src = window.PRODUCTS_BASE || (typeof PRODUCTS_BASE !== 'undefined' ? PRODUCTS_BASE : PRODUCTS);
   window.PRODUCTS = _src.map(p => {
@@ -7329,6 +7330,15 @@ function getMyDiscount() {
     catch(e) { return 25; }
   };
   if (ADMIN_ACCOUNTS && ADMIN_ACCOUNTS[u]) return safeDisc();
+  // If user has per-user pricing overrides, skip customer-level afslattr
+  // so applyPricingOverrides (with merged per-user cat/prod overrides) controls pricing
+  try {
+    var _puOv = JSON.parse(localStorage.getItem('ws_pricing_users') || '{}');
+    var _puUser = _puOv[u.toLowerCase()] || _puOv[u];
+    if (_puUser && ((_puUser.cats && Object.keys(_puUser.cats).length) || (_puUser.prods && Object.keys(_puUser.prods).length))) {
+      return safeDisc();
+    }
+  } catch(e) {}
   const stored = localStorage.getItem('ws_my_discount');
   if (stored !== null && stored !== '') return parseInt(stored);
   try {
