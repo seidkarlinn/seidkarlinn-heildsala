@@ -1281,10 +1281,7 @@ aside.detail{
               <option value="other">Annað</option>
             </select>
           </div>
-          <div><label class="vm-form-label">Afsláttur (%)</label>
-            <input class="vm-form-input" id="vmAfslattr" type="number" min="0" max="100" placeholder="25"
-              oninput="vmUpdateDiscPreview()">
-          </div>
+          
         </div>
 
         <!-- Login credentials — directly in main form -->
@@ -1310,8 +1307,7 @@ aside.detail{
               </div>
             </div>
           </div>
-          <div id="vmDiscPreview" style="font-size:11px;color:var(--green);min-height:16px"></div>
-        </div>
+          </div>
 
         <div class="vm-form-row">
           <label class="vm-form-label">Athugasemd</label>
@@ -4277,11 +4273,6 @@ function tryLogin() {
     localStorage.setItem('ws_auth', u);
     localStorage.setItem('ws_role', 'buyer');
     // Store per-customer discount so getMyDiscount() picks it up
-    if (typeof acc === 'object' && acc.discount !== null && acc.discount !== undefined) {
-      localStorage.setItem('ws_my_discount', String(acc.discount));
-    } else {
-      localStorage.removeItem('ws_my_discount');
-    }
     err.textContent = '';
     updateHeaderAuth();
     renderGrid();
@@ -6380,8 +6371,7 @@ function getProdKey(p) { return (p.url || p.name).replace(/[^a-zA-Z0-9íáéóú
 // Apply all pricing overrides to the live catalog
 function applyPricingOverrides() {
   const ov = getEffectivePricing();
-  var _myAfsl = localStorage.getItem('ws_my_discount');
-  const globalDisc = (_myAfsl !== null && _myAfsl !== '') ? parseInt(_myAfsl) : (parseInt(getTheme().discountPct) || 25);
+  const globalDisc = parseInt(getTheme().discountPct) || 25;
   // Use window.PRODUCTS_BASE which is already filtered by ADMIN_DELETED
   const _src = window.PRODUCTS_BASE || (typeof PRODUCTS_BASE !== 'undefined' ? PRODUCTS_BASE : PRODUCTS);
   window.PRODUCTS = _src.map(p => {
@@ -7032,7 +7022,6 @@ function renderVidskm() {
         <th>Sími</th>
         <th>Netfang</th>
         <th>Tegund</th>
-        <th>Afsláttur</th>
         <th>Aðgangur</th>
         <th>Staða</th>
       </tr></thead>
@@ -7046,8 +7035,7 @@ function renderVidskm() {
             <td><span class="vm-tag ${v.tegund==='vip'?'vip':v.tegund==='heildsala'?'active':'inactive'}">
               ${v.tegund==='vip'?'VIP':v.tegund==='heildsala'?'Heildsala':v.tegund==='smasala'?'Smásala':'Annað'}
             </span></td>
-            <td style="font-weight:600;color:var(--green)">${v.afslattr != null ? v.afslattr+'%' : '—'}</td>
-            <td>${v.user ? `<span style="font-size:11px;font-family:monospace;background:var(--paper2);padding:2px 7px;border-radius:4px">${esc(v.user)}</span>` : '<span style="color:var(--ink3);font-size:11px">Enginn</span>'}</td>
+                        <td>${v.user ? `<span style="font-size:11px;font-family:monospace;background:var(--paper2);padding:2px 7px;border-radius:4px">${esc(v.user)}</span>` : '<span style="color:var(--ink3);font-size:11px">Enginn</span>'}</td>
             <td><span class="vm-tag ${v.stada==='inactive'?'inactive':'active'}">${v.stada==='inactive'?'Óvirkur':'Virkur'}</span></td>
           </tr>`).join('')}
       </tbody>
@@ -7073,7 +7061,6 @@ function openVmModal(id) {
   document.getElementById('vmSimi').value      = v?.simi      || '';
   document.getElementById('vmNetfang').value   = v?.netfang   || '';
   document.getElementById('vmTegund').value    = v?.tegund    || 'heildsala';
-  document.getElementById('vmAfslattr').value  = v?.afslattr  != null ? v.afslattr : '';
   document.getElementById('vmAthugasemd').value= v?.athugasemd|| '';
   document.getElementById('vmStada').value     = v?.stada     || 'active';
   document.getElementById('vmUser').value      = v?.user      || '';
@@ -7112,7 +7099,6 @@ function saveVm() {
   if (!nafn) { showToast('⚠️ Nafn er skyldulegt'); return; }
 
   const list = getVidskm();
-  const afslattrVal = document.getElementById('vmAfslattr').value;
   const entry = {
     id:          vmEditId || ('vm_' + Date.now()),
     kt:          document.getElementById('vmKt').value.trim(),
@@ -7122,7 +7108,6 @@ function saveVm() {
     simi:        document.getElementById('vmSimi').value.trim(),
     netfang:     document.getElementById('vmNetfang').value.trim(),
     tegund:      document.getElementById('vmTegund').value,
-    afslattr:    afslattrVal !== '' ? parseInt(afslattrVal) : null,
     athugasemd:  document.getElementById('vmAthugasemd').value.trim(),
     stada:       document.getElementById('vmStada').value,
     user:        document.getElementById('vmUser').value.trim(),
@@ -7170,7 +7155,7 @@ function syncVidskToAccounts(list) {
     ACCOUNTS[v.user] = {
       pass:     v.pass,
       name:     v.nafn || v.user,
-      discount: v.afslattr !== null && v.afslattr !== undefined ? parseInt(v.afslattr) : null,
+      discount: null,
       active:   v.stada !== 'inactive',
     };
   });
@@ -7191,8 +7176,8 @@ function syncVidskToAccounts(list) {
 function exportVmCsv() {
   const list = getVidskm();
   if (!list.length) { showToast('Enginn viðskiptamaður til að flytja út'); return; }
-  const headers = ['Nafn','Kennitala','Heimilisfang','Póstnúmer','Sími','Netfang','Tegund','Afsláttur%','Notandanafn','Staða','Skráður'];
-  const rows = list.map(v => [v.nafn,v.kt,v.heimili,v.postnr,v.simi,v.netfang,v.tegund,v.afslattr,v.user,v.stada,v.created]
+  const headers = ['Nafn','Kennitala','Heimilisfang','Póstnúmer','Sími','Netfang','Tegund','Notandanafn','Staða','Skráður'];
+  const rows = list.map(v => [v.nafn,v.kt,v.heimili,v.postnr,v.simi,v.netfang,v.tegund,v.user,v.stada,v.created]
     .map(x => '"'+(x||'').toString().replace(/"/g,'""')+'"').join(','));
   const csv = [headers.join(','), ...rows].join('\n');
   const a = document.createElement('a');
@@ -7304,21 +7289,7 @@ function vmCheckUsername() {
   }
 }
 
-function vmUpdateDiscPreview() {
-  const disc = document.getElementById('vmAfslattr').value;
-  const preview = document.getElementById('vmDiscPreview');
-  if (!preview) return;
-  const globalDisc = parseInt(getTheme().discountPct) || 25;
-  if (disc === '' || disc === null) {
-    preview.textContent = 'Notar almennan afslátt: ' + globalDisc + '%';
-    preview.style.color = 'var(--ink3)';
-  } else {
-    const d = parseInt(disc);
-    const example = fmtNum(Math.round(10000 * (1 - d/100)));
-    preview.textContent = '✓ Sérsniðinn afsláttur: ' + d + '% — dæmi: 10.000 ISK vara kostar ' + example + ' ISK';
-    preview.style.color = 'var(--green)';
-  }
-}
+function vmUpdateDiscPreview() { /* removed */ }
 
 
 function getMyDiscount() {
@@ -7330,17 +7301,7 @@ function getMyDiscount() {
     catch(e) { return 25; }
   };
   if (ADMIN_ACCOUNTS && ADMIN_ACCOUNTS[u]) return safeDisc();
-  // If user has per-user pricing overrides, skip customer-level afslattr
-  // so applyPricingOverrides (with merged per-user cat/prod overrides) controls pricing
-  try {
-    var _puOv = JSON.parse(localStorage.getItem('ws_pricing_users') || '{}');
-    var _puUser = _puOv[u.toLowerCase()] || _puOv[u];
-    if (_puUser && ((_puUser.cats && Object.keys(_puUser.cats).length) || (_puUser.prods && Object.keys(_puUser.prods).length))) {
-      return safeDisc();
-    }
-  } catch(e) {}
-  const stored = localStorage.getItem('ws_my_discount');
-  if (stored !== null && stored !== '') return parseInt(stored);
+  // Customer-level afslattur removed — per-user discounts now solely via ws_pricing_users
   try {
     const accs = JSON.parse(localStorage.getItem('ws_buyer_accounts') || 'null');
     const acc = accs && accs[u];
