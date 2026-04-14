@@ -8304,7 +8304,7 @@ async function syncWithShopify() {
   })();
 }
 
-function syncCatalogToAll() {
+async function syncCatalogToAll() {
   const btn = document.getElementById('syncCatalogBtn');
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Samstilli…'; }
   try {
