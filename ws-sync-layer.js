@@ -8,11 +8,16 @@
 
   function pushToServer(key, value) {
     try {
+      // keepalive:true so fetch survives page unload/refresh,
+      // preventing a stale server pull from overwriting fresh local changes.
+      var body = JSON.stringify({ key: key, value: value });
       fetch(API, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ key: key, value: value })
-      }).catch(function (err) { console.warn("[ws-sync] push failed for " + key + ":", err); });
+        body: body,
+        keepalive: true
+      }).catch(function (err) { console.warn("[ws-sync] push failed for " + key + ": ", err); });
+      try { window._wsPending = window._wsPending || {}; window._wsPending[key] = body; } catch(e) {}
     } catch (e) {}
   }
 
@@ -93,4 +98,13 @@
     });
 
   console.log("[ws-sync] Sync layer installed. Keys tracked:", SYNC_KEYS.length);
+
+  window.addEventListener("beforeunload", function() {
+    try {
+      if (!window._wsPending) return;
+      Object.keys(window._wsPending).forEach(function(k) {
+        try { navigator.sendBeacon(API, new Blob([window._wsPending[k]], { type: "application/json" })); } catch(e) {}
+      });
+    } catch(e) {}
+  });
 })();
