@@ -24,7 +24,7 @@
     if (!serverData) return;
     var MERGE_KEYS = [
       "ws_orders","ws_invoice_seq","ws_buyer_accounts","ws_custom_products",
-      "ws_deleted_products","ws_pricing","ws_vidskm","ws_last_order"
+      "ws_deleted_products","ws_pricing","ws_pricing_users","ws_vidskm","ws_last_order"
     ];
     MERGE_KEYS.forEach(function (key) {
       if (serverData[key] !== undefined && serverData[key] !== null) {
