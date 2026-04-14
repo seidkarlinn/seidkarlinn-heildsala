@@ -6231,21 +6231,34 @@ function vstSaveProduct(key) {
 
   if (!name) { showToast('Vantar heiti vöru', 2000); return; }
 
-  const [src, idx] = (key || '').split(':');
+  // Resolve the original product (so we can derive the canonical override key)
+  // key arrives as 'base:<idx>' or 'custom:<idx>' from the products panel
+  const [src, idxStr] = (key || '').split(':');
+  const idx = parseInt(idxStr);
+
   if (src === 'custom') {
-    const c = getCustomProducts();
-    if (c[parseInt(idx)]) {
-      c[parseInt(idx)] = {...c[parseInt(idx)], name, cat, price: retail ? retail.toLocaleString('de-DE') + ' ISK' : '', wholesale: ws ? ws.toLocaleString('de-DE') + ' ISK' : '', inStock, img, desc};
-      saveCustomProducts(c);
+    const cp = getCustomProducts();
+    if (cp[idx]) {
+      cp[idx] = {...cp[idx], name, cat, price: retail ? retail.toLocaleString('de-DE') + ' ISK' : '', wholesale: ws ? ws.toLocaleString('de-DE') + ' ISK' : '', inStock, img, desc};
+      saveCustomProducts(cp);
     }
   }
 
-  // For all products (base + custom), store a full override in ws_pricing.prods
-  // so every edit persists and syncs via the sync layer.
+  // Compute canonical override key the same way applyPricingOverrides looks it up
+  let prodObj = null;
+  if (src === 'base') {
+    const baseArr = window.PRODUCTS_BASE || (typeof PRODUCTS_BASE !== 'undefined' ? PRODUCTS_BASE : []);
+    prodObj = baseArr[idx] || null;
+  } else if (src === 'custom') {
+    prodObj = getCustomProducts()[idx] || null;
+  }
+  // Fallback: synthesize a product with the new name/url so getProdKey produces stable key
+  if (!prodObj) prodObj = { name: name, url: '' };
+  const overrideKey = (typeof getProdKey === 'function') ? getProdKey(prodObj) : name;
+
   const ov = getPricingOverrides();
   if (!ov.prods) ov.prods = {};
-  const prodKey = name;
-  const prev = ov.prods[prodKey] || {};
+  const prev = ov.prods[overrideKey] || {};
   const entry = Object.assign({}, prev);
   if (name)       entry.name = name;
   if (cat)        entry.cat = cat;
@@ -6255,7 +6268,7 @@ function vstSaveProduct(key) {
   entry.inStock = inStock;
   if (img)        entry.img = img;
   if (desc !== undefined) entry.note = desc;
-  ov.prods[prodKey] = entry;
+  ov.prods[overrideKey] = entry;
   savePricingOverrides(ov);
 
   applyPricingOverrides();
