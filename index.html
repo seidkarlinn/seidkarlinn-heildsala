@@ -7645,6 +7645,8 @@ try {
 // triggers a re-render (handles first-visit race where localStorage was empty)
 window.addEventListener('ws-sync-ready', function() {
   try {
+    // Clear in-memory product-info cache so synced ws_product_info takes effect
+    if (typeof _dpCache !== 'undefined') { try { for (var _k in _dpCache) delete _dpCache[_k]; } catch(e) {} }
     // Re-apply pricing overrides with freshly synced ws_pricing_users
     applyPricingOverrides();
     if (typeof rebuildLiveCatalog === 'function') rebuildLiveCatalog();
