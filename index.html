@@ -8555,23 +8555,33 @@ try {
 // Listen for sync-ready event so per-user pricing data loaded from server
 // triggers a re-render (handles first-visit race where localStorage was empty)
 (function(){
-  // Runs after sync pull completes — re-applies pricing so buyers
-  // see freshly pulled ws_pricing / ws_pricing_users data
+  // Re-apply pricing after sync layer pulls server data.
+  // Uses both event listener AND polling to handle every possible race:
+  //   - event fires before listener registered
+  //   - sync not yet complete when script runs
+  //   - applyPricingOverrides defined later than expected
+  var applied = false;
   function onSyncReady() {
-  try {
-    // Clear in-memory product-info cache so synced ws_product_info takes effect
-    if (typeof _dpCache !== 'undefined') { try { for (var _k in _dpCache) delete _dpCache[_k]; } catch(e) {} }
-    // Re-apply pricing overrides with freshly synced ws_pricing_users
-    applyPricingOverrides();
-    if (typeof rebuildLiveCatalog === 'function') rebuildLiveCatalog();
-    if (typeof renderGrid === 'function') renderGrid();
-    if (typeof updateHeaderAuth === 'function') updateHeaderAuth();
-    console.log('[ws-sync] Pricing re-applied after server pull');
-  } catch(e) { console.error('post-sync re-render failed:', e); }
-}
-  // If sync already finished before this script registered, run immediately
-  if (window._wsSyncReady) { onSyncReady(); }
-  else { window.addEventListener('ws-sync-ready', onSyncReady); }
+    if (applied) return;
+    if (typeof applyPricingOverrides !== 'function') return;
+    try {
+      if (typeof _dpCache !== 'undefined') { try { for (var _k in _dpCache) delete _dpCache[_k]; } catch(e) {} }
+      applyPricingOverrides();
+      if (typeof rebuildLiveCatalog === 'function') rebuildLiveCatalog();
+      if (typeof renderGrid === 'function') renderGrid();
+      if (typeof updateHeaderAuth === 'function') updateHeaderAuth();
+      if (typeof renderProductsPanel === 'function') renderProductsPanel();
+      applied = true;
+    } catch(e) { console.error('post-sync re-render failed:', e); }
+  }
+  window.addEventListener('ws-sync-ready', onSyncReady);
+  // Poll every 200ms up to 15s until sync is ready and apply succeeded
+  var tries = 0;
+  var poll = setInterval(function() {
+    tries++;
+    if (window._wsSyncReady) { onSyncReady(); }
+    if (applied || tries > 75) clearInterval(poll);
+  }, 200);
 })();
 
 try {
