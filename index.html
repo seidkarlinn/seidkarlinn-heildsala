@@ -6154,17 +6154,17 @@ function vstOpenDetail(name, key) {
         </div>
         <div class="vst-field">
           <label>Verð með vsk.</label>
-          <input type="number" value="${retail||''}" id="vdRetail" readonly style="background:var(--paper2)">
+          <input type="number" value="${retail||''}" id="vdRetail" oninput="vstCalcFromRetail()">
         </div>
       </div>
       <div class="vst-2col">
         <div class="vst-field">
           <label>Heildsöluverð án vsk.</label>
-          <input type="number" value="${wsNum && vskRate>0 ? Math.round(wsNum/(1+vskRate)) : wsNum||''}" id="vdWsExVsk" readonly style="background:var(--paper2)">
+          <input type="number" value="${wsNum && vskRate>0 ? Math.round(wsNum/(1+vskRate)) : wsNum||''}" id="vdWsExVsk" oninput="vstCalcFromWsExVsk()">
         </div>
         <div class="vst-field">
           <label>Heildsöluverð með vsk.</label>
-          <input type="number" value="${wsNum||''}" id="vdWs" readonly style="background:var(--paper2)">
+          <input type="number" value="${wsNum||''}" id="vdWs" oninput="vstCalcFromWs()">
         </div>
       </div>
       <div class="vst-field">
@@ -6242,6 +6242,34 @@ function vstCalcPrice() {
   if (document.getElementById('vdWs')) document.getElementById('vdWs').value = ws || '';
   if (document.getElementById('vdWsExVsk')) document.getElementById('vdWsExVsk').value = wsEx || '';
 }
+
+function vstCalcFromRetail() {
+  // User typed in 'Verd med vsk' (vdRetail) -> back-compute vdExVsk
+  const retail = parseFloat(document.getElementById('vdRetail')?.value) || 0;
+  const vskRate = parseFloat(document.getElementById('vdVsk')?.value) || 0;
+  const exVsk = (vskRate > 0 && retail > 0) ? Math.round(retail / (1 + vskRate)) : retail;
+  const el = document.getElementById('vdExVsk');
+  if (el && document.activeElement !== el) el.value = exVsk || '';
+}
+
+function vstCalcFromWs() {
+  // User typed in 'Heildsoluverd med vsk' (vdWs) -> back-compute vdWsExVsk
+  const ws = parseFloat(document.getElementById('vdWs')?.value) || 0;
+  const vskRate = parseFloat(document.getElementById('vdVsk')?.value) || 0;
+  const wsExVsk = (vskRate > 0 && ws > 0) ? Math.round(ws / (1 + vskRate)) : ws;
+  const el = document.getElementById('vdWsExVsk');
+  if (el && document.activeElement !== el) el.value = wsExVsk || '';
+}
+
+function vstCalcFromWsExVsk() {
+  // User typed in 'Heildsoluverd an vsk' (vdWsExVsk) -> forward-compute vdWs
+  const wsExVsk = parseFloat(document.getElementById('vdWsExVsk')?.value) || 0;
+  const vskRate = parseFloat(document.getElementById('vdVsk')?.value) || 0;
+  const ws = Math.round(wsExVsk * (1 + vskRate));
+  const el = document.getElementById('vdWs');
+  if (el && document.activeElement !== el) el.value = ws || '';
+}
+
 
 function vstSaveProduct(key) {
   // Read every editable field from the product edit modal
