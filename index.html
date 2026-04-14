@@ -5945,9 +5945,34 @@ let prodSearch='', showRemoved=false, editingKey=null;
 function allAdmProducts() {
   const deleted = getDeletedProducts();
   const custom  = getCustomProducts();
-  const base = (PRODUCTS_BASE||PRODUCTS).map((p,i)=>({...p,_src:'base',_idx:i,_removed:deleted.includes(p.url||p.name)}));
-  const cust = custom.map((p,i)=>({...p,_src:'custom',_idx:i,_removed:false}));
-  return [...base,...cust];
+  const ov = getPricingOverrides();
+  const prodOvs = (ov && ov.prods) || {};
+  function applyOv(p) {
+    const key = (typeof getProdKey === 'function') ? getProdKey(p) : (p.url || p.name);
+    const o = prodOvs[key];
+    if (!o) return p;
+    const retail = (o.retail && o.retail > 0) ? o.retail : null;
+    const ws = (o.ws && o.ws > 0) ? o.ws : null;
+    return Object.assign({}, p, {
+      name:      o.name || p.name,
+      cat:       o.cat  || p.cat,
+      sku:       o.sku  || p.sku,
+      price:     retail ? (typeof fmtISK === 'function' ? fmtISK(retail) : (retail+' ISK')) : p.price,
+      wholesale: ws     ? (typeof fmtISK === 'function' ? fmtISK(ws)     : (ws+' ISK'))     : p.wholesale,
+      inStock:   (typeof o.inStock === 'boolean') ? o.inStock : p.inStock,
+      img:       o.img  || p.img,
+      desc:      (o.note !== undefined && o.note !== '') ? o.note : p.desc
+    });
+  }
+  const base = (PRODUCTS_BASE||PRODUCTS).map((p,i)=>{
+    const withOv = applyOv(p);
+    return Object.assign({}, withOv, { _src:'base', _idx:i, _removed: deleted.includes(p.url||p.name) });
+  });
+  const cust = custom.map((p,i)=>{
+    const withOv = applyOv(p);
+    return Object.assign({}, withOv, { _src:'custom', _idx:i, _removed: false });
+  });
+  return [...base, ...cust];
 }
 
 function renderProductsPanel() {
