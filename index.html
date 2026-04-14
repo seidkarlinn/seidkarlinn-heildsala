@@ -5997,6 +5997,12 @@ function renderProductsPanel() {
                  font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif">
           ☁️ Samstilla við kaupendur
         </button>
+        <button id="syncShopifyBtn" onclick="syncWithShopify()"
+          style="display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--rs);
+                 border:1.5px solid #5C5C8A;background:#E8E8F5;color:#3D3D6B;font-size:12px;
+                 font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;">
+          🛒 Samstilla við Shopify
+        </button>
         <button id="bulkDeleteBtn" onclick="bulkDeleteSelected()" style="display:none;
           padding:7px 14px;border-radius:var(--rs);border:1.5px solid #dc2626;
           background:#fee2e2;color:#dc2626;font-size:12px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif">
@@ -8242,7 +8248,63 @@ function getMyWsPriceStr(p) {
 }
 
 
-async function syncCatalogToAll() {
+async function syncWithShopify() {
+  if (!confirm('Sækja birgðarstatus frá Shopify og uppfæra vörur sem eru uppseldar?')) return;
+  showToast('⏳ Sæki gegnir Shopify...', 5000);
+
+  (async function() {
+    try {
+      var all = [];
+      for (var page = 1; page <= 10; page++) {
+        var r = await fetch('https://www.seidkarlinn.is/products.json?limit=250&page=' + page);
+        if (!r.ok) break;
+        var d = await r.json();
+        if (!d.products || d.products.length === 0) break;
+        all = all.concat(d.products);
+        if (d.products.length < 250) break;
+      }
+      var byHandle = {};
+      all.forEach(function(s) {
+        var anyAvail = (s.variants || []).some(function(v) { return v.available; });
+        byHandle[s.handle] = anyAvail;
+      });
+
+      var ov = getPricingOverrides();
+      if (!ov.prods) ov.prods = {};
+      var base = window.PRODUCTS_BASE || PRODUCTS;
+      var soldOut = 0, restocked = 0, missing = 0, unchanged = 0;
+      base.forEach(function(p) {
+        var m = (p.url||'').match(/\/products\/([^\/?]+)/);
+        if (!m) { missing++; return; }
+        var handle = m[1];
+        if (!(handle in byHandle)) { missing++; return; }
+        var shopifyInStock = byHandle[handle];
+        var key = getProdKey(p);
+        var prev = ov.prods[key] || {};
+        var currentInStock = (typeof prev.inStock === 'boolean') ? prev.inStock : (p.inStock !== false);
+        if (currentInStock !== shopifyInStock) {
+          ov.prods[key] = Object.assign({}, prev, { inStock: shopifyInStock });
+          if (shopifyInStock) restocked++; else soldOut++;
+        } else {
+          unchanged++;
+        }
+      });
+
+      savePricingOverrides(ov);
+      applyPricingOverrides();
+      if (typeof rebuildLiveCatalog === 'function') rebuildLiveCatalog();
+      if (typeof renderProductsPanel === 'function') renderProductsPanel();
+      if (typeof renderGrid === 'function') renderGrid();
+
+      showToast('✓ Shopify sync látið: ' + soldOut + ' uppseldar, ' + restocked + ' á lager aftur, ' + unchanged + ' óbreyttar' + (missing ? ' (' + missing + ' fundust ekki)' : ''), 7000);
+    } catch(e) {
+      console.error('Shopify sync failed:', e);
+      showToast('✗ Shopify sync miststókst: ' + e.message, 5000);
+    }
+  })();
+}
+
+function syncCatalogToAll() {
   const btn = document.getElementById('syncCatalogBtn');
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Samstilli…'; }
   try {
