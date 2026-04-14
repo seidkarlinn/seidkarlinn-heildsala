@@ -8554,7 +8554,10 @@ try {
 
 // Listen for sync-ready event so per-user pricing data loaded from server
 // triggers a re-render (handles first-visit race where localStorage was empty)
-window.addEventListener('ws-sync-ready', function() {
+(function(){
+  // Runs after sync pull completes — re-applies pricing so buyers
+  // see freshly pulled ws_pricing / ws_pricing_users data
+  function onSyncReady() {
   try {
     // Clear in-memory product-info cache so synced ws_product_info takes effect
     if (typeof _dpCache !== 'undefined') { try { for (var _k in _dpCache) delete _dpCache[_k]; } catch(e) {} }
@@ -8565,7 +8568,11 @@ window.addEventListener('ws-sync-ready', function() {
     if (typeof updateHeaderAuth === 'function') updateHeaderAuth();
     console.log('[ws-sync] Pricing re-applied after server pull');
   } catch(e) { console.error('post-sync re-render failed:', e); }
-});
+}
+  // If sync already finished before this script registered, run immediately
+  if (window._wsSyncReady) { onSyncReady(); }
+  else { window.addEventListener('ws-sync-ready', onSyncReady); }
+})();
 
 try {
   rebuildLiveCatalog();
