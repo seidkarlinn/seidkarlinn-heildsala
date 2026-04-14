@@ -7269,7 +7269,7 @@ function getEffectivePricing() {
 //   prods: { 'product-name-key': { ws: 4500, retail: 6000 }, ... }  // fixed prices in ISK
 // }
 
-function getProdKey(p) { return (p.url || p.name).replace(/[^a-zA-Z0-9íáéóúýðþæöÍÁÉÓÚÝÐÞÆÖ]/g,'_').toLowerCase().substring(0,60); }
+function getProdKey(p) { return (p.url || p.name).replace(/[^a-zA-Z0-9íáéóúýðþæöÍÁÉÓÚÝÐÞÆÖ]/g,'_').toLowerCase(); }
 
 // Apply all pricing overrides to the live catalog
 function applyPricingOverrides() {
