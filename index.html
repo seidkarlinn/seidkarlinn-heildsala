@@ -7282,8 +7282,21 @@ function applyPricingOverrides() {
     // Product-level override
     if (ov.prods && ov.prods[key]) {
       const o = ov.prods[key];
-      const ws = (o.ws && o.ws > 0) ? o.ws : p.wholesale;
       const retail = (o.retail && o.retail > 0) ? o.retail : null;
+      // Resolve effective category for this product
+      const effCat = o.cat || p.cat;
+      // Determine wholesale: category % discount beats product-level ws when both exist,
+      // because admin's most recent intent is usually the category override.
+      let ws;
+      const catPct = (ov.cats && effCat && ov.cats[effCat] != null) ? parseFloat(ov.cats[effCat]) : null;
+      const baseRetailNum = retail || (function(){ var m = parseInt((p.price||'').replace(/[^\d]/g,'')); return m > 0 ? m : 0; })();
+      if (catPct != null && baseRetailNum > 0) {
+        ws = Math.round(baseRetailNum * (1 - catPct/100));
+      } else if (o.ws && o.ws > 0) {
+        ws = o.ws;
+      } else {
+        ws = p.wholesale;
+      }
       return {...p,
         name:      o.name || p.name,
         cat:       o.cat || p.cat,
@@ -7294,6 +7307,7 @@ function applyPricingOverrides() {
         img:       o.img || p.img,
         desc:      (o.note !== undefined && o.note !== '') ? o.note : p.desc,
         _priceOverridden: true,
+        _catOverridden: (catPct != null),
       };
     }
     // Category-level override
