@@ -6330,10 +6330,44 @@ async function submitRefund() {
 // ══════════════════════════════════════════════════════
 
 // Storage
-function getPricingOverrides() {
-  try { return JSON.parse(localStorage.getItem('ws_pricing') || '{}'); } catch { return {}; }
+function getPricingOverrides(userKey) {
+  try {
+    if (userKey && userKey !== '__global__') {
+      var users = JSON.parse(localStorage.getItem('ws_pricing_users') || '{}');
+      return users[userKey] || { cats: {}, prods: {} };
+    }
+    return JSON.parse(localStorage.getItem('ws_pricing') || '{}');
+  } catch { return {}; }
 }
-function savePricingOverrides(p) { localStorage.setItem('ws_pricing', JSON.stringify(p)); }
+function savePricingOverrides(p, userKey) {
+  if (userKey && userKey !== '__global__') {
+    var users = {};
+    try { users = JSON.parse(localStorage.getItem('ws_pricing_users') || '{}'); } catch {}
+    users[userKey] = p;
+    localStorage.setItem('ws_pricing_users', JSON.stringify(users));
+  } else {
+    localStorage.setItem('ws_pricing', JSON.stringify(p));
+  }
+}
+function getEffectivePricing() {
+  // Merge per-user overrides (if logged in as buyer) on top of global
+  var global = {};
+  try { global = JSON.parse(localStorage.getItem('ws_pricing') || '{}'); } catch {}
+  var role = localStorage.getItem('ws_role');
+  var user = localStorage.getItem('ws_auth');
+  if (role === 'buyer' && user) {
+    var users = {};
+    try { users = JSON.parse(localStorage.getItem('ws_pricing_users') || '{}'); } catch {}
+    var u = users[user.toLowerCase()] || users[user] || null;
+    if (u) {
+      return {
+        cats: Object.assign({}, global.cats || {}, u.cats || {}),
+        prods: Object.assign({}, global.prods || {}, u.prods || {})
+      };
+    }
+  }
+  return global;
+}
 
 // overrides structure:
 // {
@@ -6345,7 +6379,7 @@ function getProdKey(p) { return (p.url || p.name).replace(/[^a-zA-Z0-9íáéóú
 
 // Apply all pricing overrides to the live catalog
 function applyPricingOverrides() {
-  const ov = getPricingOverrides();
+  const ov = getEffectivePricing();
   const globalDisc = parseInt(getTheme().discountPct) || 25;
   // Use window.PRODUCTS_BASE which is already filtered by ADMIN_DELETED
   const _src = window.PRODUCTS_BASE || (typeof PRODUCTS_BASE !== 'undefined' ? PRODUCTS_BASE : PRODUCTS);
@@ -6383,14 +6417,31 @@ let _pendingPricing = null;   // staging area before save
 let _prodPriceSearch = '';
 
 // ── Render pricing panel ──────────────────────────────
-function renderPricingPanel() {
-  const ov = getPricingOverrides();
+function onPricingUserChange(val) {
+  _pricingUserKey = val || "__global__";
+  renderPricingPanel(_pricingUserKey);
+}
+var _pricingUserKey = "__global__";
+function renderPricingPanel(userKey) {
+  if (typeof userKey === "string") _pricingUserKey = userKey;
+  const ov = getPricingOverrides(_pricingUserKey);
+  if (!ov.cats) ov.cats = {};
+  if (!ov.prods) ov.prods = {};
   _pendingPricing = JSON.parse(JSON.stringify(ov)); // deep clone
 
   document.getElementById('panelPricing').innerHTML = `
     <div class="cat-hdr">
       <div><div class="cat-title">💰 Verð og afsláttir</div>
            <div class="cat-sub">Stilla afslætti á flokka eða festa verð á einstaka vörur</div></div>
+    </div>
+
+    <div style="margin:8px 0 16px 0;padding:10px 12px;background:var(--paper2);border-radius:var(--rs);display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+      <label style="font-size:12px;font-weight:600;">Gildir fyrir:</label>
+      <select id="pricingUserSel" onchange="onPricingUserChange(this.value)" style="padding:6px 10px;border:1.5px solid var(--ink3);border-radius:var(--rs);font-size:13px;min-width:200px;">
+        <option value="__global__">✨ Sjálfgefið (allir viðskiptamenn)</option>
+        ${Object.keys(JSON.parse(localStorage.getItem('ws_buyer_accounts')||'{}')).sort().map(u=>`<option value="${u}" ${_pricingUserKey===u?'selected':''}>👤 ${u}</option>`).join('')}
+      </select>
+      <span id="pricingUserHint" style="font-size:11px;color:var(--ink3);">${_pricingUserKey==='__global__' ? 'Sjálfgefin afsláttarstilling fyrir alla' : 'Sérsniðinn afsláttur fyrir þennan notanda'}</span>
     </div>
 
     <div class="pricing-tabs">
@@ -6607,7 +6658,7 @@ function updateUnsavedCount() {
 }
 
 function savePricing() {
-  savePricingOverrides(_pendingPricing);
+  savePricingOverrides(_pendingPricing, _pricingUserKey);
   applyPricingOverrides();
   rebuildLiveCatalog();
   showToast('✓ Verðlag vistað — kaupendur sjá nýja verðið');
