@@ -6003,6 +6003,12 @@ function renderProductsPanel() {
                  font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;">
           🛒 Samstilla við Shopify
         </button>
+        <button id="syncShopifyImagesBtn" onclick="syncShopifyImages()"
+          style="display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--rs);
+                 border:1.5px solid #8B4C8F;background:#F3E8F5;color:#5C2D5F;font-size:12px;
+                 font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;">
+          🖼️ Samstilla myndir
+        </button>
         <button id="bulkDeleteBtn" onclick="bulkDeleteSelected()" style="display:none;
           padding:7px 14px;border-radius:var(--rs);border:1.5px solid #dc2626;
           background:#fee2e2;color:#dc2626;font-size:12px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif">
@@ -8247,6 +8253,69 @@ function getMyWsPriceStr(p) {
   return fmtISK(Math.round(retail * (1 - disc/100)));
 }
 
+
+async function syncShopifyImages() {
+  if (!confirm('Sækja nýjustu myndir frá Shopify fyrir allar vörur? Þetta getur tekið nokkrar mínútur.')) return;
+
+  var base = window.PRODUCTS_BASE || PRODUCTS;
+  var btn = document.getElementById('syncShopifyImagesBtn');
+  var origBtnText = btn ? btn.textContent : '';
+
+  function normImg(url) {
+    if (!url) return '';
+    return String(url).replace(/^http:/, 'https:').replace(/\?v=\d+$/, '').replace(/\?v=\d+&/, '?');
+  }
+
+  // Build list of products with Shopify handles
+  var tasks = [];
+  base.forEach(function(p, i) {
+    var m = (p.url||'').match(/\/products\/([^\/?]+)/);
+    if (m) tasks.push({ product: p, idx: i, handle: m[1] });
+  });
+
+  var total = tasks.length;
+  var updated = 0, unchanged = 0, errors = 0;
+  var ov = getPricingOverrides();
+  if (!ov.prods) ov.prods = {};
+
+  // Process in batches of 10 concurrent requests
+  var BATCH = 10;
+  for (var i = 0; i < tasks.length; i += BATCH) {
+    var batch = tasks.slice(i, i + BATCH);
+    await Promise.all(batch.map(async function(t) {
+      try {
+        var r = await fetch('https://www.seidkarlinn.is/products/' + t.handle + '.json');
+        if (!r.ok) { errors++; return; }
+        var d = await r.json();
+        var firstImg = d.product && d.product.images && d.product.images[0];
+        if (!firstImg || !firstImg.src) { errors++; return; }
+        var latest = normImg(firstImg.src);
+        var key = getProdKey(t.product);
+        var prev = ov.prods[key] || {};
+        var currentImg = normImg(prev.img || t.product.img || '');
+        if (latest && latest !== currentImg) {
+          ov.prods[key] = Object.assign({}, prev, { img: latest });
+          updated++;
+        } else {
+          unchanged++;
+        }
+      } catch(e) {
+        errors++;
+      }
+    }));
+    if (btn) btn.textContent = '⏳ Samstilli ' + Math.min(i + BATCH, total) + '/' + total + '...';
+    showToast('⏳ Sæki myndir ' + Math.min(i + BATCH, total) + '/' + total + ' (+' + updated + ' uppfærðar)', 1500);
+  }
+
+  savePricingOverrides(ov);
+  applyPricingOverrides();
+  if (typeof rebuildLiveCatalog === 'function') rebuildLiveCatalog();
+  if (typeof renderProductsPanel === 'function') renderProductsPanel();
+  if (typeof renderGrid === 'function') renderGrid();
+
+  if (btn) btn.textContent = origBtnText;
+  showToast('✓ Myndir samstilltar: ' + updated + ' uppfærðar, ' + unchanged + ' óbreyttar, ' + errors + ' villur', 8000);
+}
 
 async function syncWithShopify() {
   if (!confirm('Sækja birgðarstatus frá Shopify og uppfæra vörur sem eru uppseldar?')) return;
