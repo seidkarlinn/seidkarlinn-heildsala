@@ -4561,9 +4561,12 @@ function renderGrid() {
       const liL = !!localStorage.getItem('ws_auth');
       const discL = liL ? (typeof getMyDiscount==='function' ? getMyDiscount() : 25) : 25;
       const retailL = p.price ? parseInt(p.price.replace(/[^\d]/g,'')) : 0;
-      const myWsL = liL && retailL && discL !== null
-        ? fmtISK(Math.round(retailL * (1 - discL/100)))
-        : (p.wholesale || p.price);
+      const _hasOv = p._catOverridden || p._priceOverridden;
+      const myWsL = _hasOv
+        ? (p.wholesale || p.price)
+        : (liL && retailL && discL !== null
+          ? fmtISK(Math.round(retailL * (1 - discL/100)))
+          : (p.wholesale || p.price));
       const wsText = liL ? myWsL : '🔒';
       return `<div class="prow${p.name===selectedName?' sel':''}" style="animation-delay:${delay}s" data-idx="${i}">
         <img class="prow-img" src="${p.img}" onerror="this.style.display='none'" loading="lazy">
@@ -4589,9 +4592,12 @@ function renderGrid() {
       const li = !!localStorage.getItem('ws_auth');
       const disc = li ? (typeof getMyDiscount==='function' ? getMyDiscount() : 25) : 25;
       const retail = p.price ? parseInt(p.price.replace(/[^\d]/g,'')) : 0;
-      const myWs = li && retail
-        ? fmtISK(Math.round(retail * (1 - disc/100)))
-        : (p.wholesale || p.price || '');
+      const _hasOv2 = p._catOverridden || p._priceOverridden;
+      const myWs = _hasOv2
+        ? (p.wholesale || p.price || '')
+        : (li && retail
+          ? fmtISK(Math.round(retail * (1 - disc/100)))
+          : (p.wholesale || p.price || ''));
       const wsText = li ? myWs : null;
       const saving = li && retail ? `Sparar ${disc}%` : '';
       return `<div class="pcard${p.name===selectedName?' sel':''}" style="animation-delay:${delay}s" data-idx="${i}">
