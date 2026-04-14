@@ -7674,6 +7674,19 @@ try {
   applyPricingOverrides();
 } catch(e) { console.error('applyPricingOverrides failed:', e); }
 
+// Listen for sync-ready event so per-user pricing data loaded from server
+// triggers a re-render (handles first-visit race where localStorage was empty)
+window.addEventListener('ws-sync-ready', function() {
+  try {
+    // Re-apply pricing overrides with freshly synced ws_pricing_users
+    applyPricingOverrides();
+    if (typeof rebuildLiveCatalog === 'function') rebuildLiveCatalog();
+    if (typeof renderGrid === 'function') renderGrid();
+    if (typeof updateHeaderAuth === 'function') updateHeaderAuth();
+    console.log('[ws-sync] Pricing re-applied after server pull');
+  } catch(e) { console.error('post-sync re-render failed:', e); }
+});
+
 try {
   rebuildLiveCatalog();
 } catch(e) { console.error('rebuildLiveCatalog failed:', e); }
