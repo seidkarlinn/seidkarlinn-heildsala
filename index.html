@@ -4250,6 +4250,7 @@ function tryLogin() {
     localStorage.setItem('ws_auth', u);
     localStorage.setItem('ws_role', 'admin');
     err.textContent = '';
+    applyPricingOverrides();
     updateHeaderAuth();
     renderGrid();
     initAdminUI();
@@ -4274,6 +4275,7 @@ function tryLogin() {
     localStorage.setItem('ws_role', 'buyer');
     // Store per-customer discount so getMyDiscount() picks it up
     err.textContent = '';
+    applyPricingOverrides();
     updateHeaderAuth();
     renderGrid();
     updateCartCount();
@@ -4599,7 +4601,12 @@ function renderGrid() {
           ? fmtISK(Math.round(retail * (1 - disc/100)))
           : (p.wholesale || p.price || ''));
       const wsText = li ? myWs : null;
-      const saving = li && retail ? `Sparar ${disc}%` : '';
+      var _effDisc = disc;
+      if ((p._catOverridden || p._priceOverridden) && retail) {
+        var _wsN = parseInt(String(p.wholesale||'').replace(/[^\d]/g,''));
+        if (_wsN && retail) _effDisc = Math.round((1 - _wsN/retail) * 100);
+      }
+      const saving = li && retail ? `Sparar ${_effDisc}%` : '';
       return `<div class="pcard${p.name===selectedName?' sel':''}" style="animation-delay:${delay}s" data-idx="${i}">
         <img class="pcard-img" src="${p.img}" onerror="this.style.background='var(--paper2)'" loading="lazy">
         <div class="pcard-body">
