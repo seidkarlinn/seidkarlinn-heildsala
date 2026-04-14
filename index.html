@@ -6220,14 +6220,21 @@ function vstCalcPrice() {
 
 function vstSaveProduct(key) {
   // Read every editable field from the product edit modal
-  const name   = document.getElementById('vdName')?.value.trim();
-  const cat    = document.getElementById('vdCat')?.value;
-  const sku    = document.getElementById('vdSku')?.value.trim();
-  const retail = parseInt(document.getElementById('vdRetail')?.value) || 0;
-  const ws     = parseInt(document.getElementById('vdWs')?.value) || 0;
-  const inStock= document.getElementById('vdStock')?.value === '1';
-  const img    = document.getElementById('vdImg')?.value.trim();
-  const desc   = document.getElementById('vdNote')?.value.trim();
+  const name      = document.getElementById('vdName')?.value.trim();
+  const cat       = document.getElementById('vdCat')?.value;
+  const sku       = document.getElementById('vdSku')?.value.trim();
+  const vskRate   = parseFloat(document.getElementById('vdVsk')?.value) || 0;
+  const exVsk     = parseFloat(document.getElementById('vdExVsk')?.value) || 0;
+  let   retail    = parseInt(document.getElementById('vdRetail')?.value) || 0;
+  const wsExVsk   = parseFloat(document.getElementById('vdWsExVsk')?.value) || 0;
+  let   ws        = parseInt(document.getElementById('vdWs')?.value) || 0;
+  const inStock   = document.getElementById('vdStock')?.value === '1';
+  const img       = document.getElementById('vdImg')?.value.trim();
+  const desc      = document.getElementById('vdNote')?.value.trim();
+
+  // If user only entered the without-VAT price, derive the VAT-inclusive price
+  if (retail === 0 && exVsk > 0) retail = Math.round(exVsk * (1 + vskRate));
+  if (ws === 0 && wsExVsk > 0)   ws     = Math.round(wsExVsk * (1 + vskRate));
 
   if (!name) { showToast('Vantar heiti vöru', 2000); return; }
 
@@ -6252,7 +6259,6 @@ function vstSaveProduct(key) {
   } else if (src === 'custom') {
     prodObj = getCustomProducts()[idx] || null;
   }
-  // Fallback: synthesize a product with the new name/url so getProdKey produces stable key
   if (!prodObj) prodObj = { name: name, url: '' };
   const overrideKey = (typeof getProdKey === 'function') ? getProdKey(prodObj) : name;
 
