@@ -7302,13 +7302,6 @@ function getMyDiscount() {
   };
   if (ADMIN_ACCOUNTS && ADMIN_ACCOUNTS[u]) return safeDisc();
   // Customer-level afslattur removed — per-user discounts now solely via ws_pricing_users
-  try {
-    const accs = JSON.parse(localStorage.getItem('ws_buyer_accounts') || 'null');
-    const acc = accs && accs[u];
-    if (acc && typeof acc === 'object' && acc.discount !== null && acc.discount !== undefined) {
-      return parseInt(acc.discount);
-    }
-  } catch(e) {}
   return safeDisc();
 }
 
