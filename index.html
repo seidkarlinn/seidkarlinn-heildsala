@@ -6219,34 +6219,49 @@ function vstCalcPrice() {
 }
 
 function vstSaveProduct(key) {
-  // Update product fields
-  const name = document.getElementById('vdName')?.value.trim();
-  const cat  = document.getElementById('vdCat')?.value;
+  // Read every editable field from the product edit modal
+  const name   = document.getElementById('vdName')?.value.trim();
+  const cat    = document.getElementById('vdCat')?.value;
+  const sku    = document.getElementById('vdSku')?.value.trim();
   const retail = parseInt(document.getElementById('vdRetail')?.value) || 0;
-  const inStock = document.getElementById('vdStock')?.value === '1';
-  const img  = document.getElementById('vdImg')?.value.trim();
-  const desc = document.getElementById('vdNote')?.value.trim();
+  const ws     = parseInt(document.getElementById('vdWs')?.value) || 0;
+  const inStock= document.getElementById('vdStock')?.value === '1';
+  const img    = document.getElementById('vdImg')?.value.trim();
+  const desc   = document.getElementById('vdNote')?.value.trim();
 
   if (!name) { showToast('Vantar heiti vöru', 2000); return; }
 
-  const [src, idx] = key.split(':');
+  const [src, idx] = (key || '').split(':');
   if (src === 'custom') {
     const c = getCustomProducts();
     if (c[parseInt(idx)]) {
-      c[parseInt(idx)] = {...c[parseInt(idx)], name, cat, price: retail ? retail.toLocaleString('de-DE') + ' ISK' : '', inStock, img, desc};
+      c[parseInt(idx)] = {...c[parseInt(idx)], name, cat, price: retail ? retail.toLocaleString('de-DE') + ' ISK' : '', wholesale: ws ? ws.toLocaleString('de-DE') + ' ISK' : '', inStock, img, desc};
       saveCustomProducts(c);
     }
   }
-  // For base products, save as pricing override
+
+  // For all products (base + custom), store a full override in ws_pricing.prods
+  // so every edit persists and syncs via the sync layer.
   const ov = getPricingOverrides();
   if (!ov.prods) ov.prods = {};
   const prodKey = name;
-  ov.prods[prodKey] = {...(ov.prods[prodKey]||{}), retail, inStock};
+  const prev = ov.prods[prodKey] || {};
+  const entry = Object.assign({}, prev);
+  if (name)       entry.name = name;
+  if (cat)        entry.cat = cat;
+  if (sku)        entry.sku = sku;
+  if (retail > 0) entry.retail = retail;
+  if (ws > 0)     entry.ws = ws;
+  entry.inStock = inStock;
+  if (img)        entry.img = img;
+  if (desc !== undefined) entry.note = desc;
+  ov.prods[prodKey] = entry;
   savePricingOverrides(ov);
 
   applyPricingOverrides();
   rebuildLiveCatalog();
   renderProductsPanel();
+  if (typeof renderGrid === 'function') renderGrid();
   showToast('✓ Vara vistuð', 2000);
 }
 
@@ -7195,10 +7210,17 @@ function applyPricingOverrides() {
     // Product-level override
     if (ov.prods && ov.prods[key]) {
       const o = ov.prods[key];
-      const ws = o.ws || p.wholesale;
+      const ws = (o.ws && o.ws > 0) ? o.ws : p.wholesale;
+      const retail = (o.retail && o.retail > 0) ? o.retail : null;
       return {...p,
+        name:      o.name || p.name,
+        cat:       o.cat || p.cat,
+        sku:       o.sku || p.sku,
         wholesale: typeof ws === 'number' ? fmtISK(ws) : ws,
-        price: o.retail ? o.fmtISK(retail) : p.price,
+        price:     retail ? fmtISK(retail) : p.price,
+        inStock:   (typeof o.inStock === 'boolean') ? o.inStock : p.inStock,
+        img:       o.img || p.img,
+        desc:      (o.note !== undefined && o.note !== '') ? o.note : p.desc,
         _priceOverridden: true,
       };
     }
