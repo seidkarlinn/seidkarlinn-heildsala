@@ -6355,15 +6355,20 @@ function restoreProd(key, identifier) {
   rebuildLiveCatalog(); renderProductsPanel(); showToast('↺ Endurheimtað');
 }
 function rebuildLiveCatalog() {
-  const deleted=getDeletedProducts(), custom=getCustomProducts();
-  // For non-admin users, PRODUCTS_BASE is already filtered by ADMIN_DELETED at init
-  // For admin, use their local deleted list
-  const srcBase = window.PRODUCTS_BASE || PRODUCTS;
-  const base = srcBase.filter(p => !deleted.includes(p.url||p.name) && !deleted.includes(p.name));
-  window.PRODUCTS=[...base,...custom].map(p=>{
-    const v=p.wholesale||(p.price?Math.round(parseInt((p.price||'').replace(/[^\d]/g,''))*0.75)+' ISK':'');
-    return {...p,wholesale:v};
-  });
+  // Delegate to applyPricingOverrides which properly layers ws_pricing
+  // overrides on top of PRODUCTS_BASE. Otherwise rebuild would clobber
+  // any override that applyPricingOverrides just set on window.PRODUCTS.
+  if (typeof applyPricingOverrides === 'function') {
+    applyPricingOverrides();
+  } else {
+    const deleted=getDeletedProducts(), custom=getCustomProducts();
+    const srcBase = window.PRODUCTS_BASE || PRODUCTS;
+    const src = _isAdmin ? srcBase.filter(p => !deleted.includes(p.url||p.name)) : srcBase;
+    window.PRODUCTS = [...src,...custom].map(p=>{
+      const v=p.wholesale||(p.price?Math.round(parseInt((p.price||'').replace(/[^\d]/g,''))*0.75)+' ISK':'');
+      return {...p,wholesale:v};
+    });
+  }
   if (!currentPanel || currentPanel==='catalog') { buildSidebar(); renderGrid(); }
 }
 
