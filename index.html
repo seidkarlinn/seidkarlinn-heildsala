@@ -6914,19 +6914,19 @@ async function invoiceCheckout() {
     const totalVsk24    = lines.filter(l=>l.vskRate>0).reduce((s,l) => s + l.vskAmt, 0);
     const totalVsk0     = lines.filter(l=>l.vskRate===0).reduce((s,l) => s + l.total, 0);
 
-    // Log order in admin
+    // Generate and download PDF first (fail fast - don't log order if this throws)
+    generateInvoicePDF({
+      invoiceNo, today, due, buyerName, buyerEmail, buyerKt, buyerAddr, note, lines,
+      totalGross, totalExVsk, totalVsk24, totalVsk0,
+    });
+
+    // Log order in admin (only after PDF succeeded)
     const orderId = invoiceNo;
     logOrder(orderId, totalGross, cart, buyerName, buyerEmail, user, note);
     // Update order status to 'invoice'
     const orders = getOrders();
     const o = orders.find(x => x.id === orderId);
     if (o) { o.status = 'invoice'; o.invoiceNo = invoiceNo; o.buyerKt = buyerKt; o.buyerAddr = buyerAddr; saveOrders(orders); }
-
-    // Generate and download PDF
-    generateInvoicePDF({
-      invoiceNo, today, due, buyerName, buyerEmail, buyerKt, buyerAddr, note, lines,
-      totalGross, totalExVsk, totalVsk24, totalVsk0,
-    });
 
     // Clear cart
     cart = [];
