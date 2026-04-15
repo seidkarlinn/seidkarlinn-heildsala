@@ -5164,6 +5164,7 @@ function renderCartBody() {
         if (cur.wholesale) it.wholesale = cur.wholesale;
         if (cur.price)     it.price     = cur.price;
         if (cur.img)       it.img       = cur.img;
+        if (cur.cat)       it.cat       = cur.cat;
       }
     });
   } catch (e) {}
@@ -6900,7 +6901,8 @@ async function invoiceCheckout() {
     const lines = cart.map(item => {
       const unitWs    = parseISKNum(item.wholesale) || Math.round(parseISKNum(item.price) * 0.75);
       const lineTotal = unitWs * item.qty;
-      const vskRate   = getVskRate(item.cat);
+      const _itCat    = item.cat || ((window.PRODUCTS||[]).find(function(p){return p&&p.name===item.name;})||{}).cat || '';
+      const vskRate   = getVskRate(_itCat);
       const exVsk     = vskRate > 0 ? Math.round(lineTotal / (1 + vskRate)) : lineTotal;
       const vskAmt    = lineTotal - exVsk;
       return {
@@ -6971,15 +6973,11 @@ function generateInvoicePDF(data) {
       <td style="padding:7px 8px;border-bottom:1px solid #eee;font-size:11px;text-align:right;font-weight:500">${fmtNum(l.total)}</td>
     </tr>`).join('');
 
-  const vskSummary = totalVsk24 > 0 ? `
+  const vskSummary = `
     <tr><td colspan="4" style="padding:4px 8px;font-size:11px;color:#555">Samtals án VSK</td>
         <td style="padding:4px 8px;font-size:11px;text-align:right">${fmtNum(totalExVsk)}</td></tr>
-    <tr><td colspan="4" style="padding:4px 8px;font-size:11px;color:#555">VSK</td>
-        <td style="padding:4px 8px;font-size:11px;text-align:right">${fmtNum(totalVsk24)}</td></tr>
-    ${totalVsk0 > 0 ? `<tr><td colspan="4" style="padding:4px 8px;font-size:11px;color:#555">VSK 0% (undanþegin)</td>
-        <td style="padding:4px 8px;font-size:11px;text-align:right">${fmtNum(totalVsk0)}</td></tr>` : ''}` : `
-    <tr><td colspan="4" style="padding:4px 8px;font-size:11px;color:#555">VSK 0% (matvæli/undanþegin)</td>
-        <td style="padding:4px 8px;font-size:11px;text-align:right">0</td></tr>`;
+    ${(totalVsk24 + (totalVsk0 > 0 ? 0 : 0)) >= 0 ? `<tr><td colspan="4" style="padding:4px 8px;font-size:11px;color:#555">Samtals VSK</td>
+        <td style="padding:4px 8px;font-size:11px;text-align:right">${fmtNum(totalVsk24)}</td></tr>` : ''}`;
 
   const invoiceHTML = `<!DOCTYPE html>
 <html lang="is">
