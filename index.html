@@ -18,6 +18,8 @@
   --shadow: 0 1px 3px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.06);
 }
 *{box-sizing:border-box;margin:0;padding:0;}
+/* Eliminate 300ms tap delay on all interactive elements for mobile */
+a,button,input,select,textarea,[role="button"]{touch-action:manipulation;}
 html{scroll-behavior:smooth;}
 body{font-family:'DM Sans',sans-serif;background:var(--paper);color:var(--ink);min-height:100vh;font-size:14px;line-height:1.6;}
 
@@ -5114,7 +5116,11 @@ function saveCart() { sessionStorage.setItem('ws_cart', JSON.stringify(cart)); }
 
 function addToCart(productName, qty) {
   qty = parseInt(qty) || 1;
-  const p = PRODUCTS.find(x => x.name === productName);
+  // Always search window.PRODUCTS first — it holds the name-overridden (English) versions
+  // from ws_pricing. Falling back to raw PRODUCTS handles edge-cases where
+  // window.PRODUCTS hasn't been populated yet.
+  const _productList = (window.PRODUCTS && window.PRODUCTS.length) ? window.PRODUCTS : PRODUCTS;
+  const p = _productList.find(x => x.name === productName);
   if (!p) return;
   const existing = cart.find(x => x.name === productName);
   if (existing) {
@@ -8601,9 +8607,9 @@ function exportReglaCSV() {
 
     // Process each line item
     (o.items || []).forEach(item => {
-      // Find product to get category for VSK
-      const prod = (window.PRODUCTS_BASE || PRODUCTS || []).find(p => p.name === item.name);
-      const cat = prod ? prod.cat : '';
+      // Find product to get category for VSK — check window.PRODUCTS first (has English names)
+      const prod = (window.PRODUCTS || window.PRODUCTS_BASE || PRODUCTS || []).find(p => p.name === item.name);
+      const cat = prod ? prod.cat : (item.cat || '');
       const vskRate = getVskRate(cat);
 
       const unitPrice = parseInt((item.price || '').replace(/[^\d]/g,'')) || 0;
