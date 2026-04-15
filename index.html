@@ -5482,10 +5482,7 @@ function showDetail(p) {
 
   const col    = CAT_COLORS[p.cat] || {bg:'#F3F0E8', text:'#5C5848'};
   const rtNum  = parsePrice(p.price);
-  const disc   = localStorage.getItem('ws_auth') ? (typeof getMyDiscount==='function' ? getMyDiscount() : 25) : null;
-  const wsNum  = (rtNum && disc !== null)
-    ? Math.round(rtNum * (1 - disc/100))
-    : parsePrice(p.wholesale || p.price);
+  const wsNum  = parsePrice(p.wholesale || p.price)
   const wsStr  = wsNum ? fmtISK(wsNum) : (p.wholesale || p.price || '—');
   const savedPct = (wsNum && rtNum && rtNum > wsNum)
     ? Math.round((1 - wsNum/rtNum)*100) : null;
