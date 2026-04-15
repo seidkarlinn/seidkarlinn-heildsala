@@ -5495,6 +5495,10 @@ function showDetail(p) {
   selectedName = p.name;
   renderGrid();
 
+  // disc: null when not logged in (hides prices), number when logged in
+  const _li = !!localStorage.getItem('ws_auth');
+  const disc = _li ? (typeof getMyDiscount === 'function' ? getMyDiscount() : 25) : null;
+
   document.getElementById('dpTitle').textContent = p.name.substring(0, 30) + (p.name.length > 30 ? '…' : '');
   document.getElementById('dpSub').textContent = p.cat;
 
