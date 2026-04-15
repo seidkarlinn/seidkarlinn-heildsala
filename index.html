@@ -6969,7 +6969,7 @@ function generateInvoicePDF(data) {
       <td style="padding:7px 8px;border-bottom:1px solid #eee;font-size:11px">${esc(l.name)}</td>
       <td style="padding:7px 8px;border-bottom:1px solid #eee;font-size:11px;text-align:center">${l.qty}</td>
       <td style="padding:7px 8px;border-bottom:1px solid #eee;font-size:11px;text-align:right">${fmtNum(l.unit)}</td>
-      <td style="padding:7px 8px;border-bottom:1px solid #eee;font-size:11px;text-align:center">${fmtPct(l.vskRate)}</td>
+      <td style="padding:7px 8px;border-bottom:1px solid #eee;font-size:11px;text-align:center">${fmtPct(l.vskRate)} (${fmtNum(l.vsk)} kr.)</td>
       <td style="padding:7px 8px;border-bottom:1px solid #eee;font-size:11px;text-align:right;font-weight:500">${fmtNum(l.total)}</td>
     </tr>`).join('');
 
