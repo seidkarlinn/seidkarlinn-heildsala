@@ -5392,6 +5392,13 @@ function renderGrid() {
   );
 
   if (sort==='name') filtered.sort((a,b) => a.name.localeCompare(b.name, 'is'));
+  else if (sort==='default' || !sort) {
+    // Group by category (alphabetical, matching sidebar order), preserve product order within each category
+    filtered.sort((a,b) => {
+      if (a.cat === b.cat) return 0;
+      return a.cat.localeCompare(b.cat, 'is');
+    });
+  }
   else if (sort==='price-asc') filtered.sort((a,b) => {
     const pa = parsePrice(a.wholesale), pb = parsePrice(b.wholesale);
     // Push no-price (0) items to the end so cheapest real products appear first
