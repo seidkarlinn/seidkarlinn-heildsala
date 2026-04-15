@@ -6974,7 +6974,7 @@ function generateInvoicePDF(data) {
   const vskSummary = totalVsk24 > 0 ? `
     <tr><td colspan="4" style="padding:4px 8px;font-size:11px;color:#555">Samtals án VSK</td>
         <td style="padding:4px 8px;font-size:11px;text-align:right">${fmtNum(totalExVsk)}</td></tr>
-    <tr><td colspan="4" style="padding:4px 8px;font-size:11px;color:#555">VSK 24%</td>
+    <tr><td colspan="4" style="padding:4px 8px;font-size:11px;color:#555">VSK ${(function(){var nz=lines.filter(function(l){return l.vskRate>0;});var ex=nz.reduce(function(s,l){return s+l.exVsk;},0);return ex>0?Math.round(totalVsk24/ex*100):24;})()}%</td>
         <td style="padding:4px 8px;font-size:11px;text-align:right">${fmtNum(totalVsk24)}</td></tr>
     ${totalVsk0 > 0 ? `<tr><td colspan="4" style="padding:4px 8px;font-size:11px;color:#555">VSK 0% (undanþegin)</td>
         <td style="padding:4px 8px;font-size:11px;text-align:right">${fmtNum(totalVsk0)}</td></tr>` : ''}` : `
