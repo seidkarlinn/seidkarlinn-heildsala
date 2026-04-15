@@ -5320,7 +5320,7 @@ function filterProducts() { buildSidebar(); renderGrid(); }
 
 function buildSidebar() {
   const q = document.getElementById('searchInput').value.toLowerCase();
-  const allCats = ['All', ...CATS];
+  const allCats = ['All', ...[...CATS].sort((a, b) => a.localeCompare(b, 'is'))];
   document.getElementById('catBtns').innerHTML = allCats.map(c => {
     const cnt = c==='All'
       ? (window.PRODUCTS||PRODUCTS).filter(p => !q || matchQ(p,q)).length
