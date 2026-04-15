@@ -5156,6 +5156,17 @@ function parseISK(str) {
 }
 
 function renderCartBody() {
+  // Refresh cart item prices from current PRODUCTS (reflects per-user category discounts)
+  try {
+    cart.forEach(function(it) {
+      var cur = (window.PRODUCTS || []).find(function(p){ return p && p.name === it.name; });
+      if (cur) {
+        if (cur.wholesale) it.wholesale = cur.wholesale;
+        if (cur.price)     it.price     = cur.price;
+        if (cur.img)       it.img       = cur.img;
+      }
+    });
+  } catch (e) {}
   const body = document.getElementById('cartBody');
   const totals = document.getElementById('cartTotals');
   const btn = document.getElementById('checkoutBtn');
