@@ -5120,11 +5120,8 @@ function addToCart(productName, qty) {
   if (existing) {
     existing.qty += qty;
   } else {
-    // Calculate wholesale price using customer's personal discount
-    const _disc = typeof getMyDiscount === 'function' ? getMyDiscount() : 25;
-    const _retail = parseInt((p.price||'').replace(/[^\d]/g,'')) || 0;
-    const _wsNum = _retail ? Math.round(_retail * (1 - _disc/100)) : 0;
-    const _wsStr = _wsNum ? fmtISK(_wsNum) : (p.wholesale || p.price);
+    // Use product's wholesale price directly (includes category discounts)
+    const _wsStr = p.wholesale || p.price;
     cart.push({
       name: p.name, price: p.price, wholesale: _wsStr,
       img: p.img, qty, variantId: null
@@ -6963,9 +6960,9 @@ function generateInvoicePDF(data) {
     <tr>
       <td style="padding:7px 8px;border-bottom:1px solid #eee;font-size:11px">${esc(l.name)}</td>
       <td style="padding:7px 8px;border-bottom:1px solid #eee;font-size:11px;text-align:center">${l.qty}</td>
-      <td style="padding:7px 8px;border-bottom:1px solid #eee;font-size:11px;text-align:right">${l.fmtNum(unit)}</td>
+      <td style="padding:7px 8px;border-bottom:1px solid #eee;font-size:11px;text-align:right">${fmtNum(l.unit)}</td>
       <td style="padding:7px 8px;border-bottom:1px solid #eee;font-size:11px;text-align:center">${fmtPct(l.vskRate)}</td>
-      <td style="padding:7px 8px;border-bottom:1px solid #eee;font-size:11px;text-align:right;font-weight:500">${l.fmtNum(total)}</td>
+      <td style="padding:7px 8px;border-bottom:1px solid #eee;font-size:11px;text-align:right;font-weight:500">${fmtNum(l.total)}</td>
     </tr>`).join('');
 
   const vskSummary = totalVsk24 > 0 ? `
