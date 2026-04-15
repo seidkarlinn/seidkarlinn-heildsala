@@ -5090,6 +5090,8 @@ function tryLogin() {
 }
 document.getElementById('gPass').addEventListener('keydown', e => { if(e.key==='Enter') tryLogin(); });
 document.getElementById('gUser').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('gPass').focus(); });
+// Belt-and-suspenders listener for sort — ensures renderGrid fires on all browsers/mobile
+document.getElementById('sortSel').addEventListener('change', () => renderGrid());
 // Restore login state — called again properly during full init
 // (early call removed to prevent before-initialization errors)
 
@@ -5378,8 +5380,22 @@ function renderGrid() {
   );
 
   if (sort==='name') filtered.sort((a,b) => a.name.localeCompare(b.name, 'is'));
-  else if (sort==='price-asc') filtered.sort((a,b) => parsePrice(a.wholesale) - parsePrice(b.wholesale));
-  else if (sort==='price-desc') filtered.sort((a,b) => parsePrice(b.wholesale) - parsePrice(a.wholesale));
+  else if (sort==='price-asc') filtered.sort((a,b) => {
+    const pa = parsePrice(a.wholesale), pb = parsePrice(b.wholesale);
+    // Push no-price (0) items to the end so cheapest real products appear first
+    if (!pa && !pb) return 0;
+    if (!pa) return 1;
+    if (!pb) return -1;
+    return pa - pb;
+  });
+  else if (sort==='price-desc') filtered.sort((a,b) => {
+    const pa = parsePrice(a.wholesale), pb = parsePrice(b.wholesale);
+    // Push no-price (0) items to the end so most expensive real products appear first
+    if (!pa && !pb) return 0;
+    if (!pa) return 1;
+    if (!pb) return -1;
+    return pb - pa;
+  });
 
   var _cf = document.getElementById('catFilter'); if (_cf) _cf.value = activeFilter === 'All' ? 'All' : activeFilter;
   document.getElementById('catSub').textContent = `${filtered.length} vörur · heildsöluverð sýnt`;
