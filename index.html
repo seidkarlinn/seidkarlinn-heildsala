@@ -1053,19 +1053,6 @@ aside.detail{
       <div>
         <select class="cat-title cat-dropdown" id="catFilter" onchange="setCatFilter(this.value)">
           <option value="All">Allar vörur</option>
-          <option value="Hunangsafuðir">Hunangsafuðir</option>
-          <option value="Frostþurrkaðir ávextir">Frostþurrkaðir ávextir</option>
-          <option value="Kakó">Kakó</option>
-          <option value="Drykkir">Drykkir</option>
-          <option value="Ólífuolíur">Ólífuolíur</option>
-          <option value="Matvörur">Matvörur</option>
-          <option value="Shilajit">Shilajit</option>
-          <option value="Sveppir">Sveppir</option>
-          <option value="Fæðubótarefni">Fæðubótarefni</option>
-          <option value="Hreinlætisvörur">Hreinlætisvörur</option>
-          <option value="Húðvörur">Húðvörur</option>
-          <option value="Hárvörur">Hárvörur</option>
-          <option value="Pakkatilboð">Pakkatilboð</option>
         </select>
         <div class="cat-sub" id="catSub"></div>
       </div>
@@ -5328,7 +5315,28 @@ function setCatFilter(val) {
   renderGrid();
 }
 
+function populateCatFilter() {
+  var sel = document.getElementById('catFilter');
+  if (!sel) return;
+  var src = (window.PRODUCTS && window.PRODUCTS.length) ? window.PRODUCTS : (window.PRODUCTS_BASE || []);
+  var cats = {};
+  src.forEach(function(p) { if (p && p.cat) cats[p.cat] = (cats[p.cat] || 0) + 1; });
+  // Sort by count desc then name
+  var sorted = Object.keys(cats).sort(function(a, b) { return cats[b] - cats[a] || a.localeCompare(b, 'is'); });
+  // Build options preserving current value
+  var current = sel.value || 'All';
+  var html = '<option value="All">Allar vörur</option>';
+  sorted.forEach(function(c) {
+    var safe = c.replace(/"/g, '&quot;');
+    html += '<option value="' + safe + '">' + safe + ' (' + cats[c] + ')</option>';
+  });
+  sel.innerHTML = html;
+  // Restore selection if still present
+  if (sorted.indexOf(current) !== -1 || current === 'All') sel.value = current;
+}
+
 function renderGrid() {
+  populateCatFilter();
   const q = document.getElementById('searchInput').value.toLowerCase();
   const sort = document.getElementById('sortSel').value;
   const stockOnly = document.getElementById('stockOnly').checked;
