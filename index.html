@@ -6969,14 +6969,15 @@ function generateInvoicePDF(data) {
       <td style="padding:7px 8px;border-bottom:1px solid #eee;font-size:11px">${esc(l.name)}</td>
       <td style="padding:7px 8px;border-bottom:1px solid #eee;font-size:11px;text-align:center">${l.qty}</td>
       <td style="padding:7px 8px;border-bottom:1px solid #eee;font-size:11px;text-align:right">${fmtNum(l.unit)}</td>
-      <td style="padding:7px 8px;border-bottom:1px solid #eee;font-size:11px;text-align:center">${fmtPct(l.vskRate)} (${fmtNum(l.vsk)} kr.)</td>
+      <td style="padding:7px 8px;border-bottom:1px solid #eee;font-size:11px;text-align:center">${fmtPct(l.vskRate)}</td>
+      <td style="padding:7px 8px;border-bottom:1px solid #eee;font-size:11px;text-align:right">${fmtNum(l.vsk != null ? l.vsk : l.vskAmt)}</td>
       <td style="padding:7px 8px;border-bottom:1px solid #eee;font-size:11px;text-align:right;font-weight:500">${fmtNum(l.total)}</td>
     </tr>`).join('');
 
   const vskSummary = `
-    <tr><td colspan="4" style="padding:4px 8px;font-size:11px;color:#555">Samtals án VSK</td>
+    <tr><td colspan="5" style="padding:4px 8px;font-size:11px;color:#555">Samtals án VSK</td>
         <td style="padding:4px 8px;font-size:11px;text-align:right">${fmtNum(totalExVsk)}</td></tr>
-    ${(totalVsk24 + (totalVsk0 > 0 ? 0 : 0)) >= 0 ? `<tr><td colspan="4" style="padding:4px 8px;font-size:11px;color:#555">Samtals VSK</td>
+    ${(totalVsk24 + (totalVsk0 > 0 ? 0 : 0)) >= 0 ? `<tr><td colspan="5" style="padding:4px 8px;font-size:11px;color:#555">Samtals VSK</td>
         <td style="padding:4px 8px;font-size:11px;text-align:right">${fmtNum(totalVsk24)}</td></tr>` : ''}`;
 
   const invoiceHTML = `<!DOCTYPE html>
@@ -7068,6 +7069,7 @@ function generateInvoicePDF(data) {
       <th style="text-align:center;width:8%">Magn</th>
       <th style="text-align:right;width:14%">Einingarverð</th>
       <th style="text-align:center;width:8%">VSK%</th>
+      <th style="text-align:right;width:12%">VSK kr.</th>
       <th style="text-align:right;width:14%">Samtals (ISK)</th>
     </tr>
   </thead>
@@ -7079,7 +7081,7 @@ function generateInvoicePDF(data) {
 <table class="totals-table">
   ${vskSummary}
   <tr class="grand-total">
-    <td colspan="4" style="padding:8px">Heildarupphæð</td>
+    <td colspan="5" style="padding:8px">Heildarupphæð</td>
     <td style="text-align:right;padding:8px">${fmt(totalGross)}</td>
   </tr>
 </table>
