@@ -6867,7 +6867,9 @@ function nextInvoiceNumber() {
 }
 
 function formatDate(date) {
-  return date.toLocaleDateString('is-IS', {day:'2-digit',month:'2-digit',year:'numeric'});
+  var d = (date instanceof Date) ? date : new Date(date);
+  if (isNaN(d.getTime())) return String(date || '');
+  return d.toLocaleDateString('is-IS', {day:'2-digit',month:'2-digit',year:'numeric'});
 }
 
 function parseISKNum(str) {
