@@ -7359,9 +7359,16 @@ function getProdKey(p) { return (p.url || p.name).replace(/[^a-zA-Z0-9íáéóú
 function applyPricingOverrides() {
   const ov = getEffectivePricing();
   const globalDisc = parseInt(getTheme().discountPct) || 25;
-  // Use window.PRODUCTS_BASE which is already filtered by ADMIN_DELETED
   const _src = window.PRODUCTS_BASE || (typeof PRODUCTS_BASE !== 'undefined' ? PRODUCTS_BASE : PRODUCTS);
-  window.PRODUCTS = _src.map(p => {
+  // Always strip deleted products from the catalog, even for admins.
+  // Admins still see them in the Vörustjórnun panel (allAdmProducts reads PRODUCTS_BASE directly).
+  const _localDel  = (function(){ try{ return JSON.parse(localStorage.getItem('ws_deleted_products')||'[]'); }catch{ return []; } })();
+  const _adminDel  = (typeof ADMIN_DELETED !== 'undefined') ? ADMIN_DELETED : [];
+  const _allDel    = _localDel.length ? [...new Set([..._adminDel, ..._localDel])] : _adminDel;
+  const _filtered  = _allDel.length
+    ? _src.filter(p => !_allDel.includes(p.url) && !_allDel.includes(p.name))
+    : _src;
+  window.PRODUCTS = _filtered.map(p => {
     const key = getProdKey(p);
     // Product-level override
     if (ov.prods && ov.prods[key]) {
