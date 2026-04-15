@@ -958,7 +958,6 @@ aside.detail{
     <span class="logo-badge" style="font-size:9px;padding:2px 5px;line-height:1;vertical-align:middle;align-self:center">Heildsala</span>
   </div>
   <div class="hright">
-    <div class="h-disc" id="hDisc" style="display:none">Heildsöluverð: <span id="hDiscPct">25% afsláttur</span></div>
     <button class="cart-btn" id="hCartBtn" onclick="toggleCart()" style="display:none">
       🛒 Karfa
       <span class="cart-count" id="cartCount">0</span>
@@ -7883,16 +7882,16 @@ function updateHeaderAuth() {
     if (userChip)  { userChip.style.display = 'flex'; }
     if (userName)  userName.textContent = auth;
     if (cartBtn)   cartBtn.style.display   = 'inline-flex';
-    if (discEl)    discEl.style.display    = 'flex';
+    if (discEl)    if (discEl) discEl.style.display    = 'flex';
     if (discPct) {
       const disc = typeof getMyDiscount === 'function' ? getMyDiscount() : 25;
-      discPct.textContent = disc + '% afsláttur';
+      if (discPct) discPct.textContent = disc + '% afsláttur';
     }
   } else {
     if (loginBtn)  loginBtn.style.display  = 'inline-block';
     if (userChip)  userChip.style.display  = 'none';
     if (cartBtn)   cartBtn.style.display   = 'none';
-    if (discEl)    discEl.style.display    = 'none';
+    if (discEl)    if (discEl) discEl.style.display    = 'none';
   }
 }
 
