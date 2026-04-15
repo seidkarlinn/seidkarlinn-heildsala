@@ -5766,12 +5766,8 @@ function logOrder(orderId, total, cartItems, buyerName, buyerEmail, buyerUser, n
     teyaSessionId: teyaSessionId || null,
     refunds: [],
     items: (cartItems||[]).map(i=>{
-      // Recalculate price with customer's actual discount at order time
-      const _disc = typeof getMyDiscount === 'function' ? getMyDiscount() : 25;
-      const _retail = parseInt((i.price||'').replace(/[^\d]/g,'')) || 0;
-      const _wsNum = _retail ? Math.round(_retail * (1 - _disc/100)) : 0;
-      const _wsStr = _wsNum ? fmtISK(_wsNum) : (i.wholesale||i.price);
-      return {name:i.name, qty:i.qty, price:_wsStr};
+      // Store actual wholesale price from cart (already reflects per-user category discounts)
+      return {name:i.name, qty:i.qty, price:(i.wholesale||i.price)};
     }),
   });
   saveOrders(orders);
