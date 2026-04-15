@@ -5301,6 +5301,20 @@ const CAT_COLORS = {
 };
 const CATS = Object.keys(CAT_COLORS);
 
+// Categories that should also appear inside another category
+// e.g. selecting Fæðubótarefni also shows Shilajit products
+const CAT_INCLUDES = {
+  'Fæðubótarefni': ['Shilajit'],
+};
+
+// Helper: does product p match the given filter?
+function catMatch(p, filter) {
+  if (filter === 'All') return true;
+  if (p.cat === filter) return true;
+  const extras = CAT_INCLUDES[filter] || [];
+  return extras.includes(p.cat);
+}
+
 let activeFilter = 'All', viewMode = 'grid', selectedName = null;
 
 function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
@@ -5322,9 +5336,7 @@ function buildSidebar() {
   const q = document.getElementById('searchInput').value.toLowerCase();
   const allCats = ['All', ...[...CATS].sort((a, b) => a.localeCompare(b, 'is'))];
   document.getElementById('catBtns').innerHTML = allCats.map(c => {
-    const cnt = c==='All'
-      ? (window.PRODUCTS||PRODUCTS).filter(p => !q || matchQ(p,q)).length
-      : (window.PRODUCTS||PRODUCTS).filter(p => p.cat===c && (!q || matchQ(p,q))).length;
+    const cnt = (window.PRODUCTS||PRODUCTS).filter(p => catMatch(p, c) && (!q || matchQ(p,q))).length;
     if (cnt===0 && c!=='All') return '';
     const col = CAT_COLORS[c];
     const label = c==='All' ? 'Allar vörur' : c;
@@ -5374,7 +5386,7 @@ function renderGrid() {
     window.PRODUCTS = (window.PRODUCTS_BASE || PRODUCTS_BASE || PRODUCTS).slice();
   }
   let filtered = window.PRODUCTS.filter(p =>
-    (activeFilter==='All' || p.cat===activeFilter)
+    catMatch(p, activeFilter)
     && (!q || matchQ(p,q))
     && (!stockOnly || p.inStock)
   );
