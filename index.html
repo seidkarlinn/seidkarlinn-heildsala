@@ -8102,19 +8102,9 @@ function saveMyProfile() {
   }
   // else: user may exist only in ACCOUNTS (no vidskm record) — handled below
 
-  // Update ACCOUNTS / ws_buyer_accounts
-  // Rename key if username changed
-  if (newUser !== auth && ACCOUNTS[auth]) {
-    const oldAcc = ACCOUNTS[auth];
-    ACCOUNTS[newUser] = {
-      ...oldAcc,
-      pass: newPass ? newPass : oldAcc.pass,
-    };
-    delete ACCOUNTS[auth];
-  } else if (ACCOUNTS[auth]) {
-    if (newPass) ACCOUNTS[auth] = { ...ACCOUNTS[auth], pass: newPass };
-  }
-  localStorage.setItem('ws_buyer_accounts', JSON.stringify(ACCOUNTS));
+  // Rebuild ws_buyer_accounts from the updated ws_vidskm list
+  // (avoids overwriting server data with a stale in-memory ACCOUNTS object)
+  if (idx >= 0) syncVidskToAccounts(list);
 
   // Update session
   if (newUser !== auth) {
@@ -8951,6 +8941,10 @@ try {
     try {
       if (typeof _dpCache !== 'undefined') { try { for (var _k in _dpCache) delete _dpCache[_k]; } catch(e) {} }
       applyPricingOverrides();
+      // Rebuild ACCOUNTS from ws_vidskm so buyer login always works
+      if (typeof syncVidskToAccounts === 'function' && typeof getVidskm === 'function') {
+        syncVidskToAccounts(getVidskm());
+      }
       if (typeof rebuildLiveCatalog === 'function') rebuildLiveCatalog();
       if (typeof renderGrid === 'function') renderGrid();
       if (typeof updateHeaderAuth === 'function') updateHeaderAuth();
