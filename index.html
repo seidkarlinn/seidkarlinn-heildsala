@@ -7548,7 +7548,10 @@ function renderPricingPanel(userKey) {
 function renderCategoryPricingTab() {
   const ov = _pendingPricing || {};
   const globalDisc = parseInt(getTheme().discountPct) || 25;
-  const cats = [...new Set((window.PRODUCTS_BASE||PRODUCTS_BASE||PRODUCTS).map(p=>p.cat))].sort();
+  // Merge CAT_COLORS keys (all defined categories, including ones with no products yet)
+  // with any additional categories found on actual products, then sort.
+  const _prodCats = (window.PRODUCTS_BASE||PRODUCTS_BASE||PRODUCTS).map(p=>p.cat);
+  const cats = [...new Set([...Object.keys(CAT_COLORS), ..._prodCats])].sort();
 
   return `
     <p style="font-size:11px;color:var(--ink3);margin-bottom:1rem">
