@@ -78,6 +78,15 @@
     }
   };
 
+  // Exposed helper: write server-fetched data into localStorage WITHOUT
+  // triggering a push back to the server. Use this in all "read from server"
+  // paths to prevent accidental overwrite of newer local writes.
+  window._wsReceiveFromServer = function(key, value) {
+    try {
+      originalSetItem(key, typeof value === 'string' ? value : JSON.stringify(value));
+    } catch(e) {}
+  };
+
   window._wsSyncReady = false;
   fetch(API + "?key=_all")
     .then(function (res) { return res.json(); })

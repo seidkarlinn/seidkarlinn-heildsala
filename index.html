@@ -5922,8 +5922,16 @@ function showPanel(panel) {
       .then(r => r.json())
       .then(j => {
         if (!j.ok || !Array.isArray(j.value)) return;
-        localStorage.setItem('ws_vidskm', JSON.stringify(j.value));
-        if (typeof syncVidskToAccounts === 'function') syncVidskToAccounts(j.value);
+        // Use bypass helper so ws-sync-layer doesn't push server data straight
+        // back to the server (would overwrite any newer writes in flight).
+        if (window._wsReceiveFromServer) {
+          window._wsReceiveFromServer('ws_vidskm', j.value);
+        } else {
+          localStorage.setItem('ws_vidskm', JSON.stringify(j.value));
+        }
+        // Update in-memory ACCOUNTS only — ws_buyer_accounts on the server is
+        // already correct; we don't want to overwrite it with a derived copy.
+        syncVidskToAccounts(j.value, true);
         if (currentPanel === 'vidskm') renderVidskm(); // re-render with fresh data
       })
       .catch(() => {});
@@ -8044,10 +8052,17 @@ function openProfileModal() {
     .then(r => r.json())
     .then(j => {
       if (!j.ok || !Array.isArray(j.value)) return;
-      // Update localStorage so future reads are fresh
-      localStorage.setItem('ws_vidskm', JSON.stringify(j.value));
-      // Also refresh ws_buyer_accounts from updated data
-      if (typeof syncVidskToAccounts === 'function') syncVidskToAccounts(j.value);
+      // Bypass ws-sync push-back: writing server data back via localStorage.setItem
+      // would trigger ws-sync-layer to push it to the server again, potentially
+      // overwriting a newer save that happened while the fetch was in-flight.
+      if (window._wsReceiveFromServer) {
+        window._wsReceiveFromServer('ws_vidskm', j.value);
+      } else {
+        localStorage.setItem('ws_vidskm', JSON.stringify(j.value));
+      }
+      // Update in-memory ACCOUNTS only (server's ws_buyer_accounts is already
+      // authoritative — don't overwrite it with a derived copy).
+      syncVidskToAccounts(j.value, true);
       // Re-populate form if modal is still open
       if (!document.getElementById('profileModal').classList.contains('hidden')) {
         _populate(j.value.find(v => v.user === auth) || {});
@@ -8115,25 +8130,47 @@ function saveMyProfile() {
     }
   }
 
-  // Update ws_vidskm record
+  // Update ws_vidskm record (single source of truth for both sides)
   const list = getVidskm();
   const idx  = list.findIndex(v => v.user === auth);
   if (idx >= 0) {
+    // Update existing record, preserving all fields the user can't see
     list[idx] = {
       ...list[idx],
       user:    newUser,
-      kt:      newKt    || list[idx].kt    || '',
-      netfang: newEmail || list[idx].netfang || '',
+      kt:      newKt    !== '' ? newKt    : (list[idx].kt     || ''),
+      netfang: newEmail !== '' ? newEmail : (list[idx].netfang || ''),
       pass:    newPass  ? newPass : list[idx].pass,
       updated: new Date().toLocaleDateString('is-IS'),
     };
-    saveVidskm(list);
+  } else {
+    // User exists only in ws_buyer_accounts (legacy path) — create a minimal
+    // ws_vidskm entry so they appear in the admin panel and are fully editable.
+    const existingAcc = (() => {
+      try { const ba = JSON.parse(localStorage.getItem('ws_buyer_accounts') || '{}'); return ba[auth] || {}; } catch { return {}; }
+    })();
+    list.push({
+      id:       'vm_' + Date.now(),
+      user:     newUser,
+      pass:     newPass  ? newPass  : (typeof existingAcc === 'object' ? existingAcc.pass : existingAcc) || '',
+      nafn:     typeof existingAcc === 'object' ? (existingAcc.name || auth) : auth,
+      kt:       newKt,
+      netfang:  newEmail,
+      heimili:  '',
+      postnr:   '',
+      simi:     '',
+      tegund:   'heildsala',
+      athugasemd: '',
+      stada:    typeof existingAcc === 'object' && existingAcc.active === false ? 'inactive' : 'active',
+      created:  new Date().toLocaleDateString('is-IS'),
+      updated:  new Date().toLocaleDateString('is-IS'),
+    });
   }
-  // else: user may exist only in ACCOUNTS (no vidskm record) — handled below
-
-  // Rebuild ws_buyer_accounts from the updated ws_vidskm list
-  // (avoids overwriting server data with a stale in-memory ACCOUNTS object)
-  if (idx >= 0) syncVidskToAccounts(list);
+  // ws_vidskm is the single source of truth — save it to localStorage and
+  // let ws-sync-layer push it to Netlify Blobs automatically.
+  saveVidskm(list);
+  // Rebuild ws_buyer_accounts from the updated list so login keeps working.
+  syncVidskToAccounts(list);
 
   // Update session
   if (newUser !== auth) {
@@ -8286,6 +8323,41 @@ function openVmModal(id) {
 
   vmSwitchTab('grunnur');
   document.getElementById('vmModal').classList.remove('hidden');
+
+  // Fetch fresh data from server so admin always edits the latest version.
+  // The form is pre-filled with cached data above (instant open); we silently
+  // update the fields once the server responds — unless the admin has already
+  // started typing (we only re-fill if the modal is still open on the same record).
+  if (id) {
+    fetch('/.netlify/functions/ws-data?key=ws_vidskm')
+      .then(r => r.json())
+      .then(j => {
+        if (!j.ok || !Array.isArray(j.value)) return;
+        // Store fresh data without push-back
+        if (window._wsReceiveFromServer) {
+          window._wsReceiveFromServer('ws_vidskm', j.value);
+        }
+        syncVidskToAccounts(j.value, true); // update in-memory ACCOUNTS only
+        // Re-populate if modal is still open on the SAME record
+        if (vmEditId !== id || document.getElementById('vmModal').classList.contains('hidden')) return;
+        const fresh = j.value.find(x => x.id === id);
+        if (!fresh) return;
+        document.getElementById('vmModalTitle').textContent = fresh.nafn || 'Viðskiptamaður';
+        document.getElementById('vmModalMeta').textContent  = 'Skráður: ' + (fresh.created || '—');
+        document.getElementById('vmKt').value         = fresh.kt         || '';
+        document.getElementById('vmNafn').value       = fresh.nafn       || '';
+        document.getElementById('vmHeimili').value    = fresh.heimili    || '';
+        document.getElementById('vmPostnr').value     = fresh.postnr     || '';
+        document.getElementById('vmSimi').value       = fresh.simi       || '';
+        document.getElementById('vmNetfang').value    = fresh.netfang    || '';
+        document.getElementById('vmTegund').value     = fresh.tegund     || 'heildsala';
+        document.getElementById('vmAthugasemd').value = fresh.athugasemd || '';
+        document.getElementById('vmStada').value      = fresh.stada      || 'active';
+        document.getElementById('vmUser').value       = fresh.user       || '';
+        document.getElementById('vmPass').value       = fresh.pass       || '';
+      })
+      .catch(() => {}); // silently keep cached data on network error
+  }
 }
 
 function closeVmModal() {
@@ -8353,7 +8425,9 @@ function deleteVm() {
 }
 
 // Sync customer logins into ACCOUNTS so they can log in immediately
-function syncVidskToAccounts(list) {
+// skipWrite=true: only update in-memory ACCOUNTS (used when we just read data
+// from the server and don't want to push a stale/derived copy back).
+function syncVidskToAccounts(list, skipWrite) {
   // Remove all old customer accounts (those created from viðskiptamannakerfi)
   // Keep default accounts that aren't linked to a customer
   const vmUsers = list.map(v => v.user).filter(Boolean);
@@ -8378,7 +8452,9 @@ function syncVidskToAccounts(list) {
     }
   });
 
-  localStorage.setItem('ws_buyer_accounts', JSON.stringify(ACCOUNTS));
+  if (!skipWrite) {
+    localStorage.setItem('ws_buyer_accounts', JSON.stringify(ACCOUNTS));
+  }
 }
 
 function exportVmCsv() {
