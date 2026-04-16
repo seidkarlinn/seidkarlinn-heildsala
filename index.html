@@ -971,7 +971,7 @@ aside.detail{
     </button>
     <!-- Logged in -->
     <div id="hUserChip" style="display:none;align-items:center;gap:10px">
-      <span id="hUserName" style="font-size:11px;color:rgba(255,255,255,.6)"></span>
+      <button id="hUserName" onclick="openProfileModal()" title="Breyta prófíl" style="font-size:11px;color:rgba(255,255,255,.6);background:none;border:none;padding:2px 4px;border-radius:4px;cursor:pointer;font-family:inherit;transition:background .15s,color .15s" onmouseover="this.style.background='rgba(255,255,255,.12)';this.style.color='#fff'" onmouseout="this.style.background='none';this.style.color='rgba(255,255,255,.6)'"></button>
       <button class="logout-btn" onclick="logout()">Útskrá</button>
     </div>
   </div>
@@ -1322,6 +1322,56 @@ aside.detail{
       <div style="display:flex;gap:8px">
         <button class="adm-btn secondary" onclick="closeVmModal()">Hætta við</button>
         <button class="adm-btn primary" onclick="saveVm()">✓ Vista</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- My Profile Modal -->
+<div class="vm-modal-overlay hidden" id="profileModal" onclick="if(event.target===this)closeProfileModal()">
+  <div class="vm-modal" style="width:min(480px,100%)">
+    <div class="vm-modal-hdr">
+      <div class="vm-modal-title">👤 Mínar upplýsingar</div>
+      <button class="adm-modal-close" onclick="closeProfileModal()">✕</button>
+    </div>
+    <div class="vm-modal-body">
+      <div class="vm-form-grid" style="margin-bottom:.875rem">
+        <div>
+          <label class="vm-form-label">Notandanafn *</label>
+          <input class="vm-form-input" id="profUser" placeholder="notandanafn" autocomplete="off">
+          <div id="profUserWarn" style="font-size:10px;color:var(--red);margin-top:3px;min-height:14px"></div>
+        </div>
+        <div>
+          <label class="vm-form-label">Kennitala</label>
+          <input class="vm-form-input" id="profKt" placeholder="000000-0000" maxlength="11">
+          <div id="profKtWarn" style="font-size:10px;color:var(--red);margin-top:3px;min-height:14px"></div>
+        </div>
+      </div>
+      <div class="vm-form-row" style="margin-bottom:.875rem">
+        <label class="vm-form-label">Netfang</label>
+        <input class="vm-form-input" id="profEmail" type="email" placeholder="netfang@fyrirtaeki.is">
+      </div>
+      <div style="background:var(--paper2);border:1.5px solid var(--paper3);border-radius:var(--r);padding:.875rem;margin-bottom:.875rem">
+        <div style="font-size:11px;font-weight:600;color:var(--ink);margin-bottom:.625rem">🔒 Skipta um lykilorð</div>
+        <div style="font-size:11px;color:var(--ink3);margin-bottom:.75rem">Láttu þessa reiti vera tóma ef þú vilt ekki skipta um lykilorð.</div>
+        <div class="vm-form-grid">
+          <div>
+            <label class="vm-form-label">Nýtt lykilorð</label>
+            <input class="vm-form-input" id="profPass" type="password" placeholder="••••••••" autocomplete="new-password">
+          </div>
+          <div>
+            <label class="vm-form-label">Staðfesta lykilorð</label>
+            <input class="vm-form-input" id="profPassConfirm" type="password" placeholder="••••••••" autocomplete="new-password">
+          </div>
+        </div>
+        <div id="profPassWarn" style="font-size:10px;color:var(--red);margin-top:6px;min-height:14px"></div>
+      </div>
+    </div>
+    <div class="vm-modal-footer">
+      <div style="font-size:11px;color:var(--ink3)" id="profModalMeta"></div>
+      <div style="display:flex;gap:8px">
+        <button class="adm-btn secondary" onclick="closeProfileModal()">Hætta við</button>
+        <button class="adm-btn primary" onclick="saveMyProfile()">✓ Vista breytingar</button>
       </div>
     </div>
   </div>
@@ -7951,6 +8001,130 @@ function updateHeaderAuth() {
 }
 
 window.__isLoggedIn = function() { return !!localStorage.getItem('ws_auth'); };
+
+// ══════════════════════════════════════════════════════
+// MY PROFILE — self-service edit for logged-in buyers
+// ══════════════════════════════════════════════════════
+
+function openProfileModal() {
+  const auth = localStorage.getItem('ws_auth');
+  if (!auth) return;
+
+  // Find this user's record in ws_vidskm
+  const list = getVidskm();
+  const rec = list.find(v => v.user === auth) || {};
+
+  document.getElementById('profUser').value        = auth;
+  document.getElementById('profKt').value          = rec.kt     || '';
+  document.getElementById('profEmail').value       = rec.netfang|| '';
+  document.getElementById('profPass').value        = '';
+  document.getElementById('profPassConfirm').value = '';
+  document.getElementById('profUserWarn').textContent = '';
+  document.getElementById('profKtWarn').textContent   = '';
+  document.getElementById('profPassWarn').textContent = '';
+  document.getElementById('profModalMeta').textContent = rec.nafn ? ('👤 ' + rec.nafn) : '';
+
+  document.getElementById('profileModal').classList.remove('hidden');
+}
+
+function closeProfileModal() {
+  document.getElementById('profileModal').classList.add('hidden');
+}
+
+function saveMyProfile() {
+  const auth = localStorage.getItem('ws_auth');
+  if (!auth) return;
+
+  const newUser  = document.getElementById('profUser').value.trim();
+  const newKt    = document.getElementById('profKt').value.trim();
+  const newEmail = document.getElementById('profEmail').value.trim();
+  const newPass  = document.getElementById('profPass').value;
+  const newPass2 = document.getElementById('profPassConfirm').value;
+
+  // Reset warnings
+  document.getElementById('profUserWarn').textContent = '';
+  document.getElementById('profKtWarn').textContent   = '';
+  document.getElementById('profPassWarn').textContent = '';
+
+  // Validate username
+  if (!newUser) {
+    document.getElementById('profUserWarn').textContent = '⚠️ Notandanafn má ekki vera tómt';
+    return;
+  }
+  if (newUser !== auth) {
+    // Check for conflicts
+    const list2 = getVidskm();
+    if (ADMIN_ACCOUNTS && ADMIN_ACCOUNTS[newUser]) {
+      document.getElementById('profUserWarn').textContent = '⚠️ Þetta notandanafn er frátekið';
+      return;
+    }
+    const conflict = list2.find(v => v.user === newUser && v.user !== auth);
+    if (conflict) {
+      document.getElementById('profUserWarn').textContent = '⚠️ Notandanafn er þegar í notkun';
+      return;
+    }
+  }
+
+  // Validate kennitala (if provided) — must be 10 digits optionally with dash
+  if (newKt) {
+    const ktDigits = newKt.replace(/-/g, '');
+    if (!/^\d{10}$/.test(ktDigits)) {
+      document.getElementById('profKtWarn').textContent = '⚠️ Kennitala þarf að vera 10 tölustafir';
+      return;
+    }
+  }
+
+  // Validate password match
+  if (newPass || newPass2) {
+    if (newPass !== newPass2) {
+      document.getElementById('profPassWarn').textContent = '⚠️ Lykilorð stemma ekki';
+      return;
+    }
+    if (newPass.length < 4) {
+      document.getElementById('profPassWarn').textContent = '⚠️ Lykilorð þarf að vera að minnsta kosti 4 stafir';
+      return;
+    }
+  }
+
+  // Update ws_vidskm record
+  const list = getVidskm();
+  const idx  = list.findIndex(v => v.user === auth);
+  if (idx >= 0) {
+    list[idx] = {
+      ...list[idx],
+      user:    newUser,
+      kt:      newKt    || list[idx].kt    || '',
+      netfang: newEmail || list[idx].netfang || '',
+      pass:    newPass  ? newPass : list[idx].pass,
+      updated: new Date().toLocaleDateString('is-IS'),
+    };
+    saveVidskm(list);
+  }
+  // else: user may exist only in ACCOUNTS (no vidskm record) — handled below
+
+  // Update ACCOUNTS / ws_buyer_accounts
+  // Rename key if username changed
+  if (newUser !== auth && ACCOUNTS[auth]) {
+    const oldAcc = ACCOUNTS[auth];
+    ACCOUNTS[newUser] = {
+      ...oldAcc,
+      pass: newPass ? newPass : oldAcc.pass,
+    };
+    delete ACCOUNTS[auth];
+  } else if (ACCOUNTS[auth]) {
+    if (newPass) ACCOUNTS[auth] = { ...ACCOUNTS[auth], pass: newPass };
+  }
+  localStorage.setItem('ws_buyer_accounts', JSON.stringify(ACCOUNTS));
+
+  // Update session
+  if (newUser !== auth) {
+    localStorage.setItem('ws_auth', newUser);
+  }
+
+  closeProfileModal();
+  updateHeaderAuth();
+  showToast('✓ Upplýsingar uppfærðar');
+}
 
 
 // ══════════════════════════════════════════════════════
