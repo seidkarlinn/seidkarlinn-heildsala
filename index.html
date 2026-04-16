@@ -5291,6 +5291,25 @@ function renderCartBody() {
       ? '📄 Reikningsviðskipti · 14 dagar'
       : `⚠️ Lágmark: ${fmt(MOQ)} (vantar ${fmt(MOQ - totalWs)})`;
   }
+
+  // Auto-fill buyer fields from logged-in user's profile (only fills empty fields
+  // so manual edits made during the session are not overwritten)
+  try {
+    const _auth = localStorage.getItem('ws_auth');
+    if (_auth) {
+      const _viðskm = getVidskm();
+      const _rec = _viðskm.find(v => v.user === _auth) || {};
+      const _fill = (id, val) => {
+        const el = document.getElementById(id);
+        if (el && !el.value && val) el.value = val;
+      };
+      _fill('buyerName',  _rec.nafn   || '');
+      _fill('buyerEmail', _rec.netfang|| '');
+      _fill('buyerKt',    _rec.kt     || '');
+      const addr = [_rec.heimili, _rec.postnr].filter(Boolean).join(', ');
+      _fill('buyerAddr',  addr);
+    }
+  } catch(e) {}
 }
 
 async function checkout() {
