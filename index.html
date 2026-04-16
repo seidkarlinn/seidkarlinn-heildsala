@@ -5916,7 +5916,18 @@ function showPanel(panel) {
   if (panel === 'products') renderProductsPanel();
   if (panel === 'theme')    renderThemePanel();
   if (panel === 'pricing')  renderPricingPanel();
-  if (panel === 'vidskm')   renderVidskm();
+  if (panel === 'vidskm') {
+    renderVidskm(); // render with cached data immediately
+    fetch('/.netlify/functions/ws-data?key=ws_vidskm')
+      .then(r => r.json())
+      .then(j => {
+        if (!j.ok || !Array.isArray(j.value)) return;
+        localStorage.setItem('ws_vidskm', JSON.stringify(j.value));
+        if (typeof syncVidskToAccounts === 'function') syncVidskToAccounts(j.value);
+        if (currentPanel === 'vidskm') renderVidskm(); // re-render with fresh data
+      })
+      .catch(() => {});
+  }
   if (panel === 'catalog')  { buildSidebar(); renderGrid(); }
   updateFloatBtn();
 }
