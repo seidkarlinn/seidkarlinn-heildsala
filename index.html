@@ -8010,21 +8010,39 @@ function openProfileModal() {
   const auth = localStorage.getItem('ws_auth');
   if (!auth) return;
 
-  // Find this user's record in ws_vidskm
-  const list = getVidskm();
-  const rec = list.find(v => v.user === auth) || {};
+  // Show modal immediately with local data while we fetch fresh data from server
+  function _populate(rec) {
+    document.getElementById('profUser').value        = rec.user   || auth;
+    document.getElementById('profKt').value          = rec.kt     || '';
+    document.getElementById('profEmail').value       = rec.netfang|| '';
+    document.getElementById('profPass').value        = '';
+    document.getElementById('profPassConfirm').value = '';
+    document.getElementById('profUserWarn').textContent = '';
+    document.getElementById('profKtWarn').textContent   = '';
+    document.getElementById('profPassWarn').textContent = '';
+    document.getElementById('profModalMeta').textContent = rec.nafn ? ('👤 ' + rec.nafn) : '';
+  }
 
-  document.getElementById('profUser').value        = auth;
-  document.getElementById('profKt').value          = rec.kt     || '';
-  document.getElementById('profEmail').value       = rec.netfang|| '';
-  document.getElementById('profPass').value        = '';
-  document.getElementById('profPassConfirm').value = '';
-  document.getElementById('profUserWarn').textContent = '';
-  document.getElementById('profKtWarn').textContent   = '';
-  document.getElementById('profPassWarn').textContent = '';
-  document.getElementById('profModalMeta').textContent = rec.nafn ? ('👤 ' + rec.nafn) : '';
-
+  // Populate with cached data first so modal opens instantly
+  const cached = getVidskm();
+  _populate(cached.find(v => v.user === auth) || {});
   document.getElementById('profileModal').classList.remove('hidden');
+
+  // Then fetch fresh data from server and update the form if it's still open
+  fetch('/.netlify/functions/ws-data?key=ws_vidskm')
+    .then(r => r.json())
+    .then(j => {
+      if (!j.ok || !Array.isArray(j.value)) return;
+      // Update localStorage so future reads are fresh
+      localStorage.setItem('ws_vidskm', JSON.stringify(j.value));
+      // Also refresh ws_buyer_accounts from updated data
+      if (typeof syncVidskToAccounts === 'function') syncVidskToAccounts(j.value);
+      // Re-populate form if modal is still open
+      if (!document.getElementById('profileModal').classList.contains('hidden')) {
+        _populate(j.value.find(v => v.user === auth) || {});
+      }
+    })
+    .catch(() => {}); // silently ignore — cached data already shown
 }
 
 function closeProfileModal() {
