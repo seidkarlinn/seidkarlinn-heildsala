@@ -5390,16 +5390,26 @@ let activeFilter = 'All', viewMode = 'grid', selectedName = null;
 function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function parsePrice(p) { return p ? parseInt(p.replace(/[^\d]/g,'')) || 0 : 0; }
 // Extract size in normalised grams/ml so larger packs sort first.
-// Handles: 400g, 1kg, 500ml, 1L, 1ltr, 240 capsules/hylki (treated as units ~1g each)
+// Handles: 400g, 1kg, 500ml, 1L, 1ltr, 240 capsules/hylki
 function parseSize(name) {
   if (!name) return 0;
   const m = name.match(/(\d+(?:[.,]\d+)?)\s*(kg|g|ltr|litr|l(?=[^a-z]|$)|ml|hylki|caps?u?l?e?s?|stk)/i);
   if (!m) return 0;
   const val = parseFloat(m[1].replace(',','.'));
   const unit = m[2].toLowerCase();
-  if (unit === 'kg')                             return val * 1000;
+  if (unit === 'kg')                                      return val * 1000;
   if (unit === 'l' || unit === 'ltr' || unit === 'litr') return val * 1000;
-  return val; // g, ml, hylki, caps — treat as-is for relative comparison
+  return val;
+}
+// Strip all size tokens from a product name to get the "base" name used for grouping.
+// e.g. "Raw Mountain Honey 1kg" → "Raw Mountain Honey"
+//      "Blood Orange-Fennel Toothpaste 250ml" → "Blood Orange-Fennel Toothpaste"
+function baseName(name) {
+  if (!name) return '';
+  return name
+    .replace(/\b\d+(?:[.,]\d+)?\s*(?:kg|g|ltr|litr|l(?=\b)|ml|hylki|caps?u?l?e?s?|stk)\b/gi, '')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 function matchQ(p, q) {
   return p.name.toLowerCase().includes(q) || p.desc.toLowerCase().includes(q)
@@ -5474,16 +5484,21 @@ function renderGrid() {
   );
 
   if (sort==='name') filtered.sort((a,b) => {
-    const nc = a.name.localeCompare(b.name, 'is');
-    if (nc !== 0) return nc;
-    return parseSize(b.name) - parseSize(a.name); // larger size first when base name is equal
+    // Sort by base name alphabetically, then largest size first within each group
+    const bn = baseName(a.name).localeCompare(baseName(b.name), 'is');
+    if (bn !== 0) return bn;
+    return parseSize(b.name) - parseSize(a.name);
   });
   else if (sort==='default' || !sort) {
-    // Group by category (alphabetical), then larger sizes before smaller within the same product line
+    // 1) Group by category (a→z)
+    // 2) Within category: group by base name (a→z) so all sizes of a product are adjacent
+    // 3) Within base-name group: largest size first
     filtered.sort((a,b) => {
       const cc = a.cat.localeCompare(b.cat, 'is');
       if (cc !== 0) return cc;
-      return parseSize(b.name) - parseSize(a.name); // larger size first
+      const bn = baseName(a.name).localeCompare(baseName(b.name), 'is');
+      if (bn !== 0) return bn;
+      return parseSize(b.name) - parseSize(a.name);
     });
   }
   else if (sort==='price-asc') filtered.sort((a,b) => {
