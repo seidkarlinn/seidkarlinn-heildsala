@@ -7196,19 +7196,6 @@ function renderThemePanel() {
     </div>
 
     <div class="theme-section">
-      <div class="theme-section-title">🎨 Litir</div>
-      <div class="theme-grid">
-        ${colorRow('colorHeader','Haus bakgrunnur')}
-        ${colorRow('colorInk','Textalitur')}
-        ${colorRow('colorPaper','Aðalbakgrunnur')}
-        ${colorRow('colorPaper2','Auðbakgrunnur')}
-        ${colorRow('colorGreen','Aðallitur (grænn)')}
-        ${colorRow('colorGreenL','Ljós aðallitur')}
-        ${colorRow('colorGold','Gulllítur')}
-      </div>
-    </div>
-
-    <div class="theme-section">
       <div class="theme-section-title">✏️ Leturgerð</div>
       <div class="theme-grid">
         <div class="theme-row">
@@ -7249,11 +7236,6 @@ function renderThemePanel() {
         <div class="theme-row">
           <div class="theme-label">Innskráning — undirtitill</div>
           <input class="theme-input" value="${esc(t.gateSub)}" oninput="liveTheme('gateSub',this.value)">
-        </div>
-        <div class="theme-row">
-          <div class="theme-label">Heildsöluafsláttur (%)</div>
-          <input class="theme-input" type="number" value="${t.discountPct}" min="1" max="99"
-            oninput="liveTheme('discountPct',this.value)">
         </div>
         <div class="theme-row">
           <div class="theme-label">Lágmarksupphæð (MOQ)</div>
