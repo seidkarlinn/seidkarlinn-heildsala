@@ -1028,6 +1028,9 @@ aside.detail{
         <span class="adm-arrow">▼</span>
       </div>
       <div class="adm-drop-body" id="admDropBody">
+        <button class="adm-side-btn" id="admBtnCatalog" onclick="showPanel('catalog')">
+          🛒 Vörulisti
+        </button>
         <button class="adm-side-btn" id="admBtnOrders" onclick="showPanel('orders')">
           📋 Pantanir <span id="pendingBadge" style="margin-left:auto;font-size:9px;background:var(--gold-l);color:var(--gold-b);padding:1px 6px;border-radius:99px;"></span>
         </button>
@@ -1043,9 +1046,6 @@ aside.detail{
         <button class="adm-side-btn" id="admBtnViðskm" onclick="showPanel('vidskm')">
           🏢 Viðskiptamenn
         </button>
-        <button class="adm-side-btn" id="admBtnCatalog" onclick="showPanel('catalog')">
-          🛒 Vörulisti
-        </button>
 
       </div>
     </div>
@@ -1056,11 +1056,11 @@ aside.detail{
         <span>🛍️ Mínar pantanir</span>
       </div>
       <div class="adm-drop-body open" style="padding:6px">
-        <button class="adm-side-btn" id="buyerBtnOrders" onclick="showPanel('buyerOrders')">
-          📋 Pantanir
-        </button>
         <button class="adm-side-btn" id="buyerBtnCatalog" onclick="showPanel('catalog')">
           🛒 Vörulisti
+        </button>
+        <button class="adm-side-btn" id="buyerBtnOrders" onclick="showPanel('buyerOrders')">
+          📋 Pantanir
         </button>
       </div>
     </div>
