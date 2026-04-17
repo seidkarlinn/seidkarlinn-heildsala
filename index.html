@@ -6470,6 +6470,24 @@ function showPanel(panel) {
 
 // ══ ORDERS PANEL ══════════════════════════════════════
 let orderFilter = 'all', orderSearch = '';
+let _clearAllPending = false;
+
+function clearAllOrdersTap() {
+  const btn = document.getElementById('clearAllOrdersBtn');
+  if (!_clearAllPending) {
+    _clearAllPending = true;
+    if (btn) { btn.textContent = 'Staðfesta?'; btn.style.opacity = '0.8'; }
+    setTimeout(() => {
+      _clearAllPending = false;
+      if (btn) { btn.textContent = 'Hreinsa allar'; btn.style.opacity = ''; }
+    }, 3000);
+  } else {
+    _clearAllPending = false;
+    saveOrders([]);
+    renderOrdersPanel();
+    showToast('Allar pantanir hreinsaðar.');
+  }
+}
 
 function renderOrdersPanel() {
   const orders = getOrders();
@@ -6507,7 +6525,7 @@ function renderOrdersPanel() {
           📥 Sækja fyrir Reglu.is
         </button>
         <button class="adm-btn" onclick="refreshOrdersFromServer(renderOrdersPanel)" title="Sækja nýjustu pantanir af netþjóni" style="display:flex;align-items:center;gap:5px">↻ Uppfæra</button>
-        <button class="adm-btn danger" onclick="if(confirm('Eyða öllum?')){saveOrders([]);renderOrdersPanel();}">Hreinsa allar</button>
+        <button class="adm-btn danger" id="clearAllOrdersBtn" onclick="clearAllOrdersTap()">Hreinsa allar</button>
       </div>
     </div>
 
