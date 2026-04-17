@@ -192,6 +192,15 @@ main.catalog{padding:1.5rem;overflow-y:auto;}
 }
 .pcard:hover{border-color:var(--green);box-shadow:var(--shadow);}
 .pcard.sel{border-color:var(--green);box-shadow:0 0 0 3px var(--green-l);}
+.pcard.dragging{opacity:.4;border:2px dashed var(--green);}
+.pcard.drag-over{box-shadow:0 0 0 3px var(--green);border-color:var(--green);transform:scale(1.02);}
+.drag-handle{position:absolute;top:6px;right:6px;width:22px;height:22px;display:flex;align-items:center;justify-content:center;cursor:grab;color:var(--ink3);font-size:14px;border-radius:4px;background:rgba(255,255,255,.85);line-height:1;z-index:2;opacity:.6;transition:opacity .15s;}
+.drag-handle:hover{opacity:1;background:var(--paper2);}
+.drag-handle:active{cursor:grabbing;}
+.pcard[draggable=true]:hover .drag-handle{opacity:1;}
+#customOrderBanner{display:none;align-items:center;gap:8px;padding:6px 12px;background:#FEF9E7;border:1px solid #F59E0B;border-radius:6px;font-size:.8rem;color:#78350F;margin-bottom:8px;}
+#customOrderBanner button{padding:2px 8px;font-size:.75rem;background:transparent;border:1px solid #B45309;color:#B45309;border-radius:4px;cursor:pointer;}
+#customOrderBanner button:hover{background:#B45309;color:#fff;}
 .pcard-img{width:100%;height:160px;object-fit:cover;background:var(--paper2);}
 .pcard-body{padding:.875rem;}
 .pcard-cats{display:flex;align-items:center;gap:5px;margin-bottom:6px;flex-wrap:wrap;}
@@ -1074,6 +1083,7 @@ aside.detail{
         </div>
       </div>
     </div>
+    <div id="customOrderBanner">⠿ Sérsniðin röðun virk — dragðu vörur til að breyta. <button onclick="resetCustomOrder()">Endurstilla</button></div>
     <div id="productGrid"></div>
     </div><!-- /panelCatalog -->
   </main>
@@ -5505,6 +5515,42 @@ function matchQ(p, q) {
   return p.name.toLowerCase().includes(q) || p.desc.toLowerCase().includes(q)
     || p.cat.toLowerCase().includes(q) || p.tags.some(t => t.includes(q));
 }
+
+// ── Custom product order (admin drag-and-drop) ──
+let _customOrder = [];
+
+function loadCustomOrder() {
+  try {
+    const raw = localStorage.getItem('ws_product_order');
+    _customOrder = raw ? (JSON.parse(raw).order || []) : [];
+  } catch(e) { _customOrder = []; }
+}
+
+let _saveOrderTimer = null;
+function saveCustomOrder() {
+  const val = { order: _customOrder };
+  localStorage.setItem('ws_product_order', JSON.stringify(val));
+  // Debounce Blobs write — collapse rapid drags into one POST
+  clearTimeout(_saveOrderTimer);
+  _saveOrderTimer = setTimeout(function() {
+    fetch('/.netlify/functions/ws-data', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({key: 'ws_product_order', value: val})
+    }).catch(function(e){ console.error('saveCustomOrder failed:', e); });
+  }, 600);
+}
+
+function resetCustomOrder() {
+  _customOrder = [];
+  localStorage.removeItem('ws_product_order');
+  fetch('/.netlify/functions/ws-data', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({key: 'ws_product_order', value: {order: []}})
+  }).catch(function(e){ console.error('resetCustomOrder failed:', e); });
+  renderGrid();
+}
 function qf(cat) { activeFilter = cat; buildSidebar(); renderGrid(); }
 function setView(v) {
   viewMode = v;
@@ -5573,6 +5619,11 @@ function renderGrid() {
     && (!stockOnly || p.inStock)
   );
 
+  const isAdmin = !!localStorage.getItem('ws_admin_auth');
+  // Show/hide custom order banner
+  const _cob = document.getElementById('customOrderBanner');
+  if (_cob) _cob.style.display = (isAdmin && _customOrder.length && (sort==='default'||!sort)) ? 'flex' : 'none';
+
   if (sort==='name') filtered.sort((a,b) => {
     // brand → base name (no brand) → size desc
     const ka = _sortKey(a.name), kb = _sortKey(b.name);
@@ -5583,17 +5634,38 @@ function renderGrid() {
     return kb.size - ka.size;
   });
   else if (sort==='default' || !sort) {
-    // category → brand → base name (no brand) → size desc
-    filtered.sort((a,b) => {
-      const cc = a.cat.localeCompare(b.cat, 'is');
-      if (cc !== 0) return cc;
-      const ka = _sortKey(a.name), kb = _sortKey(b.name);
-      const br = ka.brand.localeCompare(kb.brand, 'is');
-      if (br !== 0) return br;
-      const bn = ka.base.localeCompare(kb.base, 'is');
-      if (bn !== 0) return bn;
-      return kb.size - ka.size;
-    });
+    loadCustomOrder();
+    if (_customOrder.length) {
+      // Custom admin order: position in order array wins; unordered products fall back to default sort
+      filtered.sort((a, b) => {
+        const ai = _customOrder.indexOf(a.url);
+        const bi = _customOrder.indexOf(b.url);
+        if (ai !== -1 && bi !== -1) return ai - bi;
+        if (ai !== -1) return -1;
+        if (bi !== -1) return 1;
+        // Both unordered — use default sort
+        const cc = a.cat.localeCompare(b.cat, 'is');
+        if (cc !== 0) return cc;
+        const ka = _sortKey(a.name), kb = _sortKey(b.name);
+        const br = ka.brand.localeCompare(kb.brand, 'is');
+        if (br !== 0) return br;
+        const bn = ka.base.localeCompare(kb.base, 'is');
+        if (bn !== 0) return bn;
+        return kb.size - ka.size;
+      });
+    } else {
+      // category → brand → base name (no brand) → size desc
+      filtered.sort((a,b) => {
+        const cc = a.cat.localeCompare(b.cat, 'is');
+        if (cc !== 0) return cc;
+        const ka = _sortKey(a.name), kb = _sortKey(b.name);
+        const br = ka.brand.localeCompare(kb.brand, 'is');
+        if (br !== 0) return br;
+        const bn = ka.base.localeCompare(kb.base, 'is');
+        if (bn !== 0) return bn;
+        return kb.size - ka.size;
+      });
+    }
   }
   else if (sort==='price-asc') filtered.sort((a,b) => {
     const pa = parsePrice(a.wholesale), pb = parsePrice(b.wholesale);
@@ -5638,7 +5710,8 @@ function renderGrid() {
           ? fmtISK(Math.round(retailL * (1 - discL/100)))
           : (p.wholesale || p.price));
       const wsText = liL ? myWsL : '🔒';
-      return `<div class="prow${p.name===selectedName?' sel':''}" style="animation-delay:${delay}s" data-idx="${i}">
+      return `<div class="prow${p.name===selectedName?' sel':''}" style="animation-delay:${delay}s" data-idx="${i}" data-url="${esc(p.url||p.name)}" draggable="${liL && isAdmin}">
+        ${liL && isAdmin ? `<div class="drag-handle" title="Draga til að raða">⠿</div>` : ''}
         <img class="prow-img" src="${p.img}" onerror="this.style.display='none'" loading="lazy">
         <div>
           <div class="rname">${esc(p.name)}</div>
@@ -5675,7 +5748,8 @@ function renderGrid() {
         if (_wsN && retail) _effDisc = Math.round((1 - _wsN/retail) * 100);
       }
       const saving = li && retail ? `Afsláttur ${_effDisc}%` : '';
-      return `<div class="pcard${p.name===selectedName?' sel':''}" style="animation-delay:${delay}s" data-idx="${i}">
+      return `<div class="pcard${p.name===selectedName?' sel':''}" style="animation-delay:${delay}s" data-idx="${i}" data-url="${esc(p.url||p.name)}" draggable="${li && isAdmin}">
+        ${li && isAdmin ? `<div class="drag-handle" title="Draga til að raða">⠿</div>` : ''}
         <img class="pcard-img" src="${p.img}" onerror="this.style.background='var(--paper2)'" loading="lazy">
         <div class="pcard-body">
           <div class="pcard-cats">
@@ -5709,6 +5783,86 @@ function renderGrid() {
     }).join('');
   }
 }
+
+// ── Drag-and-drop product ordering (admin only, event delegation) ──
+(function() {
+  var _dragUrl = null;
+  var _dropIndicator = null;
+
+  function getContainer() { return document.getElementById('productGrid'); }
+
+  function cardFromEl(el) {
+    return el && el.closest ? el.closest('[data-url]') : null;
+  }
+
+  document.addEventListener('dragstart', function(e) {
+    // Only trigger from .drag-handle
+    if (!e.target.classList.contains('drag-handle')) return;
+    const card = cardFromEl(e.target);
+    if (!card) return;
+    _dragUrl = card.getAttribute('data-url');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', _dragUrl);
+    // Small delay so the card renders before opacity change
+    setTimeout(function(){ card.classList.add('dragging'); }, 0);
+  });
+
+  document.addEventListener('dragover', function(e) {
+    if (!_dragUrl) return;
+    const card = cardFromEl(e.target);
+    if (!card || card.getAttribute('data-url') === _dragUrl) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    // Clear previous indicator
+    getContainer().querySelectorAll('.drag-over').forEach(function(el){ el.classList.remove('drag-over'); });
+    card.classList.add('drag-over');
+  });
+
+  document.addEventListener('dragleave', function(e) {
+    const card = cardFromEl(e.target);
+    if (card) card.classList.remove('drag-over');
+  });
+
+  document.addEventListener('drop', function(e) {
+    if (!_dragUrl) return;
+    const card = cardFromEl(e.target);
+    if (!card) return;
+    const dropUrl = card.getAttribute('data-url');
+    if (!dropUrl || dropUrl === _dragUrl) { _dragUrl = null; return; }
+    e.preventDefault();
+
+    // Build a full ordered list: existing custom order + any products not yet in it
+    loadCustomOrder();
+    var allUrls = (window.PRODUCTS || []).map(function(p){ return p.url || p.name; });
+    var order = _customOrder.slice();
+    allUrls.forEach(function(u){ if (order.indexOf(u) === -1) order.push(u); });
+
+    var from = order.indexOf(_dragUrl);
+    var to   = order.indexOf(dropUrl);
+    if (from === -1 || to === -1) { _dragUrl = null; return; }
+
+    order.splice(from, 1);
+    order.splice(to, 0, _dragUrl);
+    _customOrder = order;
+    saveCustomOrder();
+
+    // Clean up visual state then re-render
+    getContainer().querySelectorAll('.dragging,.drag-over').forEach(function(el){
+      el.classList.remove('dragging','drag-over');
+    });
+    _dragUrl = null;
+    renderGrid();
+  });
+
+  document.addEventListener('dragend', function(e) {
+    if (getContainer()) {
+      getContainer().querySelectorAll('.dragging,.drag-over').forEach(function(el){
+        el.classList.remove('dragging','drag-over');
+      });
+    }
+    _dragUrl = null;
+  });
+})();
 
 // ── Card click → detail panel ──
 document.getElementById('productGrid').addEventListener('click', function(e) {
