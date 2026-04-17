@@ -6438,6 +6438,12 @@ function allAdmProducts() {
 }
 
 function renderProductsPanel() {
+  // Save focus before replacing innerHTML — the search input is inside the panel
+  const _rppFocused = document.activeElement;
+  const _rppFocusId = _rppFocused && _rppFocused.id || null;
+  const _rppSelStart = _rppFocusId && _rppFocused.selectionStart != null ? _rppFocused.selectionStart : null;
+  const _rppSelEnd   = _rppFocusId && _rppFocused.selectionEnd   != null ? _rppFocused.selectionEnd   : null;
+
   const all = allAdmProducts();
   const visible = all.filter(p=>
     (showRemoved || !p._removed) &&
@@ -6476,7 +6482,7 @@ function renderProductsPanel() {
           background:#fee2e2;color:#dc2626;font-size:12px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif">
           🗑 Eyða völdum (<span id="bulkCount">0</span>)
         </button>
-        <input class="adm-search" placeholder="Leita…" value="${prodSearch}"
+        <input class="adm-search" id="prodSearchInput" placeholder="Leita…" value="${prodSearch}"
           oninput="prodSearch=this.value.toLowerCase();renderProductsPanel()">
         <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--ink3);cursor:pointer">
           <input type="checkbox" ${showRemoved?'checked':''} onchange="showRemoved=this.checked;renderProductsPanel()" style="accent-color:var(--green)">
@@ -6536,6 +6542,17 @@ function renderProductsPanel() {
       <div class="vst-detail" id="vstDetail"></div>
     </div>
   `;
+
+  // Restore focus + cursor after innerHTML replacement
+  if (_rppFocusId) {
+    const _el = document.getElementById(_rppFocusId);
+    if (_el) {
+      _el.focus();
+      if (_rppSelStart != null) {
+        try { _el.setSelectionRange(_rppSelStart, _rppSelEnd); } catch(e) {}
+      }
+    }
+  }
 }
 
 function vstToggleAll(checked) {
