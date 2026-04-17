@@ -6283,6 +6283,47 @@ function showToast(msg, dur=2000) {
 // ── Storage ──────────────────────────────────────────
 function getOrders()   { try{return JSON.parse(localStorage.getItem('ws_orders')||'[]');}catch{return[];} }
 function saveOrders(o) { localStorage.setItem('ws_orders',JSON.stringify(o)); }
+
+// Fetch latest ws_orders from Netlify Blobs, merge with local, then call callback
+let _orderPollTimer = null;
+function refreshOrdersFromServer(callback) {
+  fetch('/.netlify/functions/ws-data?key=ws_orders')
+    .then(function(r){ return r.json(); })
+    .then(function(json){
+      if (json.ok && Array.isArray(json.value)) {
+        var local = getOrders();
+        // Merge by order ID — newer date wins
+        var byId = {};
+        function addO(o) {
+          if (!o || !o.id) return;
+          if (!byId[o.id]) { byId[o.id] = o; return; }
+          var ed = new Date(byId[o.id].date||0).getTime();
+          var nd = new Date(o.date||0).getTime();
+          if (nd > ed) byId[o.id] = o;
+        }
+        json.value.forEach(addO);
+        local.forEach(addO);
+        var merged = Object.values(byId).sort(function(a,b){
+          return new Date(b.date||0) - new Date(a.date||0);
+        });
+        // Write back without triggering another push to server
+        if (window._wsReceiveFromServer) {
+          window._wsReceiveFromServer('ws_orders', JSON.stringify(merged));
+        }
+      }
+    })
+    .catch(function(){})
+    .finally(function(){ if (callback) callback(); });
+}
+function startOrderPoll() {
+  stopOrderPoll();
+  _orderPollTimer = setInterval(function(){
+    if (currentPanel === 'orders') refreshOrdersFromServer(renderOrdersPanel);
+  }, 30000); // every 30s while orders panel is open
+}
+function stopOrderPoll() {
+  if (_orderPollTimer) { clearInterval(_orderPollTimer); _orderPollTimer = null; }
+}
 function getCustomProducts() { try{return JSON.parse(localStorage.getItem('ws_custom_products')||'[]');}catch{return[];} }
 function saveCustomProducts(p){ localStorage.setItem('ws_custom_products',JSON.stringify(p)); }
 function getDeletedProducts() { try{return JSON.parse(localStorage.getItem('ws_deleted_products')||'[]');}catch{return[];} }
@@ -6347,8 +6388,12 @@ function showPanel(panel) {
     const btn = document.getElementById('admBtn' + p);
     if (btn) btn.classList.toggle('active', panel.toLowerCase() === p.toLowerCase());
   });
+  if (currentPanel === 'orders' && panel !== 'orders') stopOrderPoll();
   currentPanel = panel;
-  if (panel === 'orders')   renderOrdersPanel();
+  if (panel === 'orders') {
+    stopOrderPoll();
+    refreshOrdersFromServer(function(){ renderOrdersPanel(); startOrderPoll(); });
+  }
   if (panel === 'products') renderProductsPanel();
   if (panel === 'theme')    renderThemePanel();
   if (panel === 'pricing')  renderPricingPanel();
@@ -6413,6 +6458,7 @@ function renderOrdersPanel() {
         <button class="adm-btn" onclick="exportReglaCSV()" style="background:#1D4ED8;color:#fff;border-color:#1D4ED8;display:flex;align-items:center;gap:5px">
           📥 Sækja fyrir Reglu.is
         </button>
+        <button class="adm-btn" onclick="refreshOrdersFromServer(renderOrdersPanel)" title="Sækja nýjustu pantanir af netþjóni" style="display:flex;align-items:center;gap:5px">↻ Uppfæra</button>
         <button class="adm-btn danger" onclick="if(confirm('Eyða öllum?')){saveOrders([]);renderOrdersPanel();}">Hreinsa allar</button>
       </div>
     </div>
