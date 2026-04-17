@@ -1058,10 +1058,7 @@ aside.detail{
       </div>
       <div class="adm-drop-body open" style="padding:6px">
         <button class="adm-side-btn" id="buyerBtnOrders" onclick="showPanel('buyerOrders')">
-          📋 Pantanir mínar
-        </button>
-        <button class="adm-side-btn" id="buyerBtnInvoices" onclick="showPanel('buyerInvoices')">
-          🧾 Reikningar
+          📋 Pantanir
         </button>
         <div class="adm-side-divider"></div>
         <button class="adm-side-btn" onclick="showPanel('catalog')" style="font-size:11px;color:var(--ink3)">
@@ -6482,8 +6479,9 @@ function renderOrdersPanel() {
   const fmt = fmtISK;
 
   const pill = s => {
-    const labels={pending:'⏳ Í bið',fulfilled:'✓ Sent',cancelled:'✕ Hætt',processing:'⚙ Meðhöndlun'};
-    return `<span class="status-pill ${s}">${labels[s]||s}</span>`;
+    const labels={pending:'⏳ Í bið',fulfilled:'✓ Sent',cancelled:'✕ Hætt',processing:'⚙ Meðhöndlun',invoice:'📄 Reikningur'};
+    const cls = s === 'invoice' ? 'fulfilled' : s;
+    return `<span class="status-pill ${cls}">${labels[s]||s}</span>`;
   };
 
   document.getElementById('panelOrders').innerHTML = `
@@ -6612,14 +6610,15 @@ function renderBuyerOrdersPanel() {
   const orders = _buyerOrders();
   const fmt = fmtISK;
   const pill = s => {
-    const labels = {pending:'⏳ Í bið',fulfilled:'✓ Sent',cancelled:'✕ Hætt við',processing:'⚙ Meðhöndlun'};
-    return `<span class="status-pill ${s}">${labels[s]||s}</span>`;
+    const labels = {pending:'⏳ Í bið',fulfilled:'✓ Sent',cancelled:'✕ Hætt við',processing:'⚙ Meðhöndlun',invoice:'📄 Reikningur'};
+    const cls = s === 'invoice' ? 'fulfilled' : s;
+    return `<span class="status-pill ${cls}">${labels[s]||s}</span>`;
   };
 
   document.getElementById('panelBuyerOrders').innerHTML = `
     <div class="cat-hdr">
       <div>
-        <div class="cat-title">📋 Pantanir mínar</div>
+        <div class="cat-title">📋 Pantanir</div>
         <div class="cat-sub">${orders.length} pöntun${orders.length !== 1 ? 'ir' : ''} samtals</div>
       </div>
       <button class="adm-btn" onclick="refreshOrdersFromServer(renderBuyerOrdersPanel)" style="display:flex;align-items:center;gap:5px">↻ Uppfæra</button>
