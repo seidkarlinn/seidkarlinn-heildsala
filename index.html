@@ -5619,7 +5619,7 @@ function renderGrid() {
     && (!stockOnly || p.inStock)
   );
 
-  const isAdmin = !!localStorage.getItem('ws_admin_auth');
+  const isAdmin = localStorage.getItem('ws_role') === 'admin';
   // Show/hide custom order banner
   const _cob = document.getElementById('customOrderBanner');
   if (_cob) _cob.style.display = (isAdmin && _customOrder.length && (sort==='default'||!sort)) ? 'flex' : 'none';
