@@ -6404,6 +6404,8 @@ let currentPanel = 'catalog';
 function showPanel(panel) {
   if (localStorage.getItem('ws_role') === 'admin' && panel !== 'catalog') {
     localStorage.setItem('ws_last_panel', panel);
+  } else if (localStorage.getItem('ws_role') === 'buyer') {
+    localStorage.setItem('ws_last_panel', panel);
   } else {
     localStorage.removeItem('ws_last_panel');
   }
@@ -9765,10 +9767,13 @@ updateFloatBtn();
   }
 })();
 
-// Restore last admin panel if admin refreshed
-if (localStorage.getItem('ws_role') === 'admin') {
+// Restore last panel on refresh (admin and buyer)
+{
+  const role = localStorage.getItem('ws_role');
   const lastPanel = localStorage.getItem('ws_last_panel');
-  if (lastPanel) setTimeout(() => showPanel(lastPanel), 50);
+  if (lastPanel && (role === 'admin' || role === 'buyer')) {
+    setTimeout(() => showPanel(lastPanel), 50);
+  }
 }
 
 // Step 7: Safety net — ensure window.PRODUCTS is always populated
