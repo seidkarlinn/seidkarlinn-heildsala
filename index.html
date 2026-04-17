@@ -6368,7 +6368,15 @@ function logOrder(orderId, total, cartItems, buyerName, buyerEmail, buyerUser, n
       return {name:i.name, qty:i.qty, price:(i.wholesale||i.price)};
     }),
   });
-  saveOrders(orders);
+  saveOrders(orders); // sync layer intercept pushes with keepalive:true
+  // Belt-and-suspenders: explicit push so the order reaches the server even if
+  // the keepalive fetch is lost during mobile page navigation (iOS Safari caveat).
+  fetch('/.netlify/functions/ws-data', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({key: 'ws_orders', value: orders}),
+    keepalive: true,
+  }).catch(function(){});
   updatePendingBadge();
 }
 

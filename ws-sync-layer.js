@@ -41,6 +41,12 @@
           var localArr = Array.isArray(localVal) ? localVal : [];
           var merged = mergeOrders(localArr, serverVal);
           originalSetItem(key, JSON.stringify(merged));
+          // If local had orders the server didn't (e.g. keepalive fetch failed during
+          // mobile page navigation to payment gateway), push the merged set back up so
+          // the admin panel sees all orders.
+          if (merged.length > serverVal.length) {
+            pushToServer(key, merged);
+          }
           return;
         }
         if (key === "ws_invoice_seq") {
