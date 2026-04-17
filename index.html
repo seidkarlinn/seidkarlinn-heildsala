@@ -1060,9 +1060,8 @@ aside.detail{
         <button class="adm-side-btn" id="buyerBtnOrders" onclick="showPanel('buyerOrders')">
           📋 Pantanir
         </button>
-        <div class="adm-side-divider"></div>
-        <button class="adm-side-btn" onclick="showPanel('catalog')" style="font-size:11px;color:var(--ink3)">
-          ← Til baka í vörulista
+        <button class="adm-side-btn" id="buyerBtnCatalog" onclick="showPanel('catalog')">
+          🛒 Vörulisti
         </button>
       </div>
     </div>
@@ -6419,11 +6418,9 @@ function showPanel(panel) {
     if (btn) btn.classList.toggle('active', panel.toLowerCase() === p.toLowerCase());
   });
   // Sidebar active states — buyer buttons
-  ['buyerBtnOrders','buyerBtnInvoices'].forEach(id => {
+  [['buyerBtnOrders','buyerOrders'],['buyerBtnInvoices','buyerInvoices'],['buyerBtnCatalog','catalog']].forEach(([id,p]) => {
     const btn = document.getElementById(id);
-    if (!btn) return;
-    if (id === 'buyerBtnOrders')   btn.classList.toggle('active', panel === 'buyerOrders');
-    if (id === 'buyerBtnInvoices') btn.classList.toggle('active', panel === 'buyerInvoices');
+    if (btn) btn.classList.toggle('active', panel === p);
   });
   if (currentPanel === 'orders' && panel !== 'orders') stopOrderPoll();
   currentPanel = panel;
