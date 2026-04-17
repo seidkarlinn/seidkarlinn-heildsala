@@ -5787,7 +5787,7 @@ function renderGrid() {
 // ── Drag-and-drop product ordering (admin only, event delegation) ──
 (function() {
   var _dragUrl = null;
-  var _dropIndicator = null;
+  var _dragFromHandle = false;
 
   function getContainer() { return document.getElementById('productGrid'); }
 
@@ -5795,15 +5795,20 @@ function renderGrid() {
     return el && el.closest ? el.closest('[data-url]') : null;
   }
 
+  // Track whether the mousedown that started the drag came from a handle.
+  // dragstart fires on the draggable card element (not the handle child),
+  // so we can't detect the handle inside dragstart via e.target.
+  document.addEventListener('mousedown', function(e) {
+    _dragFromHandle = !!(e.target && e.target.closest && e.target.closest('.drag-handle'));
+  });
+
   document.addEventListener('dragstart', function(e) {
-    // Only trigger from .drag-handle
-    if (!e.target.classList.contains('drag-handle')) return;
+    if (!_dragFromHandle) return;
     const card = cardFromEl(e.target);
     if (!card) return;
     _dragUrl = card.getAttribute('data-url');
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', _dragUrl);
-    // Small delay so the card renders before opacity change
     setTimeout(function(){ card.classList.add('dragging'); }, 0);
   });
 
