@@ -176,92 +176,59 @@ main.catalog{padding:1.5rem;overflow-y:auto;}
 .stock-toggle input{cursor:pointer;accent-color:var(--green);}
 
 /* ─── PRODUCT GRID ─── */
-.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
-@media(max-width:640px){.grid{grid-template-columns:repeat(2,1fr);gap:8px;}}
-@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-.pcard{
-  background:var(--paper);border:1px solid var(--paper3);border-radius:14px;
-  overflow:hidden;cursor:pointer;transition:box-shadow .18s,transform .18s,border-color .18s;
-  animation:fadeUp .22s ease both;position:relative;
-  box-shadow:0 1px 3px rgba(0,0,0,.04),0 2px 8px rgba(0,0,0,.04);
-  display:flex;flex-direction:column;
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;}
+@media(max-width:820px){.grid{grid-template-columns:repeat(3,1fr);gap:6px;}
+.pcard-body{padding:.5rem;}
+.pname{font-size:11px;}
+.cbadge{font-size:9px;}
+.add-btn{font-size:11px;padding:6px 4px;}
+.qty-row{gap:3px;}
+.qty-input{width:36px;font-size:11px;}
 }
-.pcard:hover{box-shadow:0 4px 18px rgba(0,0,0,.10);transform:translateY(-2px);border-color:var(--paper3);}
-.pcard.sel{border-color:var(--green);box-shadow:0 0 0 2px var(--green-l);}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.pcard{
+  background:var(--paper);border:1.5px solid var(--paper3);border-radius:var(--r);
+  overflow:hidden;cursor:pointer;transition:all .15s;animation:fadeUp .2s ease both;
+  position:relative;
+}
+.pcard:hover{border-color:var(--green);box-shadow:var(--shadow);}
+.pcard.sel{border-color:var(--green);box-shadow:0 0 0 3px var(--green-l);}
 .pcard.dragging{opacity:.4;border:2px dashed var(--green);}
 .pcard.drag-over{box-shadow:0 0 0 3px var(--green);border-color:var(--green);transform:scale(1.02);}
-/* drag handle sits inside image-wrap, z above it */
-.drag-handle{position:absolute;top:8px;right:8px;width:24px;height:24px;display:flex;align-items:center;justify-content:center;cursor:grab;color:var(--ink3);font-size:14px;border-radius:6px;background:rgba(255,255,255,.9);line-height:1;z-index:3;opacity:.6;transition:opacity .15s;}
-.drag-handle:hover{opacity:1;background:#fff;}
+.drag-handle{position:absolute;top:6px;right:6px;width:22px;height:22px;display:flex;align-items:center;justify-content:center;cursor:grab;color:var(--ink3);font-size:14px;border-radius:4px;background:rgba(255,255,255,.85);line-height:1;z-index:2;opacity:.6;transition:opacity .15s;}
+.drag-handle:hover{opacity:1;background:var(--paper2);}
 .drag-handle:active{cursor:grabbing;}
 .pcard[draggable=true]:hover .drag-handle{opacity:1;}
 #customOrderBanner{display:none;align-items:center;gap:8px;padding:6px 12px;background:#FEF9E7;border:1px solid #F59E0B;border-radius:6px;font-size:.8rem;color:#78350F;margin-bottom:8px;}
 #customOrderBanner button{padding:2px 8px;font-size:.75rem;background:transparent;border:1px solid #B45309;color:#B45309;border-radius:4px;cursor:pointer;}
 #customOrderBanner button:hover{background:#B45309;color:#fff;}
-/* Image area — soft tinted background, square aspect ratio, product contained */
-.pcard-img-wrap{
-  position:relative;background:var(--paper2);
-  aspect-ratio:1/1;overflow:hidden;
-  display:flex;align-items:center;justify-content:center;
-  padding:18px;
-}
-.pcard-img{width:100%;height:100%;object-fit:contain;mix-blend-mode:multiply;transition:transform .2s;}
-.pcard:hover .pcard-img{transform:scale(1.04);}
-/* Badges overlaid on image area */
-.cbadge{
-  position:absolute;top:8px;left:8px;z-index:2;
-  font-size:9px;font-weight:600;padding:3px 7px;border-radius:99px;
-  text-transform:uppercase;letter-spacing:.05em;
-  backdrop-filter:blur(4px);
-}
-.sold-out-badge{
-  position:absolute;top:8px;right:8px;z-index:2;
-  font-size:8px;font-weight:600;padding:3px 7px;border-radius:99px;
-  background:var(--red-l);color:var(--red);
-}
-.disc-badge{
-  position:absolute;bottom:8px;right:8px;z-index:2;
-  font-size:9px;font-weight:700;padding:3px 8px;border-radius:99px;
-  background:var(--gold-l);color:var(--gold-b);
-}
-/* Card body */
-.pcard-body{padding:12px 14px 14px;display:flex;flex-direction:column;gap:0;flex:1;}
-.pname{font-size:12px;font-weight:500;line-height:1.4;margin-bottom:6px;color:var(--ink);}
-.price-row{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 6px;margin-bottom:10px;}
-.ws-price{font-size:15px;font-weight:700;color:var(--green);}
+.pcard-img{width:100%;height:160px;object-fit:cover;background:var(--paper2);}
+.pcard-body{padding:.875rem;}
+.pcard-cats{display:flex;align-items:center;gap:5px;margin-bottom:6px;flex-wrap:wrap;}
+.cbadge{font-size:9px;font-weight:500;padding:2px 6px;border-radius:3px;text-transform:uppercase;letter-spacing:.04em;}
+.sold-out-badge{font-size:8px;background:var(--red-l);color:var(--red);padding:2px 5px;border-radius:3px;font-weight:500;}
+.pname{font-size:12px;font-weight:500;line-height:1.35;margin-bottom:8px;color:var(--ink);}
+.price-row{display:flex;flex-direction:column;gap:1px;margin-bottom:10px;}
+.ws-price{font-size:15px;font-weight:600;color:var(--green);}
 .retail-price{font-size:10px;color:var(--ink3);text-decoration:line-through;}
-.saving{font-size:9px;color:var(--gold-b);font-weight:600;}
-.price-locked{font-size:11px;color:var(--ink3);cursor:pointer;padding:2px 0;}
-/* Qty row */
+.saving{font-size:9px;color:var(--gold-b);font-weight:500;}
+.add-btn{
+  width:100%;padding:7px;background:var(--green);color:#fff;border:none;
+  border-radius:var(--rs);font-size:11px;font-weight:500;cursor:pointer;
+  font-family:'DM Sans',sans-serif;transition:background .15s;letter-spacing:.02em;
+  display:flex;align-items:center;justify-content:center;gap:5px;
+}
+.add-btn:hover{background:#1e431e;}
+.add-btn.added{background:var(--gold-b);}
+.add-btn:disabled{background:var(--paper3);color:var(--ink3);cursor:not-allowed;}
 .qty-row{display:flex;align-items:center;gap:6px;margin-bottom:8px;}
 .qty-input{
-  width:48px;padding:5px 6px;border:1.5px solid var(--paper3);border-radius:var(--rs);
+  width:52px;padding:5px 6px;border:1.5px solid var(--paper3);border-radius:var(--rs);
   font-size:12px;text-align:center;font-family:'DM Sans',sans-serif;outline:none;
-  background:var(--paper);
+  background:var(--paper2);
 }
 .qty-input:focus{border-color:var(--green);}
 .qty-label{font-size:10px;color:var(--ink3);}
-/* Add to cart — pill outline style */
-.add-btn{
-  width:100%;padding:9px 14px;background:transparent;color:var(--green);
-  border:1.5px solid var(--green);border-radius:99px;
-  font-size:11px;font-weight:600;cursor:pointer;letter-spacing:.03em;
-  font-family:'DM Sans',sans-serif;transition:background .15s,color .15s;
-  display:flex;align-items:center;justify-content:center;gap:5px;
-  margin-top:auto;
-}
-.add-btn:hover{background:var(--green);color:#fff;}
-.add-btn.added{background:var(--gold-b);border-color:var(--gold-b);color:#fff;}
-.add-btn:disabled{background:transparent;border-color:var(--paper3);color:var(--ink3);cursor:not-allowed;}
-/* Mobile tweaks */
-@media(max-width:640px){
-  .pcard-img-wrap{padding:12px;}
-  .pcard-body{padding:10px 10px 12px;}
-  .pname{font-size:11px;}
-  .ws-price{font-size:13px;}
-  .add-btn{font-size:10px;padding:7px 10px;}
-  .qty-input{width:36px;font-size:11px;}
-}
 
 /* LIST VIEW */
 .listview{display:flex;flex-direction:column;gap:6px;}
@@ -5921,20 +5888,20 @@ function renderGrid() {
       }
       const saving = li && retail ? `Afsláttur ${_effDisc}%` : '';
       return `<div class="pcard${p.name===selectedName?' sel':''}" style="animation-delay:${delay}s" data-idx="${i}" data-url="${esc(p.url||p.name)}" draggable="${li && isAdmin}">
-        <div class="pcard-img-wrap">
-          ${li && isAdmin ? `<div class="drag-handle" title="Draga til að raða">⠿</div>` : ''}
-          <img class="pcard-img" src="${p.img}" onerror="this.style.opacity='0'" loading="lazy">
-          <span class="cbadge" style="background:${col.bg};color:${col.text}">${esc(p.cat.replace('Fæðubótarefni — ','').substring(0,16))}</span>
-          ${!p.inStock ? '<span class="sold-out-badge">Uppselt</span>' : ''}
-          ${li && saving ? `<span class="disc-badge">${_effDisc}%</span>` : ''}
-        </div>
+        ${li && isAdmin ? `<div class="drag-handle" title="Draga til að raða">⠿</div>` : ''}
+        <img class="pcard-img" src="${p.img}" onerror="this.style.background='var(--paper2)'" loading="lazy">
         <div class="pcard-body">
+          <div class="pcard-cats">
+            <span class="cbadge" style="background:${col.bg};color:${col.text}">${esc(p.cat.replace('Fæðubótarefni — ','').substring(0,14))}</span>
+            ${!p.inStock ? '<span class="sold-out-badge">Uppselt</span>' : ''}
+          </div>
           <div class="pname">${esc(p.name)}</div>
           <div class="price-row">
             ${li
-              ? `<span class="ws-price">${esc(wsText)}</span>
-                 ${p.price && p.wholesale ? `<span class="retail-price">${esc(p.price)}</span>` : ''}`
-              : `<span class="price-locked" onclick="event.stopPropagation();document.getElementById('gate').classList.remove('hidden')">🔒 Innskrá til að sjá verð</span>`
+              ? `<div class="ws-price">${esc(wsText)}</div>
+                 ${p.price && p.wholesale ? `<div class="retail-price">${esc(p.price)}</div>` : ''}
+                 ${saving ? `<div class="saving">💰 ${saving}</div>` : ''}`
+              : `<div class="price-locked" onclick="event.stopPropagation();document.getElementById('gate').classList.remove('hidden')">🔒 Innskrá til að sjá verð</div>`
             }
           </div>
           ${li ? `
@@ -5946,7 +5913,8 @@ function renderGrid() {
             ${!p.inStock?'disabled':''}>
             ${p.inStock ? '+ Bæta í körfu' : 'Uppselt'}
           </button>` : `
-          <button class="add-btn" onclick="event.stopPropagation();document.getElementById('gate').classList.remove('hidden')">
+          <button class="add-btn" onclick="event.stopPropagation();document.getElementById('gate').classList.remove('hidden')"
+            style="background:var(--paper2);color:var(--ink2);border:1.5px solid var(--paper3)">
             🔑 Innskrá
           </button>`}
         </div>
