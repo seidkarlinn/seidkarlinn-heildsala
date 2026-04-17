@@ -5559,7 +5559,28 @@ function setView(v) {
   document.getElementById('lbtn').classList.toggle('on', v==='list');
   renderGrid();
 }
-function filterProducts() { buildSidebar(); renderGrid(); }
+function filterProducts() {
+  // Save focus + cursor before render — large innerHTML replacements can drop focus
+  // even when the focused element itself isn't inside the replaced container.
+  const focused = document.activeElement;
+  const focusId  = focused && focused.id || null;
+  const selStart = focusId && focused.selectionStart != null ? focused.selectionStart : null;
+  const selEnd   = focusId && focused.selectionEnd   != null ? focused.selectionEnd   : null;
+
+  buildSidebar();
+  renderGrid();
+
+  // Restore focus and cursor position
+  if (focusId) {
+    const el = document.getElementById(focusId);
+    if (el) {
+      el.focus();
+      if (selStart != null) {
+        try { el.setSelectionRange(selStart, selEnd); } catch(e) {}
+      }
+    }
+  }
+}
 
 function buildSidebar() {
   const q = document.getElementById('searchInput').value.toLowerCase();
