@@ -1051,6 +1051,25 @@ aside.detail{
       </div>
     </div>
 
+    <!-- Buyer section — only visible when logged in as buyer -->
+    <div class="adm-drop" id="buyerActionsWrap" style="display:none">
+      <div class="adm-drop-hdr" style="cursor:default;pointer-events:none">
+        <span>🛍️ Mínar pantanir</span>
+      </div>
+      <div class="adm-drop-body open" style="padding:6px">
+        <button class="adm-side-btn" id="buyerBtnOrders" onclick="showPanel('buyerOrders')">
+          📋 Pantanir mínar
+        </button>
+        <button class="adm-side-btn" id="buyerBtnInvoices" onclick="showPanel('buyerInvoices')">
+          🧾 Reikningar
+        </button>
+        <div class="adm-side-divider"></div>
+        <button class="adm-side-btn" onclick="showPanel('catalog')" style="font-size:11px;color:var(--ink3)">
+          ← Til baka í vörulista
+        </button>
+      </div>
+    </div>
+
     <input class="sinput" id="searchInput" type="text" placeholder="Leita…" oninput="filterProducts()">
     <div class="sb-section">Flokkar</div>
     <div id="catBtns"></div>
@@ -1084,6 +1103,12 @@ aside.detail{
 
     <!-- Viðskiptamenn panel -->
     <div class="panel-view" id="panelVidskm"></div>
+
+    <!-- Buyer: My Orders panel -->
+    <div class="panel-view" id="panelBuyerOrders"></div>
+
+    <!-- Buyer: My Invoices panel -->
+    <div class="panel-view" id="panelBuyerInvoices"></div>
 
     <!-- Catalog (default view) -->
     <div class="panel-view active" id="panelCatalog">
@@ -5287,12 +5312,13 @@ function tryLogin() {
     document.getElementById('gate').classList.add('hidden');
     localStorage.setItem('ws_auth', u);
     localStorage.setItem('ws_role', 'buyer');
-    // Store per-customer discount so getMyDiscount() picks it up
     err.textContent = '';
     applyPricingOverrides();
     updateHeaderAuth();
     renderGrid();
     updateCartCount();
+    initBuyerUI();
+    showPanel('buyerOrders');
     return;
   }
 
@@ -5314,6 +5340,8 @@ function logout() {
   updateHeaderAuth();
   renderGrid();
   if (document.getElementById('adminPanel')) document.getElementById('adminPanel').classList.add('hidden');
+  initAdminUI();
+  initBuyerUI();
   showPanel('catalog');
 }
 
@@ -6370,6 +6398,11 @@ function updatePendingBadge() {
   const n = getOrders().filter(o=>o.status==='pending').length;
   badge.textContent = n > 0 ? n + ' í bið' : '';
 }
+function initBuyerUI() {
+  const isBuyer = localStorage.getItem('ws_role') === 'buyer';
+  const wrap = document.getElementById('buyerActionsWrap');
+  if (wrap) wrap.style.display = isBuyer ? 'block' : 'none';
+}
 
 // ── Panel switching ───────────────────────────────────
 let currentPanel = 'catalog';
@@ -6379,14 +6412,21 @@ function showPanel(panel) {
   } else {
     localStorage.removeItem('ws_last_panel');
   }
-  ['catalog','orders','products','theme','pricing','vidskm'].forEach(p => {
+  ['catalog','orders','products','theme','pricing','vidskm','buyerOrders','buyerInvoices'].forEach(p => {
     const el = document.getElementById('panel' + p.charAt(0).toUpperCase() + p.slice(1));
     if (el) el.classList.toggle('active', p === panel);
   });
-  // Sidebar active states
+  // Sidebar active states — admin buttons
   ['Orders','Products','Theme','Pricing','Viðskm'].forEach(p => {
     const btn = document.getElementById('admBtn' + p);
     if (btn) btn.classList.toggle('active', panel.toLowerCase() === p.toLowerCase());
+  });
+  // Sidebar active states — buyer buttons
+  ['buyerBtnOrders','buyerBtnInvoices'].forEach(id => {
+    const btn = document.getElementById(id);
+    if (!btn) return;
+    if (id === 'buyerBtnOrders')   btn.classList.toggle('active', panel === 'buyerOrders');
+    if (id === 'buyerBtnInvoices') btn.classList.toggle('active', panel === 'buyerInvoices');
   });
   if (currentPanel === 'orders' && panel !== 'orders') stopOrderPoll();
   currentPanel = panel;
@@ -6394,6 +6434,8 @@ function showPanel(panel) {
     stopOrderPoll();
     refreshOrdersFromServer(function(){ renderOrdersPanel(); startOrderPoll(); });
   }
+  if (panel === 'buyerOrders')   { refreshOrdersFromServer(renderBuyerOrdersPanel); }
+  if (panel === 'buyerInvoices') { refreshOrdersFromServer(renderBuyerInvoicesPanel); }
   if (panel === 'products') renderProductsPanel();
   if (panel === 'theme')    renderThemePanel();
   if (panel === 'pricing')  renderPricingPanel();
@@ -6554,6 +6596,152 @@ function setStatus(id, status) {
   if (o) { o.status=status; saveOrders(orders); updatePendingBadge(); }
   renderOrdersPanel();
   showToast('Staða uppfærð');
+}
+
+// ══ BUYER ORDER / INVOICE PANELS ══════════════════════
+
+function _buyerOrders() {
+  const me = (localStorage.getItem('ws_auth') || '').toLowerCase();
+  return getOrders().filter(o =>
+    (o.buyerUser || '').toLowerCase() === me ||
+    (o.buyerEmail || '').toLowerCase() === me
+  ).sort((a,b) => new Date(b.date||0) - new Date(a.date||0));
+}
+
+function renderBuyerOrdersPanel() {
+  const orders = _buyerOrders();
+  const fmt = fmtISK;
+  const pill = s => {
+    const labels = {pending:'⏳ Í bið',fulfilled:'✓ Sent',cancelled:'✕ Hætt við',processing:'⚙ Meðhöndlun'};
+    return `<span class="status-pill ${s}">${labels[s]||s}</span>`;
+  };
+
+  document.getElementById('panelBuyerOrders').innerHTML = `
+    <div class="cat-hdr">
+      <div>
+        <div class="cat-title">📋 Pantanir mínar</div>
+        <div class="cat-sub">${orders.length} pöntun${orders.length !== 1 ? 'ir' : ''} samtals</div>
+      </div>
+      <button class="adm-btn" onclick="refreshOrdersFromServer(renderBuyerOrdersPanel)" style="display:flex;align-items:center;gap:5px">↻ Uppfæra</button>
+    </div>
+
+    ${!orders.length ? `<div class="no-data">📋 Engar pantanir fundust.</div>` : `
+    <div style="overflow-x:auto">
+    <table class="orders-table">
+      <thead><tr>
+        <th>Pöntunarnr.</th><th>Dagsetning</th><th>Upphæð</th><th>Staða</th><th></th>
+      </tr></thead>
+      <tbody>
+        ${orders.map(o => `
+          <tr onclick="toggleBuyerOrdDetail('${esc(o.id)}')">
+            <td><div class="order-id">${esc(o.id)}</div></td>
+            <td>${new Date(o.date).toLocaleDateString('is-IS',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})}</td>
+            <td style="font-weight:600;color:var(--green)">${fmt(o.total||0)}</td>
+            <td>${pill(o.status)}</td>
+            <td onclick="event.stopPropagation()">
+              <button class="fulfill-btn" data-orderid="${esc(o.id)}"
+                onclick="downloadOrderPDF(this.dataset.orderid)"
+                style="background:#EFF6FF;color:#1D4ED8;border:1px solid rgba(29,78,216,.2)">
+                📄 PDF
+              </button>
+            </td>
+          </tr>
+          <tr class="expand-detail" id="bod-${esc(o.id)}" style="display:none">
+            <td colspan="5">
+              <div class="order-detail-inner">
+                <div class="od-box">
+                  <div class="od-box-title">Vörur (${(o.items||[]).length})</div>
+                  ${(o.items||[]).map(it => `
+                    <div class="od-item-row">
+                      <span>${esc(it.name)}</span>
+                      <span style="color:var(--ink3)">${it.qty} × ${esc(it.price||'')}</span>
+                    </div>`).join('')}
+                </div>
+                <div class="od-box">
+                  <div class="od-box-title">Upplýsingar</div>
+                  <div class="od-info-row"><span class="od-info-key">Pöntunarnr.</span><span class="od-info-val" style="font-family:monospace;font-size:11px">${esc(o.id)}</span></div>
+                  <div class="od-info-row"><span class="od-info-key">Heildarupphæð</span><span class="od-info-val" style="color:var(--green)">${fmt(o.total||0)}</span></div>
+                  <div class="od-info-row"><span class="od-info-key">Staða</span><span class="od-info-val">${pill(o.status)}</span></div>
+                  ${o.note ? `<div class="od-note">📝 ${esc(o.note)}</div>` : ''}
+                  <div style="margin-top:10px">
+                    <button class="adm-btn primary" data-orderid="${esc(o.id)}"
+                      onclick="downloadOrderPDF(this.dataset.orderid)" style="width:100%">
+                      📄 Sækja reikning í PDF
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+    </div>`}
+  `;
+}
+
+function toggleBuyerOrdDetail(id) {
+  const row = document.getElementById('bod-' + id);
+  if (row) row.style.display = row.style.display === 'none' ? 'table-row' : 'none';
+}
+
+function renderBuyerInvoicesPanel() {
+  const orders = _buyerOrders().filter(o => o.status !== 'cancelled');
+  const fmt = fmtISK;
+  const pill = s => {
+    const labels = {pending:'⏳ Í bið',fulfilled:'✓ Sent',cancelled:'✕ Hætt við',processing:'⚙ Meðhöndlun'};
+    return `<span class="status-pill ${s}">${labels[s]||s}</span>`;
+  };
+
+  document.getElementById('panelBuyerInvoices').innerHTML = `
+    <div class="cat-hdr">
+      <div>
+        <div class="cat-title">🧾 Reikningar</div>
+        <div class="cat-sub">${orders.length} reikningur${orders.length !== 1 ? 'ar' : ''}</div>
+      </div>
+      <button class="adm-btn" onclick="refreshOrdersFromServer(renderBuyerInvoicesPanel)" style="display:flex;align-items:center;gap:5px">↻ Uppfæra</button>
+    </div>
+
+    ${!orders.length ? `<div class="no-data">🧾 Engir reikningar fundust.</div>` : `
+    <div style="display:flex;flex-direction:column;gap:12px;max-width:680px">
+      ${orders.map(o => {
+        const d = new Date(o.date);
+        const due = new Date(d); due.setDate(due.getDate()+14);
+        return `
+        <div style="border:1.5px solid var(--paper3);border-radius:var(--r);overflow:hidden;background:var(--sf)">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--paper2);gap:12px;flex-wrap:wrap">
+            <div>
+              <div style="font-weight:600;font-size:13px;color:var(--ink);font-family:monospace">${esc(o.id)}</div>
+              <div style="font-size:11px;color:var(--ink3);margin-top:2px">
+                ${d.toLocaleDateString('is-IS',{day:'2-digit',month:'long',year:'numeric'})}
+                · Gjalddagi: ${due.toLocaleDateString('is-IS',{day:'2-digit',month:'long',year:'numeric'})}
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px">
+              ${pill(o.status)}
+              <div style="font-weight:700;font-size:15px;color:var(--green)">${fmt(o.total||0)}</div>
+            </div>
+          </div>
+          <div style="padding:10px 16px;display:flex;flex-direction:column;gap:4px">
+            ${(o.items||[]).slice(0,4).map(it =>
+              `<div style="display:flex;justify-content:space-between;font-size:12px;color:var(--ink2)">
+                <span>${esc(it.name)}</span>
+                <span style="color:var(--ink3)">${it.qty} × ${esc(it.price||'')}</span>
+              </div>`
+            ).join('')}
+            ${(o.items||[]).length > 4 ? `<div style="font-size:11px;color:var(--ink3)">…og ${(o.items||[]).length-4} vörur í viðbót</div>` : ''}
+          </div>
+          <div style="padding:8px 16px 12px;border-top:1px solid var(--paper3)">
+            <button class="adm-btn primary" data-orderid="${esc(o.id)}"
+              onclick="downloadOrderPDF(this.dataset.orderid)"
+              style="display:flex;align-items:center;gap:6px">
+              📄 Sækja reikning í PDF
+            </button>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`}
+  `;
 }
 
 // ══ PRODUCTS PANEL ════════════════════════════════════
@@ -9560,6 +9748,7 @@ updateCartCount();
 renderCartBody();
 updateHeaderAuth();
 initAdminUI();
+initBuyerUI();
 updateFloatBtn();
 
 // Restore sidebar collapsed state
@@ -9583,6 +9772,10 @@ updateFloatBtn();
 if (localStorage.getItem('ws_role') === 'admin') {
   const lastPanel = localStorage.getItem('ws_last_panel');
   if (lastPanel) setTimeout(() => showPanel(lastPanel), 50);
+}
+// Restore buyer panel on refresh
+if (localStorage.getItem('ws_role') === 'buyer') {
+  setTimeout(() => showPanel('buyerOrders'), 50);
 }
 
 // Step 7: Safety net — ensure window.PRODUCTS is always populated
