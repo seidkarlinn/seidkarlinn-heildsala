@@ -1043,9 +1043,8 @@ aside.detail{
         <button class="adm-side-btn" id="admBtnViðskm" onclick="showPanel('vidskm')">
           🏢 Viðskiptamenn
         </button>
-        <div class="adm-side-divider"></div>
-        <button class="adm-side-btn" onclick="showPanel('catalog')" style="font-size:11px;color:var(--ink3)">
-          ← Til baka í vörulista
+        <button class="adm-side-btn" id="admBtnCatalog" onclick="showPanel('catalog')">
+          🛒 Vörulisti
         </button>
 
       </div>
@@ -6413,7 +6412,7 @@ function showPanel(panel) {
     if (el) el.classList.toggle('active', p === panel);
   });
   // Sidebar active states — admin buttons
-  ['Orders','Products','Theme','Pricing','Viðskm'].forEach(p => {
+  ['Orders','Products','Theme','Pricing','Viðskm','Catalog'].forEach(p => {
     const btn = document.getElementById('admBtn' + p);
     if (btn) btn.classList.toggle('active', panel.toLowerCase() === p.toLowerCase());
   });
