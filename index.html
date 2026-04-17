@@ -9770,10 +9770,6 @@ if (localStorage.getItem('ws_role') === 'admin') {
   const lastPanel = localStorage.getItem('ws_last_panel');
   if (lastPanel) setTimeout(() => showPanel(lastPanel), 50);
 }
-// Restore buyer panel on refresh
-if (localStorage.getItem('ws_role') === 'buyer') {
-  setTimeout(() => showPanel('buyerOrders'), 50);
-}
 
 // Step 7: Safety net — ensure window.PRODUCTS is always populated
 if (!window.PRODUCTS || window.PRODUCTS.length === 0) {
