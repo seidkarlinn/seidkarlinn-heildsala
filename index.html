@@ -5401,15 +5401,41 @@ function parseSize(name) {
   if (unit === 'l' || unit === 'ltr' || unit === 'litr') return val * 1000;
   return val;
 }
-// Strip all size tokens from a product name to get the "base" name used for grouping.
-// e.g. "Raw Mountain Honey 1kg" → "Raw Mountain Honey"
-//      "Blood Orange-Fennel Toothpaste 250ml" → "Blood Orange-Fennel Toothpaste"
+// Shared size-token regex used by baseName and brandName
+const _SIZE_TOKEN_RE = /\b\d+(?:[.,\-]\d+)?\s*(?:kg|g|ltr|litr|l(?=\b)|ml|hylki|servings?|caps?u?l?e?s?|stk|ji|pack|pcs|pc)\b|\(\d+\w*\)/gi;
+
+// Strip size tokens to get the base name used for within-brand grouping.
+// e.g. "Raw Mountain Honey 1kg Seiðkarlinn" → "Raw Mountain Honey Seiðkarlinn"
 function baseName(name) {
   if (!name) return '';
   return name
-    .replace(/\b\d+(?:[.,]\d+)?\s*(?:kg|g|ltr|litr|l(?=\b)|ml|hylki|caps?u?l?e?s?|stk)\b/gi, '')
+    .replace(_SIZE_TOKEN_RE, '')
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+// Extract brand — the last word of the name after stripping size tokens and stray numbers.
+// Special case: if name starts with "Varia" the brand is always "Varia".
+function brandName(name) {
+  if (!name) return '';
+  if (/^varia\b/i.test(name)) return 'Varia';
+  const stripped = name
+    .replace(_SIZE_TOKEN_RE, '')        // remove size tokens
+    .replace(/\b\d+%?\b/g, '')         // remove stray numbers / percentages
+    .replace(/\s+/g, ' ').trim();
+  const words = stripped.split(' ').filter(Boolean);
+  return words[words.length - 1] || '';
+}
+
+// Full sort key for a product: { brand, base (without brand suffix), size }
+function _sortKey(name) {
+  const brand = brandName(name);
+  const base  = baseName(name);
+  // Drop brand from the end of base so intra-brand sort is by product description only
+  const baseNoBrand = (brand && base.endsWith(' ' + brand))
+    ? base.slice(0, -(brand.length + 1)).trim()
+    : base;
+  return { brand, base: baseNoBrand, size: parseSize(name) };
 }
 function matchQ(p, q) {
   return p.name.toLowerCase().includes(q) || p.desc.toLowerCase().includes(q)
@@ -5484,21 +5510,25 @@ function renderGrid() {
   );
 
   if (sort==='name') filtered.sort((a,b) => {
-    // Sort by base name alphabetically, then largest size first within each group
-    const bn = baseName(a.name).localeCompare(baseName(b.name), 'is');
+    // brand → base name (no brand) → size desc
+    const ka = _sortKey(a.name), kb = _sortKey(b.name);
+    const br = ka.brand.localeCompare(kb.brand, 'is');
+    if (br !== 0) return br;
+    const bn = ka.base.localeCompare(kb.base, 'is');
     if (bn !== 0) return bn;
-    return parseSize(b.name) - parseSize(a.name);
+    return kb.size - ka.size;
   });
   else if (sort==='default' || !sort) {
-    // 1) Group by category (a→z)
-    // 2) Within category: group by base name (a→z) so all sizes of a product are adjacent
-    // 3) Within base-name group: largest size first
+    // category → brand → base name (no brand) → size desc
     filtered.sort((a,b) => {
       const cc = a.cat.localeCompare(b.cat, 'is');
       if (cc !== 0) return cc;
-      const bn = baseName(a.name).localeCompare(baseName(b.name), 'is');
+      const ka = _sortKey(a.name), kb = _sortKey(b.name);
+      const br = ka.brand.localeCompare(kb.brand, 'is');
+      if (br !== 0) return br;
+      const bn = ka.base.localeCompare(kb.base, 'is');
       if (bn !== 0) return bn;
-      return parseSize(b.name) - parseSize(a.name);
+      return kb.size - ka.size;
     });
   }
   else if (sort==='price-asc') filtered.sort((a,b) => {
