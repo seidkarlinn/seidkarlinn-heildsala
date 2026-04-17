@@ -6483,9 +6483,20 @@ function clearAllOrdersTap() {
     }, 3000);
   } else {
     _clearAllPending = false;
+    if (btn) { btn.textContent = 'Hreinsun…'; btn.disabled = true; }
     saveOrders([]);
-    renderOrdersPanel();
-    showToast('Allar pantanir hreinsaðar.');
+    // Explicit server push — don't rely solely on the sync-layer interceptor,
+    // which is fire-and-forget and may lose the race against a page refresh.
+    fetch('/.netlify/functions/ws-data', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key: 'ws_orders', value: [] }),
+    })
+      .catch(function () {})
+      .finally(function () {
+        renderOrdersPanel();
+        showToast('Allar pantanir hreinsaðar.');
+      });
   }
 }
 
