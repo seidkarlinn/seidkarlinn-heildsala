@@ -5665,7 +5665,11 @@ function resetCustomOrder() {
   }).catch(function(e){ console.error('resetCustomOrder failed:', e); });
   renderGrid();
 }
-function qf(cat) { activeFilter = cat; buildSidebar(); renderGrid(); }
+function qf(cat) {
+  activeFilter = cat;
+  if (currentPanel !== 'catalog') showPanel('catalog');
+  else { buildSidebar(); renderGrid(); }
+}
 function setView(v) {
   viewMode = v;
   document.getElementById('gbtn').classList.toggle('on', v==='grid');
