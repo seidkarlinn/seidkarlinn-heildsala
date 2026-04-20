@@ -6540,13 +6540,15 @@ function clearAllOrdersTap() {
   } else {
     _clearAllPending = false;
     if (btn) { btn.textContent = 'Hreinsun…'; btn.disabled = true; }
-    saveOrders([]);
-    // Explicit server push — don't rely solely on the sync-layer interceptor,
-    // which is fire-and-forget and may lose the race against a page refresh.
+    // Write empty array to localStorage WITHOUT triggering the sync-layer push
+    // (saveOrders would fire a background keepalive that races with the force push)
+    if (window._wsReceiveFromServer) window._wsReceiveFromServer('ws_orders', JSON.stringify([]));
+    else localStorage.setItem('ws_orders', JSON.stringify([]));
+    // Force push — server skips merge so [] actually overwrites all stored orders
     fetch('/.netlify/functions/ws-data', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ key: 'ws_orders', value: [] }),
+      body: JSON.stringify({ key: 'ws_orders', value: [], force: true }),
     })
       .catch(function () {})
       .finally(function () {
@@ -6686,13 +6688,16 @@ function setStatus(id, status) {
   const o = orders.find(x => x.id === id);
   if (!o) return;
   o.status = status;
-  saveOrders(orders); // sync-layer interceptor also pushes via keepalive
-  // Explicit server push so the updated status reaches Netlify Blobs
-  // immediately — buyers see the change next time they open Mínar pantanir.
+  // Write to localStorage via _wsReceiveFromServer (bypasses sync-layer interceptor)
+  // so we do NOT fire a background keepalive push that would race with the force push below.
+  if (window._wsReceiveFromServer) window._wsReceiveFromServer('ws_orders', JSON.stringify(orders));
+  else localStorage.setItem('ws_orders', JSON.stringify(orders));
+  // Single authoritative force push — server skips merge so the new status
+  // is never overwritten by an older concurrent push restoring the prior value.
   fetch('/.netlify/functions/ws-data', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ key: 'ws_orders', value: orders }),
+    body: JSON.stringify({ key: 'ws_orders', value: orders, force: true }),
   }).catch(function () {});
   updatePendingBadge();
   renderOrdersPanel();

@@ -60,28 +60,32 @@ exports.handler = async (event) => {
         return { statusCode: 400, headers, body: JSON.stringify({ ok: false, error: "Invalid or missing key" }) };
       }
 
-      // ws_orders: merge by order ID instead of blind overwrite so that
-      // out-of-order network delivery never silently drops orders.
-      // Two concurrent pushes (e.g. sync-layer + explicit keepalive) may arrive
-      // in reverse order; the earlier push must not wipe orders added by the later one.
-      if (key === "ws_orders" && Array.isArray(value)) {
+      // ws_orders: merge by order ID so out-of-order concurrent pushes
+      // (sync-layer keepalive + explicit fetch from logOrder) cannot silently
+      // drop orders that arrived in a different network order.
+      //
+      // EXCEPTION — force:true: admin deliberate writes (status changes,
+      // deletions) set force:true and bypass the merge entirely. This
+      // prevents a status-change push from being undone by an older concurrent
+      // push arriving later, and allows "clear all" to actually clear.
+      if (key === "ws_orders" && Array.isArray(value) && !body.force) {
         const existing = await store.get("ws_orders");
         let stored = [];
         if (existing) {
           try { stored = JSON.parse(existing); } catch { stored = []; }
           if (!Array.isArray(stored)) stored = [];
         }
-        // Merge: keep all unique order IDs, prefer the entry with the later date
+        // Merge: keep all unique order IDs; incoming wins on equal or newer date
         const byId = {};
         function addOrder(o) {
           if (!o || !o.id) return;
           if (!byId[o.id]) { byId[o.id] = o; return; }
           const existingTs = new Date(byId[o.id].date || 0).getTime();
           const incomingTs = new Date(o.date || 0).getTime();
-          if (incomingTs > existingTs) byId[o.id] = o;
+          if (incomingTs >= existingTs) byId[o.id] = o; // >= so incoming wins on tie
         }
         stored.forEach(addOrder);   // existing server data first
-        value.forEach(addOrder);    // incoming data second (wins on tie or newer date)
+        value.forEach(addOrder);    // incoming second (wins on same or newer date)
         const merged = Object.values(byId).sort((a, b) =>
           new Date(b.date || 0) - new Date(a.date || 0)
         );
@@ -89,7 +93,7 @@ exports.handler = async (event) => {
         return { statusCode: 200, headers, body: JSON.stringify({ ok: true, key, saved: true }) };
       }
 
-      // All other keys: plain overwrite (safe — they are not append-only arrays)
+      // All other keys, and ws_orders with force:true: plain overwrite
       await store.set(key, JSON.stringify(value));
       return { statusCode: 200, headers, body: JSON.stringify({ ok: true, key, saved: true }) };
     }
