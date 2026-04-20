@@ -6366,6 +6366,7 @@ function getOrders()   { try{return JSON.parse(localStorage.getItem('ws_orders')
 function saveOrders(o) { localStorage.setItem('ws_orders',JSON.stringify(o)); }
 
 // Fetch latest ws_orders from Netlify Blobs, merge with local, then call callback
+// Used by admin panel — merges to handle concurrent new-order race conditions
 let _orderPollTimer = null;
 function refreshOrdersFromServer(callback) {
   fetch('/.netlify/functions/ws-data?key=ws_orders')
@@ -6390,6 +6391,23 @@ function refreshOrdersFromServer(callback) {
         // Write back without triggering another push to server
         if (window._wsReceiveFromServer) {
           window._wsReceiveFromServer('ws_orders', JSON.stringify(merged));
+        }
+      }
+    })
+    .catch(function(){})
+    .finally(function(){ if (callback) callback(); });
+}
+
+// Fetch latest ws_orders from Netlify Blobs and REPLACE local — server is authoritative.
+// Used by buyer panel so admin-deleted orders don't survive in localStorage.
+function replaceOrdersFromServer(callback) {
+  fetch('/.netlify/functions/ws-data?key=ws_orders')
+    .then(function(r){ return r.json(); })
+    .then(function(json){
+      if (json.ok && Array.isArray(json.value)) {
+        // Replace — do NOT merge with local; server is source of truth
+        if (window._wsReceiveFromServer) {
+          window._wsReceiveFromServer('ws_orders', JSON.stringify(json.value));
         }
       }
     })
@@ -6495,8 +6513,8 @@ function showPanel(panel) {
     stopOrderPoll();
     refreshOrdersFromServer(function(){ renderOrdersPanel(); startOrderPoll(); });
   }
-  if (panel === 'buyerOrders')   { refreshOrdersFromServer(renderBuyerOrdersPanel); }
-  if (panel === 'buyerInvoices') { refreshOrdersFromServer(renderBuyerInvoicesPanel); }
+  if (panel === 'buyerOrders')   { replaceOrdersFromServer(renderBuyerOrdersPanel); }
+  if (panel === 'buyerInvoices') { replaceOrdersFromServer(renderBuyerInvoicesPanel); }
   if (panel === 'products') renderProductsPanel();
   if (panel === 'theme')    renderThemePanel();
   if (panel === 'pricing')  renderPricingPanel();
@@ -6729,7 +6747,7 @@ function renderBuyerOrdersPanel() {
         <div class="cat-title">📋 Pantanir</div>
         <div class="cat-sub">${orders.length} pöntun${orders.length !== 1 ? 'ir' : ''} samtals</div>
       </div>
-      <button class="adm-btn" onclick="refreshOrdersFromServer(renderBuyerOrdersPanel)" style="display:flex;align-items:center;gap:5px">↻ Uppfæra</button>
+      <button class="adm-btn" onclick="replaceOrdersFromServer(renderBuyerOrdersPanel)" style="display:flex;align-items:center;gap:5px">↻ Uppfæra</button>
     </div>
 
     ${!orders.length ? `<div class="no-data">📋 Engar pantanir fundust.</div>` : `
@@ -6806,7 +6824,7 @@ function renderBuyerInvoicesPanel() {
         <div class="cat-title">🧾 Reikningar</div>
         <div class="cat-sub">${orders.length} reikningur${orders.length !== 1 ? 'ar' : ''}</div>
       </div>
-      <button class="adm-btn" onclick="refreshOrdersFromServer(renderBuyerInvoicesPanel)" style="display:flex;align-items:center;gap:5px">↻ Uppfæra</button>
+      <button class="adm-btn" onclick="replaceOrdersFromServer(renderBuyerInvoicesPanel)" style="display:flex;align-items:center;gap:5px">↻ Uppfæra</button>
     </div>
 
     ${!orders.length ? `<div class="no-data">🧾 Engir reikningar fundust.</div>` : `
