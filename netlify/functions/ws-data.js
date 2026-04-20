@@ -60,6 +60,36 @@ exports.handler = async (event) => {
         return { statusCode: 400, headers, body: JSON.stringify({ ok: false, error: "Invalid or missing key" }) };
       }
 
+      // ws_orders: merge by order ID instead of blind overwrite so that
+      // out-of-order network delivery never silently drops orders.
+      // Two concurrent pushes (e.g. sync-layer + explicit keepalive) may arrive
+      // in reverse order; the earlier push must not wipe orders added by the later one.
+      if (key === "ws_orders" && Array.isArray(value)) {
+        const existing = await store.get("ws_orders");
+        let stored = [];
+        if (existing) {
+          try { stored = JSON.parse(existing); } catch { stored = []; }
+          if (!Array.isArray(stored)) stored = [];
+        }
+        // Merge: keep all unique order IDs, prefer the entry with the later date
+        const byId = {};
+        function addOrder(o) {
+          if (!o || !o.id) return;
+          if (!byId[o.id]) { byId[o.id] = o; return; }
+          const existingTs = new Date(byId[o.id].date || 0).getTime();
+          const incomingTs = new Date(o.date || 0).getTime();
+          if (incomingTs > existingTs) byId[o.id] = o;
+        }
+        stored.forEach(addOrder);   // existing server data first
+        value.forEach(addOrder);    // incoming data second (wins on tie or newer date)
+        const merged = Object.values(byId).sort((a, b) =>
+          new Date(b.date || 0) - new Date(a.date || 0)
+        );
+        await store.set("ws_orders", JSON.stringify(merged));
+        return { statusCode: 200, headers, body: JSON.stringify({ ok: true, key, saved: true }) };
+      }
+
+      // All other keys: plain overwrite (safe — they are not append-only arrays)
       await store.set(key, JSON.stringify(value));
       return { statusCode: 200, headers, body: JSON.stringify({ ok: true, key, saved: true }) };
     }

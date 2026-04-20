@@ -7809,10 +7809,23 @@ async function invoiceCheckout() {
     // Status stays as 'processing' (set by logOrder) — admin advances manually.
     const orderId = invoiceNo;
     logOrder(orderId, totalGross, cart, buyerName, buyerEmail, user, note);
-    // Store invoice metadata without changing status
-    const orders = getOrders();
-    const o = orders.find(x => x.id === orderId);
-    if (o) { o.invoiceNo = invoiceNo; o.buyerKt = buyerKt; o.buyerAddr = buyerAddr; saveOrders(orders); }
+    // Patch invoice metadata directly in localStorage without a second saveOrders()
+    // push — logOrder already fired two server pushes; a third one here races with
+    // them and can cause the server to overwrite a newer [order2, order1] with an
+    // older [order1]. Instead we write only to localStorage (no server push).
+    try {
+      const _orders = getOrders();
+      const _o = _orders.find(x => x.id === orderId);
+      if (_o) {
+        _o.invoiceNo = invoiceNo; _o.buyerKt = buyerKt; _o.buyerAddr = buyerAddr;
+        // Use originalSetItem equivalent to skip the sync-layer interceptor
+        if (window._wsReceiveFromServer) {
+          window._wsReceiveFromServer('ws_orders', JSON.stringify(_orders));
+        } else {
+          localStorage.setItem('ws_orders', JSON.stringify(_orders));
+        }
+      }
+    } catch(e) {}
 
     // Clear cart
     cart = [];
