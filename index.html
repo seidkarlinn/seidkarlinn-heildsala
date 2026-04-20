@@ -6416,7 +6416,7 @@ function logOrder(orderId, total, cartItems, buyerName, buyerEmail, buyerUser, n
   orders.unshift({
     id: orderId, total, buyerName, buyerEmail, buyerUser, note,
     date: new Date().toISOString(),
-    status: 'pending',
+    status: 'processing',
     teyaSessionId: teyaSessionId || null,
     refunds: [],
     items: (cartItems||[]).map(i=>{
@@ -6456,8 +6456,9 @@ function initAdminUI() {
 function updatePendingBadge() {
   const badge = document.getElementById('pendingBadge');
   if (!badge) return;
-  const n = getOrders().filter(o=>o.status==='pending').length;
-  badge.textContent = n > 0 ? n + ' í bið' : '';
+  // Count orders that need admin action: 'processing' (new default) + legacy 'pending'
+  const n = getOrders().filter(o => o.status === 'processing' || o.status === 'pending').length;
+  badge.textContent = n > 0 ? n + ' ný' : '';
 }
 function initBuyerUI() {
   const isBuyer = localStorage.getItem('ws_role') === 'buyer';
