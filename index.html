@@ -7806,12 +7806,13 @@ async function invoiceCheckout() {
     });
 
     // Log order in admin (only after PDF succeeded)
+    // Status stays as 'processing' (set by logOrder) — admin advances manually.
     const orderId = invoiceNo;
     logOrder(orderId, totalGross, cart, buyerName, buyerEmail, user, note);
-    // Update order status to 'invoice'
+    // Store invoice metadata without changing status
     const orders = getOrders();
     const o = orders.find(x => x.id === orderId);
-    if (o) { o.status = 'invoice'; o.invoiceNo = invoiceNo; o.buyerKt = buyerKt; o.buyerAddr = buyerAddr; saveOrders(orders); }
+    if (o) { o.invoiceNo = invoiceNo; o.buyerKt = buyerKt; o.buyerAddr = buyerAddr; saveOrders(orders); }
 
     // Clear cart
     cart = [];
