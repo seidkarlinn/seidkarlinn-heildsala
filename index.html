@@ -5690,9 +5690,42 @@ function resetCustomOrder() {
 }
 function qf(cat) {
   activeFilter = cat;
+  // Persist selected category in URL hash so refresh / sharing restores it.
+  // 'All' clears the hash (replaceState avoids a pointless history entry for the empty state).
+  const newHash = cat === 'All' ? '' : encodeURIComponent(cat);
+  const curHash = window.location.hash.replace(/^#/, '');
+  if (newHash !== curHash) {
+    if (newHash) {
+      window.location.hash = newHash;  // creates a browser history entry → back/forward works
+    } else {
+      history.replaceState(null, '', window.location.pathname + window.location.search);
+    }
+  }
   if (currentPanel !== 'catalog') showPanel('catalog');
   else { buildSidebar(); renderGrid(); }
 }
+
+// Read current URL hash and set activeFilter if it matches a known category.
+function _applyHashFilter() {
+  const raw = window.location.hash.replace(/^#/, '');
+  if (!raw) { activeFilter = 'All'; return; }
+  try {
+    const decoded = decodeURIComponent(raw);
+    const known = (typeof CATS !== 'undefined' ? CATS : []);
+    if (known.includes(decoded)) { activeFilter = decoded; }
+  } catch (e) {}
+}
+
+// Handle browser back / forward navigation between category hashes.
+window.addEventListener('hashchange', function () {
+  const raw = window.location.hash.replace(/^#/, '');
+  const decoded = raw ? (function(){ try{return decodeURIComponent(raw);}catch(e){return raw;} })() : 'All';
+  if (decoded === activeFilter) return;  // we set this hash ourselves — skip re-render
+  _applyHashFilter();
+  if (currentPanel !== 'catalog') showPanel('catalog');
+  else { buildSidebar(); renderGrid(); }
+});
+
 function setView(v) {
   viewMode = v;
   document.getElementById('gbtn').classList.toggle('on', v==='grid');
@@ -9842,6 +9875,22 @@ if (!window.PRODUCTS || window.PRODUCTS.length === 0) {
   buildSidebar();
   renderGrid();
 }
+
+// Step 8: Restore category filter from URL hash (survives refresh, supports bookmarks).
+// Runs after catalog is built so CATS is populated and activeFilter takes effect.
+(function () {
+  const raw = window.location.hash.replace(/^#/, '');
+  if (!raw) return;
+  try {
+    const decoded = decodeURIComponent(raw);
+    const known = (typeof CATS !== 'undefined' ? CATS : []);
+    if (known.includes(decoded) && decoded !== activeFilter) {
+      activeFilter = decoded;
+      buildSidebar();
+      renderGrid();
+    }
+  } catch (e) {}
+})();
 </script>
 </body>
 </html>
