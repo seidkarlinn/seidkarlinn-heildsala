@@ -3,6 +3,7 @@ const { getStore } = require("@netlify/blobs");
 const ALLOWED_KEYS = [
   "ws_orders","ws_invoice_seq","ws_buyer_accounts","ws_custom_products",
   "ws_deleted_products","ws_pricing","ws_pricing_users","ws_vidskm","ws_last_order","ws_cache_version","ws_product_info","ws_theme","ws_product_order",
+  "ws_orders_lm", // last-modified timestamp — set only on force:true writes (admin deletions)
 ];
 
 exports.handler = async (event) => {
@@ -93,8 +94,14 @@ exports.handler = async (event) => {
         return { statusCode: 200, headers, body: JSON.stringify({ ok: true, key, saved: true }) };
       }
 
-      // All other keys, and ws_orders with force:true: plain overwrite
+      // All other keys, and ws_orders with force:true: plain overwrite.
+      // For force:true ws_orders writes (admin deletions/status changes), also
+      // stamp ws_orders_lm so clients can detect server-side authority and
+      // replace their stale localStorage instead of merging it back up.
       await store.set(key, JSON.stringify(value));
+      if (key === "ws_orders" && body.force) {
+        await store.set("ws_orders_lm", new Date().toISOString());
+      }
       return { statusCode: 200, headers, body: JSON.stringify({ ok: true, key, saved: true }) };
     }
 

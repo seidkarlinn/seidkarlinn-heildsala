@@ -38,9 +38,30 @@
         try { localVal = JSON.parse(originalGetItem(key) || "null"); } catch (e) { localVal = null; }
 
         if (key === "ws_orders" && Array.isArray(serverVal)) {
+          // Compare authoritative last-modified timestamps.
+          // ws_orders_lm is only written when admin does a force:true delete/clear.
+          // If the server's lm is newer than the client's, the server performed an
+          // authoritative edit after the client last synced — REPLACE local with
+          // server data so admin-deleted orders are not resurrected by stale localStorage.
+          var server_lm = (serverData['ws_orders_lm'] && typeof serverData['ws_orders_lm'] === 'string')
+            ? serverData['ws_orders_lm'] : null;
+          var local_lm = originalGetItem('ws_orders_lm') || null;
+          var serverIsNewer = server_lm && (!local_lm || server_lm > local_lm);
+
+          if (serverIsNewer) {
+            // Server performed an authoritative admin action after client last synced.
+            // Replace local entirely — do NOT merge and do NOT push stale data back up.
+            originalSetItem('ws_orders', JSON.stringify(serverVal));
+            originalSetItem('ws_orders_lm', server_lm);
+            console.log('[ws-sync] Server ws_orders_lm newer (' + server_lm + ' > ' + local_lm + ') — replaced local orders with server-authoritative list (' + serverVal.length + ' orders).');
+            return;
+          }
+
           var localArr = Array.isArray(localVal) ? localVal : [];
           var merged = mergeOrders(localArr, serverVal);
           originalSetItem(key, JSON.stringify(merged));
+          // Keep local lm in sync (if server has one and we don't yet)
+          if (server_lm && !local_lm) originalSetItem('ws_orders_lm', server_lm);
           // If local had orders the server didn't (e.g. keepalive fetch failed during
           // mobile page navigation to payment gateway), push the merged set back up so
           // the admin panel sees all orders.
