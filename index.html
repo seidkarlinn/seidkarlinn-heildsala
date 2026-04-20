@@ -6416,7 +6416,7 @@ function logOrder(orderId, total, cartItems, buyerName, buyerEmail, buyerUser, n
   orders.unshift({
     id: orderId, total, buyerName, buyerEmail, buyerUser, note,
     date: new Date().toISOString(),
-    status: 'processing',
+    status: 'pending',
     teyaSessionId: teyaSessionId || null,
     refunds: [],
     items: (cartItems||[]).map(i=>{
@@ -6456,9 +6456,8 @@ function initAdminUI() {
 function updatePendingBadge() {
   const badge = document.getElementById('pendingBadge');
   if (!badge) return;
-  // Count orders that need admin action: 'processing' (new default) + legacy 'pending'
-  const n = getOrders().filter(o => o.status === 'processing' || o.status === 'pending').length;
-  badge.textContent = n > 0 ? n + ' ný' : '';
+  const n = getOrders().filter(o => o.status === 'pending').length;
+  badge.textContent = n > 0 ? n + ' í bið' : '';
 }
 function initBuyerUI() {
   const isBuyer = localStorage.getItem('ws_role') === 'buyer';
@@ -6684,8 +6683,18 @@ function toggleOrdDetail(id) {
 }
 function setStatus(id, status) {
   const orders = getOrders();
-  const o = orders.find(x=>x.id===id);
-  if (o) { o.status=status; saveOrders(orders); updatePendingBadge(); }
+  const o = orders.find(x => x.id === id);
+  if (!o) return;
+  o.status = status;
+  saveOrders(orders); // sync-layer interceptor also pushes via keepalive
+  // Explicit server push so the updated status reaches Netlify Blobs
+  // immediately — buyers see the change next time they open Mínar pantanir.
+  fetch('/.netlify/functions/ws-data', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ key: 'ws_orders', value: orders }),
+  }).catch(function () {});
+  updatePendingBadge();
   renderOrdersPanel();
   showToast('Staða uppfærð');
 }
