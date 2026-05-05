@@ -1,0 +1,37 @@
+name: Fix Shopify Sync (one-shot)
+
+# Triggers on the first push that adds either of these files. After it
+# patches index.html and pushes the commit, no further pushes will
+# include either file, so it does not loop. Can also be re-run manually
+# from the Actions tab via 'Run workflow'.
+
+on:
+  push:
+    paths:
+      - '.github/workflows/fix-shopify-sync.yml'
+      - '.github/scripts/fix-shopify-sync.py'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Patch index.html
+        run: python3 .github/scripts/fix-shopify-sync.py
+
+      - name: Commit and push
+        run: |
+          git config user.email "sync@seidkarlinn.is"
+          git config user.name "Sync"
+          git add index.html
+          if git diff --staged --quiet; then
+            echo "No changes to commit (already patched?)"
+          else
+            git commit -m "fix: robust syncWithShopify (handle redirects + missing names) [skip ci]"
+            git push
+          fi
