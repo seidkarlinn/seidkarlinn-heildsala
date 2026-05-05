@@ -9474,7 +9474,7 @@ async function syncShopifyImages() {
 
 async function syncWithShopify() {
   if (!confirm('Sækja birgðarstatus frá Shopify og uppfæra vörur sem eru uppseldar?')) return;
-  showToast('⏳ Sæki gegnir Shopify...', 5000);
+  showToast('⏳ Sæki gögn frá Shopify...', 5000);
 
   (async function() {
     try {
@@ -9497,12 +9497,41 @@ async function syncWithShopify() {
       if (!ov.prods) ov.prods = {};
       var base = window.PRODUCTS_BASE || PRODUCTS;
       var soldOut = 0, restocked = 0, missing = 0, unchanged = 0;
-      base.forEach(function(p) {
+      var missingNames = [];
+
+      // First pass: bulk byHandle lookup. Anything not found goes into a
+      // resolveNeeded queue for a per-product .js fetch — that endpoint follows
+      // Shopify's handle-history redirects, so old handles in PRODUCTS_BASE still
+      // resolve to the current product even after a Shopify-side rename.
+      var resolveNeeded = [];
+      base.forEach(function(p, i) {
         var m = (p.url||'').match(/\/products\/([^\/?]+)/);
-        if (!m) { missing++; return; }
+        if (!m) { missing++; missingNames.push(p.name || ('#' + i)); return; }
         var handle = m[1];
-        if (!(handle in byHandle)) { missing++; return; }
-        var shopifyInStock = byHandle[handle];
+        if (handle in byHandle) {
+          applyResult(p, byHandle[handle]);
+        } else {
+          resolveNeeded.push({ p: p, i: i, handle: handle });
+        }
+      });
+
+      // Second pass: resolve renamed/edge-case handles in batches of 10.
+      var BATCH = 10;
+      for (var bi = 0; bi < resolveNeeded.length; bi += BATCH) {
+        var batch = resolveNeeded.slice(bi, bi + BATCH);
+        await Promise.all(batch.map(async function(t) {
+          try {
+            var pr = await fetch('https://www.seidkarlinn.is/products/' + t.handle + '.js');
+            if (!pr.ok) { missing++; missingNames.push(t.p.name || ('#' + t.i)); return; }
+            var pd = await pr.json();
+            applyResult(t.p, !!pd.available);
+          } catch(e) {
+            missing++; missingNames.push(t.p.name || ('#' + t.i));
+          }
+        }));
+      }
+
+      function applyResult(p, shopifyInStock) {
         var key = getProdKey(p);
         var prev = ov.prods[key] || {};
         var currentInStock = (typeof prev.inStock === 'boolean') ? prev.inStock : (p.inStock !== false);
@@ -9512,7 +9541,7 @@ async function syncWithShopify() {
         } else {
           unchanged++;
         }
-      });
+      }
 
       savePricingOverrides(ov);
       applyPricingOverrides();
@@ -9520,10 +9549,17 @@ async function syncWithShopify() {
       if (typeof renderProductsPanel === 'function') renderProductsPanel();
       if (typeof renderGrid === 'function') renderGrid();
 
-      showToast('✓ Shopify sync látið: ' + soldOut + ' uppseldar, ' + restocked + ' á lager aftur, ' + unchanged + ' óbreyttar' + (missing ? ' (' + missing + ' fundust ekki)' : ''), 7000);
+      var msg = '✓ Shopify sync lokið: ' + soldOut + ' uppseldar, ' + restocked + ' á lager aftur, ' + unchanged + ' óbreyttar';
+      if (missing) {
+        var preview = missingNames.slice(0, 3).join(', ');
+        if (missingNames.length > 3) preview += ' +' + (missingNames.length - 3);
+        msg += ' (' + missing + ' fundust ekki: ' + preview + ')';
+        console.warn('[syncWithShopify] Vörur sem ekki fundust í Shopify:', missingNames);
+      }
+      showToast(msg, 9000);
     } catch(e) {
       console.error('Shopify sync failed:', e);
-      showToast('✗ Shopify sync miststókst: ' + e.message, 5000);
+      showToast('✗ Shopify sync mistókst: ' + e.message, 5000);
     }
   })();
 }
