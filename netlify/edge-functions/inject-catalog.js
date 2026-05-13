@@ -14,7 +14,9 @@
  * 2026-05-13: Inject favicon <link> tags into <head>. The actual binary
  *   favicon content is served by netlify/edge-functions/favicons.js at
  *   /favicon.ico, /favicon-32.png, /favicon-180.png. Idempotent — skips
- *   if a favicon link is already present in source.
+ *   if a favicon link is already present in source. Hrefs include a
+ *   ?v=N query string for cache-busting whenever the favicon image
+ *   bytes change (bump FAVICON_VERSION below to force a refetch).
  */
 
 // 8 CordyFresh entries — Cordyceps/Lions Mane/Reishi/Chaga at 20% and 50% strengths.
@@ -191,12 +193,15 @@ const CORDYFRESH_PATCH = `
 
 // Favicon <link> tags — added 2026-05-13.
 // Binary favicon files are served by the sibling edge function favicons.js
-// (HTTP-routed at /favicon.ico, /favicon-32.png, /favicon-180.png). This block
-// just wires the <link> references so the browser knows to request them.
+// (HTTP-routed at /favicon.ico, /favicon-32.png, /favicon-180.png). The
+// favicons.js handler keys on url.pathname, so the ?v=N query string is
+// transparent to it — but visible to browsers, which bust their cache on URL
+// change. Bump FAVICON_VERSION any time the favicon image bytes change.
+const FAVICON_VERSION = '2';
 const FAVICON_LINKS = `
-    <link rel="icon" type="image/x-icon" href="/favicon.ico">
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="/favicon-180.png">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico?v=${FAVICON_VERSION}">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png?v=${FAVICON_VERSION}">
+    <link rel="apple-touch-icon" sizes="180x180" href="/favicon-180.png?v=${FAVICON_VERSION}">
 `;
 
 export default async function handler(request, context) {
@@ -261,10 +266,12 @@ export default async function handler(request, context) {
     }
   }
 
-  // 4. Inject favicon <link> tags right after <head>. Idempotent: skip if any
-  //    favicon link is already present (e.g. if index.html is later updated
-  //    to bake them in, this block will no-op cleanly).
-  if (!injected.includes('href="/favicon.ico"') && !injected.includes('rel="icon"')) {
+  // 4. Inject favicon <link> tags right after <head>. Idempotent guard: skip
+  //    if the source HTML already has a favicon reference (lets a future
+  //    baked-in version take over without double-injecting). We check
+  //    "/favicon.ico" without the ?v= suffix so a bare baked reference still
+  //    counts.
+  if (!injected.includes('href="/favicon.ico') && !injected.includes('rel="icon"')) {
     injected = injected.replace('<head>', `<head>${FAVICON_LINKS}`);
   }
 
