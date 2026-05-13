@@ -10,6 +10,11 @@
  *   • Routes wholesale price for tag:"Cordyfresh" products through that
  *     category, with default 30% if no admin override exists for the
  *     active user/global. Replaces the previously-hardcoded 30% derivation.
+ *
+ * 2026-05-13: Inject favicon <link> tags into <head>. The actual binary
+ *   favicon content is served by netlify/edge-functions/favicons.js at
+ *   /favicon.ico, /favicon-32.png, /favicon-180.png. Idempotent — skips
+ *   if a favicon link is already present in source.
  */
 
 // 8 CordyFresh entries — Cordyceps/Lions Mane/Reishi/Chaga at 20% and 50% strengths.
@@ -184,6 +189,16 @@ const CORDYFRESH_PATCH = `
 </script>
 `;
 
+// Favicon <link> tags — added 2026-05-13.
+// Binary favicon files are served by the sibling edge function favicons.js
+// (HTTP-routed at /favicon.ico, /favicon-32.png, /favicon-180.png). This block
+// just wires the <link> references so the browser knows to request them.
+const FAVICON_LINKS = `
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/favicon-180.png">
+`;
+
 export default async function handler(request, context) {
   const response = await context.next();
   const contentType = response.headers.get('content-type') || '';
@@ -244,6 +259,13 @@ export default async function handler(request, context) {
     } else {
       injected += CORDYFRESH_PATCH;
     }
+  }
+
+  // 4. Inject favicon <link> tags right after <head>. Idempotent: skip if any
+  //    favicon link is already present (e.g. if index.html is later updated
+  //    to bake them in, this block will no-op cleanly).
+  if (!injected.includes('href="/favicon.ico"') && !injected.includes('rel="icon"')) {
+    injected = injected.replace('<head>', `<head>${FAVICON_LINKS}`);
   }
 
   return new Response(injected, {
