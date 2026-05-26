@@ -135,6 +135,96 @@
 
   console.log("[ws-sync] Sync layer installed. Keys tracked:", SYNC_KEYS.length);
 
+  // ─── DEFAULT PRICING SEED ────────────────────────────────────────────────
+  // After sync completes, any buyer account (from ws_buyer_accounts or
+  // ws_vidskm) that does not yet have an entry in ws_pricing_users — or has
+  // an empty entry — is seeded with the standard category-discount template.
+  // This guarantees new users get the right per-category percentages out of
+  // the box, instead of falling back to the 25% global default.
+  //
+  // Runs admin-side only: the seeding write is pushed to the server, so it
+  // only needs to happen once for any given user. Edit STANDARD_PRICING_TEMPLATE
+  // here to change the default applied to all future new users.
+  var STANDARD_PRICING_TEMPLATE = {
+    cats: {
+      "Drykkir": 30,
+      "Frostþurrkaðir ávextir": 30,
+      "Fæðubótarefni": 35,
+      "Hreinlætisvörur": 30,
+      "Hunangsafurðir": 35,
+      "Hárvörur": 30,
+      "Húðvörur": 30,
+      "Kakó": 30,
+      "Shilajit": 35,
+      "Sveppir": 35,
+      "Ólífuolíur": 30,
+      "Tannhirða": 25,
+      "Rakstursvörur": 30,
+      "Eldhúsáhöld": 30
+    },
+    prods: {}
+  };
+
+  function seedDefaultPricing() {
+    try {
+      // Only run for the admin session — buyers don't have permission to
+      // mutate other users' pricing and shouldn't push to the server here.
+      if (originalGetItem("ws_role") !== "admin") return;
+
+      var pricingUsers = {};
+      try { pricingUsers = JSON.parse(originalGetItem("ws_pricing_users") || "{}"); } catch (e) { pricingUsers = {}; }
+
+      // Collect candidate usernames from both possible sources.
+      var candidates = {};
+      try {
+        var accounts = JSON.parse(originalGetItem("ws_buyer_accounts") || "{}");
+        Object.keys(accounts || {}).forEach(function (u) {
+          // Skip default/system users — they typically aren't real customers
+          // and may have intentional non-standard pricing.
+          if (["heildsala", "demo", "buyer1"].indexOf(u) === -1) candidates[u] = true;
+        });
+      } catch (e) {}
+      try {
+        var vidskm = JSON.parse(originalGetItem("ws_vidskm") || "[]");
+        if (Array.isArray(vidskm)) {
+          vidskm.forEach(function (v) {
+            if (v && v.user) candidates[v.user] = true;
+          });
+        }
+      } catch (e) {}
+
+      var dirty = false;
+      Object.keys(candidates).forEach(function (user) {
+        var lc = user.toLowerCase();
+        var existing = pricingUsers[user] || pricingUsers[lc];
+        var isEmpty = existing
+          && (!existing.cats || Object.keys(existing.cats).length === 0)
+          && (!existing.prods || Object.keys(existing.prods).length === 0);
+        if (!existing || isEmpty) {
+          pricingUsers[lc] = JSON.parse(JSON.stringify(STANDARD_PRICING_TEMPLATE));
+          dirty = true;
+          console.log("[ws-sync] Seeded standard pricing for new user: " + user);
+        }
+      });
+
+      if (dirty) {
+        // Use the patched setItem so the change is mirrored to localStorage
+        // AND pushed to the server via the sync layer.
+        localStorage.setItem("ws_pricing_users", JSON.stringify(pricingUsers));
+        console.log("[ws-sync] Pricing seed pushed to server.");
+        // Hint the UI to re-render pricing.
+        try { window.dispatchEvent(new CustomEvent("ws-pricing-seeded")); } catch (e) {}
+      }
+    } catch (e) {
+      console.warn("[ws-sync] seedDefaultPricing failed:", e);
+    }
+  }
+
+  // Run seed after sync completes. Listener AND timeout poll, in case
+  // event fires before our listener registers.
+  window.addEventListener("ws-sync-ready", function () { setTimeout(seedDefaultPricing, 250); });
+  setTimeout(function () { if (window._wsSyncReady) seedDefaultPricing(); }, 3000);
+
   window.addEventListener("beforeunload", function() {
     try {
       if (!window._wsPending) return;
