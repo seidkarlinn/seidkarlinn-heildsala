@@ -17,6 +17,14 @@
  *   if a favicon link is already present in source. Hrefs include a
  *   ?v=N query string for cache-busting whenever the favicon image
  *   bytes change (bump FAVICON_VERSION below to force a refetch).
+ *
+ * 2026-05-28: Injected 4 new products (Sea Moss, Moringa, Full Spectrum
+ *   Maca, Lignosus 450mg) that received fresh product photos on Shopify
+ *   today. Uses the same edge-function pattern as CordyFresh so the
+ *   500KB index.html doesn't need to be touched. Also strips the stale
+ *   "seidkarlinn-maca-600mg-120hylki" URL from the baked ADMIN_DELETED
+ *   list and removes the old maca block from PRODUCTS to avoid a
+ *   duplicate listing.
  */
 
 // 8 CordyFresh entries — Cordyceps/Lions Mane/Reishi/Chaga at 20% and 50% strengths.
@@ -33,6 +41,26 @@ const CORDYFRESH = `
   {"name":"Lions Mane 50% Cordyfresh 30ml","price":"11.990 ISK","cat":"Sveppir","tags":["lions mane","dropar","tvíextrakt","NGF","Cordyfresh"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/lions-mane-50-cordyfresh-30ml","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/Lions-Mane-50.jpg?v=1777761662","wholesale":"8.393 ISK"},
   {"name":"Reishi 50% Cordyfresh 30ml","price":"11.990 ISK","cat":"Sveppir","tags":["reishi","dropar","tvíextrakt","Cordyfresh"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/reishi-50-cordyfresh-30ml","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/Reishi-50.jpg?v=1777761647","wholesale":"8.393 ISK"},
   {"name":"Chaga 50% Cordyfresh 30ml","price":"11.990 ISK","cat":"Sveppir","tags":["chaga","dropar","tvíextrakt","Cordyfresh"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/chaga-50-cordyfresh-30ml","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/Chaga-50.jpg?v=1777761634","wholesale":"8.393 ISK"},`;
+
+// 4 products added 2026-05-28 — fresh photos uploaded to Shopify today.
+// Wholesale prices use the standard 25% off retail (Math.floor(retail * 0.75)).
+// All four are baked here (rather than added to index.html) so the 500KB
+// source file stays untouched. Idempotent guard below keys on the Sea Moss
+// marker so this can later be migrated into index.html without
+// double-injecting.
+const NEW_PRODUCTS_20260528 = `
+  {"name":"Seiðkarlinn Irish Sea Moss with bladderwrack 60 hylki","price":"6.990 ISK","cat":"Fæðubótarefni","tags":["sea moss","bladderwrack","ofurfæða","joð","steinefni"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/seidkarlinn-sea-moss-60-hylki","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/2_e06f226f-9ead-4f7a-b499-2f95cbf5bfb1.png?v=1780001234","wholesale":"5.242 ISK"},
+  {"name":"Seiðkarlinn Moringa 350mg 60 hylki","price":"3.990 ISK","cat":"Fæðubótarefni","tags":["moringa","supermat","andoxun","þreyta","næring"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/seidkarlinn-moringa-350mg-60-hylki","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/4_2a40b944-a6f4-4d11-a49b-e28658315a3d.png?v=1780001095","wholesale":"2.992 ISK"},
+  {"name":"Seiðkarlinn Full Spectrum Maca 600mg 120 hylki","price":"4.990 ISK","cat":"Fæðubótarefni","tags":["maca","hormónabalans","orkugjafi","frjósemi","Peru"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/seidkarlinn-maca-600mg-120hylki","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/3_5e37c0ff-cb5c-433b-8b54-906d67c7b85b.png?v=1780001057","wholesale":"3.742 ISK"},
+  {"name":"Seiðkarlinn Lignosus 450mg 60 hylki","price":"5.990 ISK","cat":"Sveppir","tags":["lignosus","tiger milk","sveppur","ónæmiskerfi"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/seidkarlinn-lignosus-450mg-60-hylki","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/1_528e6f7a-7f66-4c82-9ea3-c7315d2d3c44.png?v=1780001022","wholesale":"4.492 ISK"},`;
+
+// The stale "Seiðkarlinn maca 600mg 120 hylki" entry baked into index.html
+// shares its URL with the new Full Spectrum Maca entry above. That URL is
+// also in the baked ADMIN_DELETED list, so it would suppress the new entry
+// for non-admin viewers. We strip both the deleted-URL entry and the old
+// product block from the served HTML below.
+const OLD_MACA_BLOCK_RE = /\{\s*\n\s*"name":\s*"Seiðkarlinn maca 600mg 120 hylki",[\s\S]*?"wholesale":\s*"3\.742 ISK"\s*\},?\s*\n/;
+const OLD_MACA_DELETED_URL = '"https://www.seidkarlinn.is/is-is/products/seidkarlinn-maca-600mg-120hylki", ';
 
 // Runtime patch — installs after the page's main script defines its globals.
 // Kept as a self-contained IIFE so the existing index.html stays untouched.
@@ -252,6 +280,25 @@ export default async function handler(request, context) {
       `const PRODUCTS = [${CORDYFRESH}`
     );
   }
+
+  // 2b. Inject the 4 new products from 2026-05-28 at the start of PRODUCTS.
+  //     Idempotent: keyed on the Sea Moss marker.
+  if (!injected.includes('"Seiðkarlinn Irish Sea Moss with bladderwrack 60 hylki"')) {
+    injected = injected.replace(
+      'const PRODUCTS = [',
+      `const PRODUCTS = [${NEW_PRODUCTS_20260528}`
+    );
+  }
+
+  // 2c. Remove the stale maca block (same URL as the new Full Spectrum Maca)
+  //     from the served PRODUCTS array so the listing isn't duplicated.
+  //     Idempotent: regex no-ops if the block has already been removed.
+  injected = injected.replace(OLD_MACA_BLOCK_RE, '');
+
+  // 2d. Strip the maca URL from the baked ADMIN_DELETED list so the new
+  //     Full Spectrum Maca entry isn't filtered out for non-admin viewers.
+  //     Idempotent: replace no-ops if the URL isn't present.
+  injected = injected.replace(OLD_MACA_DELETED_URL, '');
 
   // 3. Inject the runtime category-patch script just before the document's
   //    final </body>. We use lastIndexOf because index.html contains an
