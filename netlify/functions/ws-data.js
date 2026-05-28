@@ -6,6 +6,36 @@ const ALLOWED_KEYS = [
   "ws_orders_lm", // last-modified timestamp — set only on force:true writes (admin deletions)
 ];
 
+// Resolve a Blob store handle by trying auto-injected context first and
+// falling back to explicit SITE_ID + NETLIFY_API_TOKEN if the runtime
+// doesn't have the auto-context (e.g. Netlify Blobs extension not yet
+// enabled for this site). The latter is the legacy mode that broke when
+// the NETLIFY_API_TOKEN was rotated; either path working is enough.
+function resolveStore() {
+  // Path 1 — auto-injected context. Works when Netlify runtime sets
+  // NETLIFY_BLOBS_CONTEXT (default for Functions on sites with the
+  // Blobs extension active). Throws a TypeError-style message if not.
+  try {
+    return getStore("wholesale-data");
+  } catch (autoErr) {
+    // Path 2 — explicit credentials. Requires both env vars to be set
+    // AND for the token to be a valid Netlify Personal Access Token
+    // with access to this site's blob store. Will throw / 401 if not.
+    const siteID = process.env.SITE_ID;
+    const token = process.env.NETLIFY_API_TOKEN;
+    if (!siteID || !token) {
+      const err = new Error(
+        "Netlify Blobs unavailable: auto-context disabled and explicit " +
+        "credentials missing. Set SITE_ID + NETLIFY_API_TOKEN, or enable " +
+        "the Netlify Blobs extension. Auto-context error: " + autoErr.message
+      );
+      err.autoErr = autoErr;
+      throw err;
+    }
+    return getStore({ name: "wholesale-data", siteID, token });
+  }
+}
+
 exports.handler = async (event) => {
   const headers = {
     "Access-Control-Allow-Origin": "*",
@@ -19,11 +49,7 @@ exports.handler = async (event) => {
   }
 
   try {
-    // Use Netlify's auto-injected blob context — the function runtime
-    // provides short-lived signed credentials via NETLIFY_BLOBS_CONTEXT,
-    // so we don't need to manage SITE_ID / NETLIFY_API_TOKEN env vars
-    // (which previously expired and broke this endpoint with a 401).
-    const store = getStore("wholesale-data");
+    const store = resolveStore();
 
     if (event.httpMethod === "GET") {
       const key = event.queryStringParameters?.key;
