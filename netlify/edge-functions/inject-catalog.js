@@ -33,6 +33,12 @@
  *   from ADMIN_DELETED), so admins who previously deleted maca/shilajit
  *   would still see them filtered even after this edge-level cleanup.
  *   The migration is idempotent — runs once per URL per browser.
+ *
+ * 2026-05-28 (3): Hotfix — the (2) commit's URL stripping included a
+ *   bare-string `"URL"` strip that also matched inside the injected
+ *   PRODUCTS entries' "url":"…" field, blanking them out and breaking
+ *   the page. Dropped the bare strip; comma-delimited forms cover
+ *   every position inside ADMIN_DELETED on their own.
  */
 
 // 8 CordyFresh entries — Cordyceps/Lions Mane/Reishi/Chaga at 20% and 50% strengths.
@@ -345,11 +351,13 @@ export default async function handler(request, context) {
 
   // 2d. Strip stale-deleted URLs from the baked ADMIN_DELETED list so the
   //     resurrected entries aren't filtered out for non-admin viewers.
+  //     Only strip the comma-delimited forms — never the bare quoted URL,
+  //     which would also obliterate the "url":"…" field inside our injected
+  //     PRODUCTS entries and break the page (incident 2026-05-28).
   //     Idempotent: each replace no-ops if the URL is absent.
   for (const u of STALE_DELETED_URLS) {
     injected = injected.split(`"${u}", `).join('');
     injected = injected.split(`, "${u}"`).join('');
-    injected = injected.split(`"${u}"`).join('');
   }
 
   // 3. Inject the runtime category-patch script just before the document's
