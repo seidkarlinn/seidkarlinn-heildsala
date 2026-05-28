@@ -25,6 +25,14 @@
  *   "seidkarlinn-maca-600mg-120hylki" URL from the baked ADMIN_DELETED
  *   list and removes the old maca block from PRODUCTS to avoid a
  *   duplicate listing.
+ *
+ * 2026-05-28 (2): Added Seiðkarlinn Shilajit 60 hylki (5th product) and
+ *   extended the deleted-URL stripping to handle multiple URLs. Also
+ *   added a one-time localStorage migration script — for admin users,
+ *   ws_deleted_products keeps its own copy of deleted URLs (separate
+ *   from ADMIN_DELETED), so admins who previously deleted maca/shilajit
+ *   would still see them filtered even after this edge-level cleanup.
+ *   The migration is idempotent — runs once per URL per browser.
  */
 
 // 8 CordyFresh entries — Cordyceps/Lions Mane/Reishi/Chaga at 20% and 50% strengths.
@@ -42,9 +50,9 @@ const CORDYFRESH = `
   {"name":"Reishi 50% Cordyfresh 30ml","price":"11.990 ISK","cat":"Sveppir","tags":["reishi","dropar","tvíextrakt","Cordyfresh"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/reishi-50-cordyfresh-30ml","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/Reishi-50.jpg?v=1777761647","wholesale":"8.393 ISK"},
   {"name":"Chaga 50% Cordyfresh 30ml","price":"11.990 ISK","cat":"Sveppir","tags":["chaga","dropar","tvíextrakt","Cordyfresh"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/chaga-50-cordyfresh-30ml","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/Chaga-50.jpg?v=1777761634","wholesale":"8.393 ISK"},`;
 
-// 4 products added 2026-05-28 — fresh photos uploaded to Shopify today.
+// 5 products added 2026-05-28 — fresh photos uploaded to Shopify today.
 // Wholesale prices use the standard 25% off retail (Math.floor(retail * 0.75)).
-// All four are baked here (rather than added to index.html) so the 500KB
+// All five are baked here (rather than added to index.html) so the 500KB
 // source file stays untouched. Idempotent guard below keys on the Sea Moss
 // marker so this can later be migrated into index.html without
 // double-injecting.
@@ -52,15 +60,55 @@ const NEW_PRODUCTS_20260528 = `
   {"name":"Seiðkarlinn Irish Sea Moss with bladderwrack 60 hylki","price":"6.990 ISK","cat":"Fæðubótarefni","tags":["sea moss","bladderwrack","ofurfæða","joð","steinefni"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/seidkarlinn-sea-moss-60-hylki","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/2_e06f226f-9ead-4f7a-b499-2f95cbf5bfb1.png?v=1780001234","wholesale":"5.242 ISK"},
   {"name":"Seiðkarlinn Moringa 350mg 60 hylki","price":"3.990 ISK","cat":"Fæðubótarefni","tags":["moringa","supermat","andoxun","þreyta","næring"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/seidkarlinn-moringa-350mg-60-hylki","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/4_2a40b944-a6f4-4d11-a49b-e28658315a3d.png?v=1780001095","wholesale":"2.992 ISK"},
   {"name":"Seiðkarlinn Full Spectrum Maca 600mg 120 hylki","price":"4.990 ISK","cat":"Fæðubótarefni","tags":["maca","hormónabalans","orkugjafi","frjósemi","Peru"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/seidkarlinn-maca-600mg-120hylki","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/3_5e37c0ff-cb5c-433b-8b54-906d67c7b85b.png?v=1780001057","wholesale":"3.742 ISK"},
-  {"name":"Seiðkarlinn Lignosus 450mg 60 hylki","price":"5.990 ISK","cat":"Sveppir","tags":["lignosus","tiger milk","sveppur","ónæmiskerfi"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/seidkarlinn-lignosus-450mg-60-hylki","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/1_528e6f7a-7f66-4c82-9ea3-c7315d2d3c44.png?v=1780001022","wholesale":"4.492 ISK"},`;
+  {"name":"Seiðkarlinn Lignosus 450mg 60 hylki","price":"5.990 ISK","cat":"Sveppir","tags":["lignosus","tiger milk","sveppur","ónæmiskerfi"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/seidkarlinn-lignosus-450mg-60-hylki","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/1_528e6f7a-7f66-4c82-9ea3-c7315d2d3c44.png?v=1780001022","wholesale":"4.492 ISK"},
+  {"name":"Seiðkarlinn Shilajit 60 hylki","price":"6.990 ISK","cat":"Fæðubótarefni","tags":["shilajit","fulvic acid","steinefni","orkugjafi"],"desc":"500mg Shilajit hylki 83% Fulvic Acid sem er um það bil 2-3x sterkara en meðalshilajit í töflum á markaði.","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/seidkarlinn-shilajit-60-hylki","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/1_d410b220-2211-46dd-b9af-6521f5d76f8a.png?v=1778671558","wholesale":"5.242 ISK"},`;
 
-// The stale "Seiðkarlinn maca 600mg 120 hylki" entry baked into index.html
-// shares its URL with the new Full Spectrum Maca entry above. That URL is
-// also in the baked ADMIN_DELETED list, so it would suppress the new entry
-// for non-admin viewers. We strip both the deleted-URL entry and the old
-// product block from the served HTML below.
+// Stale entries that need to come back out of the deleted list, because the
+// fresh NEW_PRODUCTS_20260528 entries reuse their Shopify URLs. If we leave
+// these in ADMIN_DELETED, the new entries get filtered out for non-admin
+// viewers; if we leave them in admin localStorage, they stay hidden for the
+// admin too (admins use their own localStorage list rather than ADMIN_DELETED).
+const STALE_DELETED_URLS = [
+  'https://www.seidkarlinn.is/is-is/products/seidkarlinn-maca-600mg-120hylki',
+  'https://www.seidkarlinn.is/is-is/products/seidkarlinn-shilajit-60-hylki',
+];
+
+// The original "Seiðkarlinn maca 600mg 120 hylki" entry baked into
+// index.html shares its URL with the new Full Spectrum Maca entry above and
+// would render as a duplicate listing — strip it from the served HTML.
 const OLD_MACA_BLOCK_RE = /\{\s*\n\s*"name":\s*"Seiðkarlinn maca 600mg 120 hylki",[\s\S]*?"wholesale":\s*"3\.742 ISK"\s*\},?\s*\n/;
-const OLD_MACA_DELETED_URL = '"https://www.seidkarlinn.is/is-is/products/seidkarlinn-maca-600mg-120hylki", ';
+
+// One-time localStorage migration injected into the page. Admin users have
+// their own ws_deleted_products array (separate from the baked ADMIN_DELETED
+// list); after a URL is brought back at the edge level, we still need to
+// remove it from each admin's local list, otherwise their view continues to
+// filter it. Keyed on STALE_DELETED_URLS above. Idempotent — uses a
+// per-URL marker in localStorage so it only runs once per browser.
+const LOCALSTORAGE_MIGRATION = `
+<script id="__deleted_url_migration_2026_05_28__">
+(function(){
+  try {
+    var STALE = ${JSON.stringify(STALE_DELETED_URLS)};
+    var MARKER = "ws_migration_2026_05_28_stale_urls";
+    if (localStorage.getItem(MARKER) === "1") return;
+    var raw = localStorage.getItem("ws_deleted_products");
+    if (raw) {
+      try {
+        var list = JSON.parse(raw);
+        if (Array.isArray(list)) {
+          var cleaned = list.filter(function(u){ return STALE.indexOf(u) === -1; });
+          if (cleaned.length !== list.length) {
+            localStorage.setItem("ws_deleted_products", JSON.stringify(cleaned));
+            console.log("[migration:2026-05-28] restored", list.length - cleaned.length, "URLs from ws_deleted_products");
+          }
+        }
+      } catch(e){ /* ignore parse errors */ }
+    }
+    localStorage.setItem(MARKER, "1");
+  } catch(e){ /* localStorage unavailable */ }
+})();
+</script>
+`;
 
 // Runtime patch — installs after the page's main script defines its globals.
 // Kept as a self-contained IIFE so the existing index.html stays untouched.
@@ -281,9 +329,9 @@ export default async function handler(request, context) {
     );
   }
 
-  // 2b. Inject the 4 new products from 2026-05-28 at the start of PRODUCTS.
-  //     Idempotent: keyed on the Sea Moss marker.
-  if (!injected.includes('"Seiðkarlinn Irish Sea Moss with bladderwrack 60 hylki"')) {
+  // 2b. Inject the 5 new products from 2026-05-28 at the start of PRODUCTS.
+  //     Idempotent: keyed on the Shilajit marker (last entry added).
+  if (!injected.includes('"Seiðkarlinn Shilajit 60 hylki"')) {
     injected = injected.replace(
       'const PRODUCTS = [',
       `const PRODUCTS = [${NEW_PRODUCTS_20260528}`
@@ -295,10 +343,14 @@ export default async function handler(request, context) {
   //     Idempotent: regex no-ops if the block has already been removed.
   injected = injected.replace(OLD_MACA_BLOCK_RE, '');
 
-  // 2d. Strip the maca URL from the baked ADMIN_DELETED list so the new
-  //     Full Spectrum Maca entry isn't filtered out for non-admin viewers.
-  //     Idempotent: replace no-ops if the URL isn't present.
-  injected = injected.replace(OLD_MACA_DELETED_URL, '');
+  // 2d. Strip stale-deleted URLs from the baked ADMIN_DELETED list so the
+  //     resurrected entries aren't filtered out for non-admin viewers.
+  //     Idempotent: each replace no-ops if the URL is absent.
+  for (const u of STALE_DELETED_URLS) {
+    injected = injected.split(`"${u}", `).join('');
+    injected = injected.split(`, "${u}"`).join('');
+    injected = injected.split(`"${u}"`).join('');
+  }
 
   // 3. Inject the runtime category-patch script just before the document's
   //    final </body>. We use lastIndexOf because index.html contains an
@@ -311,6 +363,15 @@ export default async function handler(request, context) {
     } else {
       injected += CORDYFRESH_PATCH;
     }
+  }
+
+  // 3b. Inject the one-time admin localStorage migration just after <head>
+  //     so it runs as early as possible (before any script reads
+  //     ws_deleted_products). Idempotent at two levels: this guard avoids
+  //     re-injecting the tag, and the script's own marker avoids re-running
+  //     the migration inside the browser.
+  if (!injected.includes('__deleted_url_migration_2026_05_28__')) {
+    injected = injected.replace('<head>', `<head>${LOCALSTORAGE_MIGRATION}`);
   }
 
   // 4. Inject favicon <link> tags right after <head>. Idempotent guard: skip
