@@ -19,11 +19,11 @@ exports.handler = async (event) => {
   }
 
   try {
-    const store = getStore({
-      name: "wholesale-data",
-      siteID: process.env.SITE_ID,
-      token: process.env.NETLIFY_API_TOKEN,
-    });
+    // Use Netlify's auto-injected blob context — the function runtime
+    // provides short-lived signed credentials via NETLIFY_BLOBS_CONTEXT,
+    // so we don't need to manage SITE_ID / NETLIFY_API_TOKEN env vars
+    // (which previously expired and broke this endpoint with a 401).
+    const store = getStore("wholesale-data");
 
     if (event.httpMethod === "GET") {
       const key = event.queryStringParameters?.key;
