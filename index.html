@@ -5334,7 +5334,8 @@ const PRODUCTS = [
     "url": "https://www.seidkarlinn.is/is-is/products/bucket-runny-orange-honey-10kg",
     "img": "https://cdn.shopify.com/s/files/1/0657/8264/4910/files/IMG_6396_orange_white.jpg?v=1780413482",
     "sku": "1650",
-    "wholesale": "29.993 ISK"
+    "noDisc": true,
+    "wholesale": "39.990 ISK"
   },
   {
     "name": "Bucket Runny Pyrenees Honey 10kg",
@@ -5351,7 +5352,8 @@ const PRODUCTS = [
     "url": "https://www.seidkarlinn.is/is-is/products/bucket-runny-pyrenees-honey-10kg",
     "img": "https://cdn.shopify.com/s/files/1/0657/8264/4910/files/IMG_6397_pyrenees_white.jpg?v=1780413485",
     "sku": "1651",
-    "wholesale": "29.993 ISK"
+    "noDisc": true,
+    "wholesale": "39.990 ISK"
   }
 ];
 
@@ -8315,6 +8317,11 @@ function applyPricingOverrides() {
     : _src;
   window.PRODUCTS = _filtered.map(p => {
     const key = getProdKey(p);
+    // Fixed-price products (already discounted, e.g. bulk buckets): never apply
+    // category or global discounts — wholesale stays equal to the listed price.
+    if (p.noDisc) {
+      return {...p, wholesale: p.wholesale || p.price, _priceOverridden: true};
+    }
     // Product-level override
     if (ov.prods && ov.prods[key]) {
       const o = ov.prods[key];
@@ -9693,7 +9700,7 @@ async function silentCatalogPull() {
       ...custom
     ].map(p => {
       const retail = parseInt((p.price||'').replace(/[^\d]/g,'')) || 0;
-      const ws = retail ? fmtISK(retail * 0.75) : p.wholesale;
+      const ws = p.noDisc ? (p.wholesale || p.price) : (retail ? fmtISK(retail * 0.75) : p.wholesale);
       return {...p, wholesale: ws};
     });
 
