@@ -3613,22 +3613,6 @@ const PRODUCTS = [
     "wholesale": "773 ISK"
   },
   {
-    "name": "Mulieres lemongrass diffuser 100ml",
-    "price": "3.796 ISK",
-    "cat": "Hreinlætisvörur",
-    "tags": [
-      "loftgæðir",
-      "lemongrass",
-      "ilmgjafi",
-      "náttúrulegur"
-    ],
-    "desc": "",
-    "inStock": true,
-    "url": "https://www.seidkarlinn.is/is-is/products/mulieres-lemongrass-diffuser-100ml",
-    "img": "https://www.seidkarlinn.is/cdn/shop/files/Kodulohnastaja_lemongrass-300x300.jpg",
-    "wholesale": "2.847 ISK"
-  },
-  {
     "name": "Mulieres natural candle forest 180ml",
     "price": "1.990 ISK",
     "cat": "Hreinlætisvörur",
@@ -5022,28 +5006,6 @@ const PRODUCTS = [
     "wholesale": "1.842 ISK"
   },
   {
-    "name": "Mulieres Citrus Diffuser 100ml",
-    "price": "3.796 ISK",
-    "cat": "Hreinlætisvörur",
-    "tags": [],
-    "desc": "",
-    "inStock": true,
-    "url": "https://www.seidkarlinn.is/is-is/products/mulieres-citrus-diffuser-100ml",
-    "img": "https://cdn.shopify.com/s/files/1/0657/8264/4910/files/Kodulohnastaja-tsitrus-karbiga-1200x1801.jpg",
-    "wholesale": "2.847 ISK"
-  },
-  {
-    "name": "Mulieres Berry Diffuser 100ml",
-    "price": "3.796 ISK",
-    "cat": "Hreinlætisvörur",
-    "tags": [],
-    "desc": "",
-    "inStock": false,
-    "url": "https://www.seidkarlinn.is/is-is/products/mulieres-berry-diffuser-100ml",
-    "img": "https://cdn.shopify.com/s/files/1/0657/8264/4910/files/Ruumilohnastaja-Mari-1200x1801.jpg",
-    "wholesale": "2.847 ISK"
-  },
-  {
     "name": "Seiðkarlinn te ladies hormone balancing",
     "price": "3.990 ISK",
     "cat": "Fæðubótarefni",
@@ -5900,16 +5862,18 @@ function renderGrid() {
   else if (sort==='default' || !sort) {
     loadCustomOrder();
     if (_customOrder.length) {
-      // Custom admin order: position in order array wins; unordered products fall back to default sort
+      // Products are ALWAYS grouped by category first (shown after their category).
+      // Within a category the admin's manual drag order applies; anything not in
+      // that order (e.g. newly added products) then falls back to brand → base
+      // name → size (largest first) so sizes sit side by side.
       filtered.sort((a, b) => {
+        const cc = a.cat.localeCompare(b.cat, 'is');
+        if (cc !== 0) return cc;
         const ai = _customOrder.indexOf(a.url);
         const bi = _customOrder.indexOf(b.url);
         if (ai !== -1 && bi !== -1) return ai - bi;
         if (ai !== -1) return -1;
         if (bi !== -1) return 1;
-        // Both unordered — use default sort
-        const cc = a.cat.localeCompare(b.cat, 'is');
-        if (cc !== 0) return cc;
         const ka = _sortKey(a.name), kb = _sortKey(b.name);
         const br = ka.brand.localeCompare(kb.brand, 'is');
         if (br !== 0) return br;
