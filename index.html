@@ -5656,8 +5656,14 @@ function baseName(name) {
     .trim();
 }
 
-// Extract brand — the last word of the name after stripping size tokens and stray numbers.
-// Special case: if name starts with "Varia" the brand is always "Varia".
+// Known store brands. Used so a product line clusters by its real brand
+// regardless of whether the brand appears at the start or end of the name
+// (e.g. "Nutriest beef liver …" and "… Bamboovement" both resolve correctly).
+const KNOWN_BRANDS = ['Seiðkarlinn','Nutriest','Mulieres','Bamboovement','Mountaindrop','VAICACAO','Cosanea','CocoCoast','Naturavit','Mingaone','Wildesland','KRG','MVB'];
+
+// Extract brand. Prefer a recognised store brand wherever it appears in the name
+// (earliest match wins); otherwise fall back to the last word after stripping
+// size tokens and stray numbers. Special case: names starting with "Varia".
 function brandName(name) {
   if (!name) return '';
   if (/^varia\b/i.test(name)) return 'Varia';
@@ -5666,6 +5672,12 @@ function brandName(name) {
     .replace(/\b\d+%?\b/g, '')         // remove stray numbers / percentages
     .replace(/\s+/g, ' ').trim();
   const words = stripped.split(' ').filter(Boolean);
+  let bestIdx = Infinity, best = '';
+  for (const b of KNOWN_BRANDS) {
+    const i = words.findIndex(w => w.toLowerCase() === b.toLowerCase());
+    if (i !== -1 && i < bestIdx) { bestIdx = i; best = b; }
+  }
+  if (best) return best;
   return words[words.length - 1] || '';
 }
 
