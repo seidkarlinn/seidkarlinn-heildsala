@@ -83,6 +83,13 @@ const STALE_DELETED_URLS = [
 // index.html shares its URL with the new Full Spectrum Maca entry above and
 // would render as a duplicate listing — strip it from the served HTML.
 const OLD_MACA_BLOCK_RE = /\{\s*\n\s*"name":\s*"Seiðkarlinn maca 600mg 120 hylki",[\s\S]*?"wholesale":\s*"3\.742 ISK"\s*\},?\s*\n/;
+// The original "Seiðkarlinn shilajit 60 hylki" entry baked into index.html
+// shares its URL with the fresh-photo Shilajit entry injected above and would
+// render as a duplicate listing — strip it from the served HTML. (Mirrors the
+// maca handling; the original 2026-05-28 injection forgot this one because the
+// baked entry uses a lowercase "shilajit" while the idempotency guard keys on
+// the capital-S "Shilajit", so the guard never suppressed the injection.)
+const OLD_SHILAJIT_BLOCK_RE = /\{\s*\n\s*"name":\s*"Seiðkarlinn shilajit 60 hylki",[\s\S]*?"wholesale":\s*"5\.242 ISK"\s*\},?\s*\n/;
 
 // One-time localStorage migration injected into the page. Admin users have
 // their own ws_deleted_products array (separate from the baked ADMIN_DELETED
@@ -348,6 +355,11 @@ export default async function handler(request, context) {
   //     from the served PRODUCTS array so the listing isn't duplicated.
   //     Idempotent: regex no-ops if the block has already been removed.
   injected = injected.replace(OLD_MACA_BLOCK_RE, '');
+
+  // 2c-bis. Remove the stale baked shilajit block (same URL as the injected
+  //         fresh-photo Shilajit entry) so the listing isn't duplicated.
+  //         Idempotent: regex no-ops if the block has already been removed.
+  injected = injected.replace(OLD_SHILAJIT_BLOCK_RE, '');
 
   // 2d. Strip stale-deleted URLs from the baked ADMIN_DELETED list so the
   //     resurrected entries aren't filtered out for non-admin viewers.
