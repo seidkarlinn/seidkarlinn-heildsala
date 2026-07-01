@@ -121,6 +121,15 @@
       if (json.ok && json.data) {
         mergeServerData(json.data);
         console.log("[ws-sync] Server data loaded and merged.");
+        // Re-apply the shared theme now that the server's ws_theme has been
+        // merged into localStorage, so first-visit / guest sessions converge on
+        // the same colors + logo font as returning users (the app applies the
+        // theme once at load, before this async sync completes).
+        try {
+          if (typeof window.applyTheme === "function" && typeof window.getTheme === "function") {
+            window.applyTheme(window.getTheme());
+          }
+        } catch (e) { console.warn("[ws-sync] theme re-apply failed:", e); }
       }
       _syncPullDone = true;
       window._wsSyncReady = true;
