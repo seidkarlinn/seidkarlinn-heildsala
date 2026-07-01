@@ -6,15 +6,15 @@
 <title>Seiðkarlinn — Heildsöluverslun</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,500;0,600;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
 <style>
 /* ── TOKENS ── */h
 :root {
-  --ink:#1A1710; --ink2:#54503F; --ink3:#837E6F;
-  --paper:#FAF8F3; --paper2:#F3F0E8; --paper3:#EAE5D8;
-  --sf:#FAF8F3;
-  --gold:#B8860B; --gold-l:#F5EED8; --gold-b:#8B6508;
-  --green:#2A5C2A; --green-d:#1E431E; --green-l:#E6F0E6;
+  --ink:#1C1E15; --ink2:#4A4E3F; --ink3:#767A66;
+  --paper:#F1EFE4; --paper2:#E9E6D8; --paper3:#DED9C7;
+  --sf:#F1EFE4;
+  --gold:#C0801E; --gold-l:#F4E9CF; --gold-b:#9C6714;
+  --green:#1E3A2B; --green-d:#152A1F; --green-l:#E3EAE0;
   --red:#C0392B; --red-l:#FDECEA;
   --r:10px; --rs:6px;
   --shadow: 0 1px 3px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.06);
@@ -37,7 +37,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--paper);color:var(--ink);m
   width:min(420px, 90vw);text-align:center;
   box-shadow:0 24px 64px rgba(0,0,0,.4);
 }
-.gate-logo{font-family:'Playfair Display',serif;font-size:30px;color:#1A1710;font-weight:400;letter-spacing:.01em;margin-bottom:4px;}
+.gate-logo{font-family:'Spectral',serif;font-size:30px;color:#1A1710;font-weight:400;letter-spacing:.01em;margin-bottom:4px;}
 .gate-sub{font-size:12px;color:var(--ink3);letter-spacing:.12em;text-transform:uppercase;margin-bottom:2rem;}
 .gate-label{display:block;text-align:left;font-size:11px;font-weight:500;color:var(--ink2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px;}
 .gate-input{
@@ -64,7 +64,7 @@ header{
   padding:0 2rem;display:flex;align-items:center;justify-content:space-between;
   height:64px;position:sticky;top:0;z-index:200;
 }
-.logo{font-family:'Playfair Display',serif;font-size:20px;color:#fff;display:flex;align-items:center;gap:10px;}
+.logo{font-family:'Spectral',serif;font-size:20px;color:#fff;display:flex;align-items:center;gap:10px;}
 .logo-badge{
   font-size:6px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
   background:#fff;color:var(--ink);border:1.5px solid var(--ink);padding:1px 3px;border-radius:3px;
@@ -160,7 +160,7 @@ aside.sb{
 /* ─── CATALOG ─── */
 main.catalog{padding:1.5rem;overflow-y:auto;}
 .cat-hdr{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:1.25rem;gap:12px;flex-wrap:wrap;}
-.cat-title{font-family:'Playfair Display',serif;font-size:24px;line-height:1.2;}
+.cat-title{font-family:'Spectral',serif;font-size:24px;line-height:1.2;}
 .cat-sub{font-size:11px;color:var(--ink3);margin-top:2px;}
 .cat-controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
 .sort-sel{
@@ -278,7 +278,7 @@ aside.detail{
 
 /* DETAIL CONTENT */
 .dp-img{width:100%;height:200px;object-fit:cover;border-radius:var(--r);background:var(--paper2);margin-bottom:1rem;}
-.dp-name{font-family:'Playfair Display',serif;font-size:18px;line-height:1.3;margin-bottom:.5rem;}
+.dp-name{font-family:'Spectral',serif;font-size:18px;line-height:1.3;margin-bottom:.5rem;}
 .dp-prices{background:var(--green-l);border-radius:var(--r);padding:.875rem;margin-bottom:1rem;display:grid;grid-template-columns:1fr 1fr;gap:8px;}
 .dp-price-box{text-align:center;}
 .dp-price-label{font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink2);margin-bottom:2px;}
@@ -325,7 +325,7 @@ aside.detail{
 /* WELCOME STATE */
 .welcome{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:2rem;text-align:center;gap:14px;}
 .w-icon{font-size:32px;}
-.w-title{font-family:'Playfair Display',serif;font-size:20px;}
+.w-title{font-family:'Spectral',serif;font-size:20px;}
 .w-sub{font-size:12px;color:var(--ink2);line-height:1.6;max-width:240px;}
 .wchip{font-size:10px;padding:4px 10px;border-radius:99px;border:1px solid var(--paper3);
   background:var(--paper2);cursor:pointer;color:var(--ink2);font-family:'DM Sans',sans-serif;margin:2px;}
@@ -348,7 +348,7 @@ aside.detail{
   padding:1.25rem 1.5rem;border-bottom:1px solid var(--paper3);
   display:flex;align-items:center;justify-content:space-between;background:var(--paper2);
 }
-.cart-title{font-family:'Playfair Display',serif;font-size:20px;}
+.cart-title{font-family:'Spectral',serif;font-size:20px;}
 .cart-close{background:none;border:none;font-size:20px;cursor:pointer;color:var(--ink2);padding:4px;}
 .cart-body{flex:1;overflow-y:auto;padding:1.25rem 1.5rem;}
 .cart-empty{text-align:center;padding:3rem 1rem;color:var(--ink3);}
@@ -558,7 +558,7 @@ aside.detail{
   width:min(520px,100%);max-height:90vh;overflow-y:auto;box-shadow:0 16px 48px rgba(0,0,0,.15);}
 .adm-modal-hdr{padding:1.125rem 1.5rem;border-bottom:1px solid var(--paper3);
   display:flex;align-items:center;justify-content:space-between;}
-.adm-modal-title{font-family:'Playfair Display',serif;font-size:17px;}
+.adm-modal-title{font-family:'Spectral',serif;font-size:17px;}
 .adm-modal-close{background:none;border:none;color:var(--ink3);font-size:18px;cursor:pointer;}
 .adm-modal-body{padding:1.25rem 1.5rem;}
 .adm-form-row{margin-bottom:.875rem;}
@@ -631,7 +631,7 @@ aside.detail{
   width:min(460px,100%);box-shadow:0 16px 48px rgba(0,0,0,.15);}
 .refund-modal-hdr{padding:1.125rem 1.5rem;border-bottom:1px solid var(--paper3);
   display:flex;align-items:center;justify-content:space-between;}
-.refund-modal-title{font-family:'Playfair Display',serif;font-size:17px;color:var(--red);}
+.refund-modal-title{font-family:'Spectral',serif;font-size:17px;color:var(--red);}
 .refund-modal-body{padding:1.25rem 1.5rem;}
 .refund-modal-footer{padding:1rem 1.5rem;border-top:1px solid var(--paper3);
   display:flex;justify-content:flex-end;gap:8px;}
@@ -813,7 +813,7 @@ aside.detail{
   width:min(640px,100%);max-height:90vh;overflow-y:auto;box-shadow:0 16px 48px rgba(0,0,0,.15);}
 .vm-modal-hdr{padding:1.125rem 1.5rem;border-bottom:1px solid var(--paper3);
   display:flex;align-items:center;justify-content:space-between;gap:8px;}
-.vm-modal-title{font-family:'Playfair Display',serif;font-size:18px;}
+.vm-modal-title{font-family:'Spectral',serif;font-size:18px;}
 .vm-modal-body{padding:1.25rem 1.5rem;}
 .vm-tabs{display:flex;gap:0;border-bottom:1.5px solid var(--paper3);margin-bottom:1.25rem;}
 .vm-tab{padding:7px 16px;border:none;background:transparent;font-size:12px;font-weight:500;
@@ -956,7 +956,7 @@ aside.detail{
   appearance: none; -webkit-appearance: none;
   background: var(--ink) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23fff'/%3E%3C/svg%3E") no-repeat right 12px center;
   color: #fff;
-  font-family: 'Playfair Display', serif;
+  font-family: 'Spectral', serif;
   font-size: 22px;
   line-height: 1.2;
   border: none;
@@ -976,7 +976,7 @@ aside.detail{
 
 <!-- ══ LOGIN GATE ══ -->
 <!-- Login Modal -->
-<div id="gate" class="hidden" style="position:fixed;inset:0;z-index:900;background:rgba(0,0,0,.5);align-items:center;justify-content:center;padding:1rem;">
+<div id="gate" class="hidden" style="position:fixed;inset:0;z-index:900;background:radial-gradient(130% 120% at 50% 0%,rgba(30,58,43,.86),rgba(15,32,22,.94));align-items:center;justify-content:center;padding:1rem;">
   <div class="gate-box" style="position:relative;max-width:380px;width:100%;">
     <button onclick="document.getElementById('gate').classList.add('hidden')" style="position:absolute;top:12px;right:14px;background:none;border:none;font-size:18px;cursor:pointer;color:var(--ink3)">✕</button>
     <div class="gate-logo" style="line-height:0;font-size:0"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 152.09" width="210" style="fill:#1A1710"><g><path d="M109.47,73.8c-2.59-1.56-6.21-2.59-10.36-3.28-4.15-.69-11.06-1.03-20.38-1.38-6.73-.17-11.74-.52-14.68-.86-2.93-.35-5.52-1.04-7.6-2.07-1.73-.69-3.28-2.07-4.32-3.63-1.2-1.73-1.73-3.28-1.73-5.18,0-2.25.69-4.32,2.07-6.39,1.56-2.07,3.45-3.63,6.05-5.01,5.35-2.76,11.91-4.15,19.34-4.15,8.99,0,17.62,1.9,25.74,5.7,3.8,1.73,3.97,2.76,3.97,2.93s-.17.69-1.03,3.11l-.35.86,3.62,1.9,9.85-17.96-3.62-1.73-.52.69c-1.38,1.9-2.07,2.07-2.07,2.07,0,0-.52,0-2.07-.69-6.22-2.76-11.75-4.66-16.58-5.87-4.83-1.21-10.19-1.73-15.89-1.73-6.91,0-13.47.86-19.34,2.76-5.87,1.73-10.54,4.32-13.99,7.6-4.66,4.49-7.08,10.02-7.08,16.24,0,3.63,1.03,7.08,2.76,10.19,1.9,3.11,4.32,5.53,7.42,7.25,3.28,1.9,6.91,3.11,11.06,3.97,3.98.69,9.68,1.21,16.75,1.56,10.02.35,15.89.69,17.96.86,2.07.17,3.97.52,5.87,1.21,5.7,1.9,8.46,5.35,8.46,10.36,0,3.97-1.73,7.25-5.01,10.02-5.18,4.32-12.95,6.56-22.97,6.56-5.01,0-9.68-.52-13.99-1.55-4.32-1.04-8.81-2.76-13.48-5.18-6.91-3.63-7.25-5.01-7.25-5.18,0,0,0-.69,1.04-2.77l.52-.86-3.62-2.07-10.37,17.44,3.46,2.07.69-.69c1.56-1.73,2.07-1.9,2.07-1.9,0,0,.69,0,3.11,1.21,7.42,3.97,13.82,6.73,19.17,8.12,5.35,1.55,11.57,2.24,18.83,2.24,12.61,0,22.63-2.76,29.54-8.46,6.73-5.01,10.02-11.57,10.02-19.51,0-8.46-3.8-14.68-11.06-18.83Z"/><path d="M205.86,106.44c-.35,1.55-.87,2.24-1.22,2.42-.17.17-1.03.52-2.93.52h-52.86v-29.02h33.68c1.9,0,2.59.35,2.94.52.34.18.86.69,1.2,2.42l.18.86h3.97v-18.13h-3.97l-.18.86c-.34,1.55-.86,2.24-1.2,2.41-.17.18-1.04.52-2.94.52h-33.68v-26.6h51.99c1.9,0,2.59.34,2.93.52.35.17.86.86,1.21,2.42l.18.86h3.97v-18.13h-3.97l-.18.86c-.35,1.73-.86,2.42-1.21,2.59-.17.17-1.03.52-2.93.52h-67.88v3.97l.86.17c1.73.35,2.42.86,2.59,1.21.18.17.52,1.03.52,2.93v69.61c0,1.9-.34,2.59-.52,2.94-.17.17-.86.69-2.59,1.21l-.86.17v3.97h68.57c1.9,0,2.59.34,2.94.52.35.35.86,1.04,1.21,2.59l.18.86h4.14v-17.45h-3.97l-.17.86Z"/><path d="M223.65,36.84l.86.17c1.55.35,2.24.86,2.41,1.21.18.17.52,1.03.52,2.93v69.61c0,1.9-.35,2.59-.52,2.94-.17.17-.86.69-2.59,1.21l-.86.17v3.97h19.87v-3.97l-.86-.17c-1.73-.35-2.42-.86-2.59-1.21-.18-.17-.52-1.04-.52-2.94V41.16c0-1.9.34-2.59.52-2.93.35-.35,1.03-.86,2.59-1.21l.86-.17v-3.97h-19.69v3.97Z"/><path d="M328.83,37.18c-5.52-2.93-13.47-4.32-23.66-4.32h-45.6v3.97l.86.17c1.55.35,2.24.86,2.59,1.21.35.34.52,1.03.52,2.07v29.54h-2.42c-1.2,0-2.07-.34-2.59-.69-.34-.35-.86-1.04-1.38-2.59l-.17-.69h-4.15v17.79h4.15l.17-.69c.52-1.55,1.04-2.24,1.38-2.59.52-.52,1.39-.69,2.59-.69h2.42v31.95c0,.86-.17,1.56-.52,2.07-.35.35-1.04.69-2.59,1.21l-.86.17v3.97h45.6c9.68,0,17.45-1.38,23.14-3.97,5.87-2.76,10.89-7.25,14.69-13.65,4.32-7.25,6.38-15.72,6.38-25.39,0-8.29-1.55-15.72-4.66-22.28-3.63-7.42-8.99-12.95-15.9-16.58ZM300.5,83.82h4.15v-17.79h-4.15l-.17.69c-.52,1.56-1.03,2.25-1.38,2.59-.52.52-1.38.69-2.59.69h-20.9v-26.77h29.19c6.56,0,11.75.69,15.54,2.07,3.63,1.38,6.91,3.8,9.5,7.08,4.84,6.21,7.26,14.16,7.26,23.66,0,5.18-.69,10.02-2.25,14.34-2.24,6.39-5.87,11.4-10.71,14.51-3.97,2.59-10.54,3.97-19.17,3.97h-29.36v-29.02h20.9c1.21,0,2.07.35,2.59.69.35.34.86,1.04,1.38,2.59l.17.69Z"/><path d="M539.73,113.18c-.35-.52-1.38-2.07-4.15-8.12l-29.54-64.08c-1.03-2.07-1.03-2.59-1.03-2.59,0-.52.86-1.03,2.24-1.55l.69-.17v-3.97h-22.79v3.97l.86.17c1.37.34,2.24.86,2.24,1.38,0,0,0,.69-1.04,2.76l-30.92,66.5c-1.73,3.8-2.76,5.36-3.28,5.87-.69.86-1.9,1.38-3.28,1.56l-.86.17h-.52c-1.39,0-2.42-.17-3.11-.52-.34-.35-1.03-.86-2.07-2.07l-36.97-46.81,33.34-25.91c2.24-1.73,4.49-2.59,6.74-2.76h1.03v-4.15h-24.52v4.15l1.03.17c.69.18,1.39.35,1.39.69,0,0,0,.52-1.9,2.07l-43.52,34.02v-32.64c0-1.9.34-2.59.51-2.94.35-.35,1.04-.86,2.6-1.21l.86-.17v-3.97h-19.87v3.97l.86.17c1.56.35,2.25.86,2.42,1.21.17.17.52,1.04.52,2.94v69.61c0,1.9-.35,2.59-.52,2.93-.17.18-.86.69-2.59,1.21l-.86.17v3.97h19.86v-3.97l-.86-.17c-1.73-.35-2.24-.86-2.59-1.21-.17-.34-.52-1.03-.52-2.93v-24.53l17.62-13.65,29.71,38c2.07,2.76,2.41,3.45,2.41,3.45,0,0-.17.35-1.73.69l-.86.17v3.97h22.63s20.72,0,20.72,0v-3.97l-.86-.17c-1.73-.35-2.76-.86-2.76-1.38,0-.17,0-.86.86-2.76l7.08-15.37h43.53l6.56,14.51c1.04,2.42,1.21,3.11,1.21,3.28,0,.34,0,1.21-2.59,1.55l-1.03.18v4.14h22.28s.17,0,.17,0v-3.97l-.86-.17c-2.76-.69-3.62-1.38-3.97-1.73ZM513.3,85.2h-34.37l17.1-37.82,17.27,37.82Z"/><path d="M631.26,112.14l-20.38-31.61c6.91-.86,12.27-3.28,16.41-7.08,4.49-4.32,6.74-9.85,6.74-16.58,0-4.49-1.04-8.46-3.11-12.09-1.9-3.11-4.32-5.53-7.25-7.42-2.94-1.73-6.22-2.94-10.02-3.63-3.62-.69-8.81-1.03-15.2-1.03h-47.32v3.97l.86.17c1.55.34,2.24.86,2.41,1.21.18.18.52,1.04.52,2.94v69.61c0,1.9-.34,2.59-.52,2.94-.35.34-1.03.86-2.59,1.21l-.86.18v3.97h19.86v-3.97l-.86-.18c-1.73-.34-2.41-.86-2.59-1.21-.17-.34-.52-1.21-.52-2.94v-29.53h30.4l18.83,29.71c1.73,2.59,2.07,3.28,2.07,3.28,0,0-.35.34-2.07.69l-1.04.18v4.14h21.77s.34,0,.34,0v-4.32h-1.2c-2.08,0-3.63-.86-4.67-2.59ZM621.77,57.05c0,5.35-1.9,9.15-5.7,11.4-1.73,1.04-3.63,1.73-5.87,2.07-2.24.35-5.87.52-10.36.52h-33.16v-27.98h32.13c5,0,8.64.17,10.88.52,2.24.35,4.32,1.04,6.04,2.07,4.15,2.24,6.04,6.04,6.04,11.4Z"/><path d="M720.73,106.1c-.35,1.56-.86,2.25-1.21,2.42-.17.17-1.03.52-2.93.52h-52.68V41.33c0-1.9.35-2.59.52-2.94.35-.35,1.03-.86,2.59-1.21l.86-.17v-3.97h-19.86v3.97l.86.17c1.73.35,2.24.86,2.59,1.21.17.17.52,1.04.52,2.94v69.61c0,1.9-.35,2.59-.52,2.93-.18.18-.86.69-2.59,1.21l-.86.17v3.97h68.57c1.9,0,2.59.34,2.93.52.35.17.86.69,1.21,2.42l.18.86h3.97v-17.79h-3.97l-.18.86Z"/><path d="M733.86,36.84l.86.17c1.56.35,2.24.86,2.42,1.21.17.17.52,1.03.52,2.93v69.61c0,1.9-.35,2.59-.52,2.94-.18.17-.86.69-2.59,1.21l-.86.17v3.97h20.03v-3.97l-.86-.17c-1.73-.35-2.41-1.04-2.59-1.21-.17-.17-.52-1.04-.52-2.94V41.16c0-1.9.35-2.59.52-2.93.35-.35,1.04-.86,2.59-1.21l.86-.17v-3.97h-19.86v3.97Z"/><path d="M841.3,37.01l.86.17c1.55.35,2.24.86,2.41,1.21.18.17.52,1.04.52,2.94v58.38l-48.71-57c-2.42-3.11-2.59-3.8-2.59-3.97,0-.86,1.03-1.38,2.07-1.73l.69-.17v-3.97h-26.42v3.97l.86.17c1.55.35,2.24.86,2.41,1.21.18.17.52,1.03.52,2.93v69.61c0,1.9-.35,2.59-.52,2.94-.17.17-.86.69-2.59,1.21l-.86.17v3.97h19v-3.97l-.87-.17c-1.73-.35-2.24-.86-2.59-1.21-.17-.35-.52-1.04-.52-2.94v-63.22l53.72,62.18c2.07,2.76,2.24,3.62,2.24,3.8,0,.52-.69,1.04-2.07,1.38l-.86.17v3.97h22.28v-3.8l-.86-.17c-1.73-.35-2.41-.86-2.59-1.21-.17-.17-.52-1.03-.52-2.93V41.33c0-1.9.35-2.59.52-2.94.35-.35.86-.86,2.59-1.21l.86-.17v-3.97h-19v3.97Z"/><path d="M962.89,38.39c.35-.35.86-.86,2.59-1.21l.86-.17v-3.97h-19v3.97l.86.17c1.56.35,2.25.86,2.42,1.21.17.17.52,1.04.52,2.94v58.38l-48.7-57c-2.42-3.11-2.59-3.8-2.59-3.97,0-.86,1.03-1.38,2.07-1.73l.69-.17v-3.97h-26.43v3.97l.86.17c1.56.35,2.25.86,2.42,1.21.17.17.52,1.03.52,2.93v69.61c0,1.9-.35,2.59-.52,2.94-.17.17-.86.69-2.59,1.21l-.86.17v3.97h19v-3.97l-.86-.17c-1.73-.35-2.24-.86-2.59-1.21-.17-.35-.52-1.04-.52-2.94v-63.22l53.71,62.18c2.07,2.76,2.25,3.62,2.25,3.8,0,.52-.69,1.04-2.07,1.38l-.86.17v3.97h22.28v-3.8l-.86-.17c-1.73-.35-2.42-.86-2.59-1.21-.18-.17-.52-1.03-.52-2.93V41.33c0-1.9.34-2.59.52-2.94Z"/></g><path d="M1000,152.09H0V0h1000v152.09ZM8.23,143.86h983.53V8.23H8.23v135.63Z"/></svg></div>
@@ -988,6 +988,7 @@ aside.detail{
     <button class="gate-btn" onclick="tryLogin()">Innskrá · Login</button>
     <div class="gate-err" id="gErr"></div>
     <div class="gate-contact">Ertu ekki með aðgang? <a href="/cdn-cgi/l/email-protection#cfbcaaa6aba4aebda3a6a1a18fbcaaa6aba4aebda3a6a1a1e1a6bc">Hafðu samband</a></div>
+    <div class="gate-contact" style="margin-top:.4rem">Ný verslun? <a href="/heildsala.html">Kynntu þér heildsöluna</a></div>
   </div>
 </div>
 
@@ -999,13 +1000,13 @@ aside.detail{
   </div>
   <div class="hright">
     <button class="cart-btn" id="hCartBtn" onclick="toggleCart()" style="display:none">
-      🛒 Karfa
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="vertical-align:-2px"><path d="M7 18a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 18zm10 0a2 2 0 1 0 .001 4.001A2 2 0 0 0 17 18zM6.2 6l-.7-3H2v2h1.9l2.9 8.6-.8 1.5c-.5 1 .2 2.4 1.5 2.4h11v-2H7.8l.6-1H17a2 2 0 0 0 1.8-1.1l3-6.4H6.2z"/></svg> Karfa
       <span class="cart-count" id="cartCount">0</span>
     </button>
     <!-- Logged out -->
     <button class="logout-btn" id="hLoginBtn" onclick="document.getElementById('gate').classList.remove('hidden')"
       style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);border-radius:6px;padding:6px 14px;font-size:12px;color:#fff;font-weight:500">
-      🔑 Innskrá
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="vertical-align:-1px"><path d="M17 9V7a5 5 0 0 0-10 0v2H5v13h14V9h-2zM9 7a3 3 0 0 1 6 0v2H9V7z"/></svg> Innskrá
     </button>
     <!-- Logged in -->
     <div id="hUserChip" style="display:none;align-items:center;gap:10px">
@@ -1153,12 +1154,12 @@ aside.detail{
         <div class="w-title">Heildsöluverslun</div>
         <div class="w-sub">Smelltu á vöru til að sjá heildsöluverð og bæta í körfu.</div>
         <div style="margin-top:8px">
-          <span class="wchip" onclick="qf('Hunangsafurðir')">🍯 Hunang</span>
-          <span class="wchip" onclick="qf('Fæðubótarefni')">💊 Bætiefni</span>
-          <span class="wchip" onclick="qf('Sveppir')">🍄 Sveppir</span>
-          <span class="wchip" onclick="qf('Shilajit')">⛰️ Shilajit</span>
-          <span class="wchip" onclick="qf('Seremóníu Kakó')">🍫 Seremóníu Kakó</span>
-          <span class="wchip" onclick="qf('Dýrafóður')">🐾 Dýrafóður</span>
+          <span class="wchip" onclick="qf('Hunangsafurðir')">Hunang</span>
+          <span class="wchip" onclick="qf('Fæðubótarefni')">Bætiefni</span>
+          <span class="wchip" onclick="qf('Sveppir')">Sveppir</span>
+          <span class="wchip" onclick="qf('Shilajit')">Shilajit</span>
+          <span class="wchip" onclick="qf('Seremóníu Kakó')">Seremóníu Kakó</span>
+          <span class="wchip" onclick="qf('Dýrafóður')">Dýrafóður</span>
         </div>
       </div>
     </div>
@@ -5950,7 +5951,7 @@ function renderGrid() {
         : (liL && retailL && discL !== null
           ? fmtISK(Math.round(retailL * (1 - discL/100)))
           : (p.wholesale || p.price));
-      const wsText = liL ? myWsL : '🔒';
+      const wsText = liL ? myWsL : 'Innskrá';
       return `<div class="prow${p.name===selectedName?' sel':''}" style="animation-delay:${delay}s" data-idx="${i}" data-url="${esc(p.url||p.name)}" draggable="${liL && isAdmin}">
         ${liL && isAdmin ? `<div class="drag-handle" title="Draga til að raða">⠿</div>` : ''}
         <img class="prow-img" src="${p.img}" onerror="this.style.display='none'" loading="lazy">
@@ -6002,8 +6003,8 @@ function renderGrid() {
             ${li
               ? `<div class="ws-price">${esc(wsText)}</div>
                  ${p.price && p.wholesale ? `<div class="retail-price">${esc(p.price)}</div>` : ''}
-                 ${saving ? `<div class="saving">💰 ${saving}</div>` : ''}`
-              : `<div class="price-locked" onclick="event.stopPropagation();document.getElementById('gate').classList.remove('hidden')">🔒 Innskrá til að sjá verð</div>`
+                 ${saving ? `<div class="saving">${saving}</div>` : ''}`
+              : `<div class="price-locked" onclick="event.stopPropagation();document.getElementById('gate').classList.remove('hidden')"><svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-1px"><path d="M17 9V7a5 5 0 0 0-10 0v2H5v13h14V9h-2zM9 7a3 3 0 0 1 6 0v2H9V7z"/></svg> Innskrá til að sjá verð</div>`
             }
           </div>
           ${li ? `
@@ -6016,8 +6017,8 @@ function renderGrid() {
             ${p.inStock ? '+ Bæta í körfu' : 'Uppselt'}
           </button>` : `
           <button class="add-btn" onclick="event.stopPropagation();document.getElementById('gate').classList.remove('hidden')"
-            style="background:var(--paper2);color:var(--ink2);border:1.5px solid var(--paper3)">
-            🔑 Innskrá
+            style="background:transparent;color:var(--green);border:1.5px solid var(--green)">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M17 9V7a5 5 0 0 0-10 0v2H5v13h14V9h-2zM9 7a3 3 0 0 1 6 0v2H9V7z"/></svg> Innskrá
           </button>`}
         </div>
       </div>`;
@@ -6149,10 +6150,10 @@ function showDetail(p) {
         </div>
         ${p.price ? `<div class="dp-price-card"><div class="dp-price-lbl">Smásöluverð</div><div class="dp-price-amt retail">${p.price}</div></div>` : ''}
       </div>
-      ${savedPct ? `<div class="dp-saving-chip">💰 Afsláttur: ${savedPct}%</div>` : ''}`
+      ${savedPct ? `<div class="dp-saving-chip">Afsláttur: ${savedPct}%</div>` : ''}`
     : `<div style="background:var(--paper2);border:1.5px solid var(--paper3);border-radius:var(--r);padding:1rem;text-align:center;margin-bottom:.875rem">
-        <div style="font-size:13px;color:var(--ink3);margin-bottom:.5rem">🔒 Innskráning krafist til að sjá verð</div>
-        <button onclick="document.getElementById('gate').classList.remove('hidden')" style="background:var(--green);color:#fff;border:none;border-radius:var(--rs);padding:8px 20px;font-size:13px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif">🔑 Innskrá</button>
+        <div style="font-size:13px;color:var(--ink3);margin-bottom:.5rem"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-1px"><path d="M17 9V7a5 5 0 0 0-10 0v2H5v13h14V9h-2zM9 7a3 3 0 0 1 6 0v2H9V7z"/></svg> Innskráning krafist til að sjá verð</div>
+        <button onclick="document.getElementById('gate').classList.remove('hidden')" style="background:var(--green);color:#fff;border:none;border-radius:var(--rs);padding:8px 20px;font-size:13px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif">Innskrá</button>
       </div>`;
 
   document.getElementById('dpBody').innerHTML = `
@@ -6223,13 +6224,13 @@ function showDetail(p) {
       </div>
       <button class="dp-add-btn" id="dpAddBtn" onclick="dpAdd('${esc(p.name)}')"
         style="margin-top:.75rem" ${!p.inStock?'disabled':''}>
-        ${p.inStock ? '🛒 Bæta í körfu' : '✕ Uppselt'}
+        ${p.inStock ? '<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px"><path d="M7 18a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 18zm10 0a2 2 0 1 0 .001 4.001A2 2 0 0 0 17 18zM6.2 6l-.7-3H2v2h1.9l2.9 8.6-.8 1.5c-.5 1 .2 2.4 1.5 2.4h11v-2H7.8l.6-1H17a2 2 0 0 0 1.8-1.1l3-6.4H6.2z"/></svg> Bæta í körfu' : '✕ Uppselt'}
       </button>
     </div>` : `
     <div style="margin-bottom:1rem">
       <button onclick="document.getElementById('gate').classList.remove('hidden')"
         style="width:100%;padding:11px;background:var(--green);color:#fff;border:none;border-radius:var(--rs);font-size:13px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif">
-        🔑 Innskrá til að kaupa
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-1px"><path d="M17 9V7a5 5 0 0 0-10 0v2H5v13h14V9h-2zM9 7a3 3 0 0 1 6 0v2H9V7z"/></svg> Innskrá til að kaupa
       </button>
     </div>`}
 
@@ -6389,7 +6390,7 @@ function dpAdd(name) {
   const qty = parseInt(document.getElementById('dpQty')?.value) || 1;
   addToCart(name, qty);
   const btn = document.querySelector('.dp-add-btn');
-  if (btn) { btn.textContent = '✓ Bætt við!'; btn.classList.add('added'); setTimeout(()=>{btn.textContent='🛒 Bæta í körfu';btn.classList.remove('added');},1500); }
+  if (btn) { btn.textContent = '✓ Bætt við!'; btn.classList.add('added'); setTimeout(()=>{btn.textContent='+ Bæta í körfu';btn.classList.remove('added');},1500); }
 }
 
 // ── Toast ──
@@ -7552,7 +7553,7 @@ const THEME_DEFAULTS = {
   colorHeader:  '#1A1710',
   // Typography
   fontBody:     'DM Sans',
-  fontLogo:     'Playfair Display',
+  fontLogo:     'Spectral',
   logoSize:     '22',
   // Text content
   logoText:     'Seiðkarlinn',
@@ -7622,7 +7623,7 @@ function applyTheme(t) {
 // ── Render theme panel ────────────────────────────────
 function renderThemePanel() {
   const t = getTheme();
-  const fonts = ['DM Sans','Playfair Display','Times New Roman','Georgia','Arial','Helvetica','Verdana','Trebuchet MS','Palatino'];
+  const fonts = ['DM Sans','Spectral','Times New Roman','Georgia','Arial','Helvetica','Verdana','Trebuchet MS','Palatino'];
 
   const colorRow = (key, label) => `
     <div class="theme-row">

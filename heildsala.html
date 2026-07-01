@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="is">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Seiðkarlinn Heildsala - Náttúruvörur fyrir verslanir og veitingahús</title>
+<meta name="description" content="Gerðu Seiðkarlinn að birgi þínum. Hunang, sveppir, shilajit, ceremonial cacao og fleiri náttúruvörur á heildsöluverði. 25% afsláttur, 50.000 kr lágmarkspöntun.">
+<meta property="og:title" content="Seiðkarlinn Heildsala">
+<meta property="og:description" content="Náttúruvörur á heildsöluverði fyrir íslenskar verslanir, apótek og veitingahús.">
+<meta property="og:type" content="website">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,500;0,600;1,400;1,500&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════  TOKENS  ═══════════════════════════════ */
+:root{
+  /* Forest + bone + honey. Deliberately NOT the cream/brass/espresso AI default. */
+  --pine:#1E3A2B;        /* primary brand - deep spruce */
+  --pine-2:#162C20;      /* darker band */
+  --pine-3:#0F2016;      /* deepest / footer */
+  --bone:#F1EFE4;        /* warm bone paper (page) */
+  --bone-2:#E9E6D8;      /* elevated surface */
+  --bone-3:#DED9C7;      /* hairlines / borders */
+  --ink:#1C1E15;         /* green-charcoal text */
+  --ink-2:#4A4E3F;       /* secondary text */
+  --ink-3:#767A66;       /* muted / captions */
+  --honey:#D08A2C;       /* single locked accent - honey amber */
+  --honey-d:#B0721B;     /* accent pressed */
+  --sage:#8FA07F;        /* soft green for dark-band secondary text */
+  --on-pine:#EDEFE0;     /* text on pine */
+  --on-pine-2:#B7C3AE;   /* muted text on pine */
+  --r:16px; --rs:12px; --rl:24px;
+  --mx:min(1200px,92vw);
+  /* spring-mass easing - no linear / ease-in-out anywhere */
+  --ease:cubic-bezier(.16,1,.3,1);
+  --ease-2:cubic-bezier(.32,.72,0,1);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{
+  font-family:'DM Sans',system-ui,sans-serif;background:var(--bone);color:var(--ink);
+  font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden;
+}
+a{color:inherit;text-decoration:none}
+img{display:block;max-width:100%}
+h1,h2,h3{font-family:'Spectral',Georgia,serif;font-weight:500;line-height:1.08;letter-spacing:-.012em}
+.serif{font-family:'Spectral',Georgia,serif}
+.wrap{width:var(--mx);margin-inline:auto}
+
+/* film-grain / paper texture - fixed, pointer-events none, never on scrolling content */
+body::after{
+  content:"";position:fixed;inset:0;z-index:2;pointer-events:none;opacity:.04;mix-blend-mode:multiply;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* reveal-on-scroll: heavy fade-up + blur, resolving to sharp (gated by reduced motion) */
+.rise{opacity:0;transform:translateY(26px);filter:blur(7px);
+  transition:opacity .85s var(--ease),transform .85s var(--ease),filter .85s var(--ease)}
+.rise.in{opacity:1;transform:none;filter:blur(0)}
+.d1{transition-delay:.07s}.d2{transition-delay:.14s}.d3{transition-delay:.21s}.d4{transition-delay:.28s}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  .rise{opacity:1;transform:none;filter:none;transition:none}
+  *{animation:none!important;transition-duration:.001s!important}
+}
+
+/* ── shared icon (ultra-light diagonal arrow, ~1.4 stroke) ── */
+.ic{width:1em;height:1em;flex:none}
+
+/* ═══════════════════════════════  BUTTONS  ═══════════════════════════════ */
+/* island / pill CTAs with nested "button-in-button" trailing icon + magnetic physics */
+.btn{position:relative;display:inline-flex;align-items:center;gap:.7rem;font-size:15px;font-weight:600;
+  font-family:'DM Sans',sans-serif;letter-spacing:-.005em;padding:13px 15px 13px 24px;border-radius:999px;
+  cursor:pointer;border:1.5px solid transparent;will-change:transform;
+  transition:transform .5s var(--ease-2),background .25s var(--ease),color .25s var(--ease),border-color .25s var(--ease),box-shadow .3s var(--ease)}
+.btn .btn-ic{width:30px;height:30px;flex:none;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;
+  transition:transform .5s var(--ease-2),background .25s var(--ease)}
+.btn .btn-ic .ic{width:15px;height:15px}
+.btn:hover .btn-ic{transform:translate(2px,-2px) scale(1.07)}
+.btn:active{transform:translateY(1px) scale(.985)}
+.btn-honey{background:var(--honey);color:var(--pine-3);box-shadow:0 6px 18px rgba(208,138,44,.28),inset 0 1px 0 rgba(255,255,255,.35)}
+.btn-honey:hover{background:#e0993a;box-shadow:0 10px 26px rgba(208,138,44,.34),inset 0 1px 0 rgba(255,255,255,.4)}
+.btn-honey .btn-ic{background:rgba(15,32,22,.16)}
+.btn-pine{background:var(--pine);color:var(--on-pine);box-shadow:0 6px 18px rgba(15,32,22,.2),inset 0 1px 0 rgba(255,255,255,.08)}
+.btn-pine:hover{background:var(--pine-2)}
+.btn-pine .btn-ic{background:rgba(237,239,224,.14)}
+.btn-ghost-l{background:transparent;color:var(--on-pine);border-color:rgba(237,239,224,.32)}
+.btn-ghost-l:hover{border-color:var(--on-pine);background:rgba(237,239,224,.06)}
+.btn-ghost-l .btn-ic{background:rgba(237,239,224,.12)}
+.btn-ghost-d{background:transparent;color:var(--pine);border-color:rgba(30,58,43,.28)}
+.btn-ghost-d:hover{border-color:var(--pine);background:rgba(30,58,43,.05)}
+.btn-ghost-d .btn-ic{background:rgba(30,58,43,.1)}
+
+/* ═══════════════════════════════  EYEBROW BADGE  ═══════════════════════════════ */
+.badge{display:inline-flex;align-items:center;gap:.55rem;font-size:10px;font-weight:600;letter-spacing:.22em;
+  text-transform:uppercase;padding:6px 14px;border-radius:999px;font-family:'DM Sans',sans-serif}
+.badge::before{content:"";width:5px;height:5px;border-radius:999px;background:var(--honey)}
+.badge-l{color:var(--honey);border:1px solid rgba(208,138,44,.4);background:rgba(208,138,44,.06)}
+.badge-d{color:var(--pine);border:1px solid rgba(30,58,43,.22);background:rgba(30,58,43,.04)}
+.badge-d::before{background:var(--honey)}
+
+/* ═══════════════════════════════  DOUBLE-BEZEL  ═══════════════════════════════ */
+/* machined-hardware nesting: outer tray + inner core with concentric radii */
+.bezel{background:rgba(28,30,21,.045);border:1px solid rgba(28,30,21,.07);padding:8px;border-radius:calc(var(--rl) + 8px);
+  box-shadow:inset 0 1px 1px rgba(255,255,255,.5),0 24px 55px rgba(28,30,21,.13)}
+.bezel-d{background:rgba(237,239,224,.05);border:1px solid rgba(237,239,224,.12);
+  box-shadow:inset 0 1px 1px rgba(255,255,255,.14),0 30px 70px rgba(0,0,0,.35)}
+.bezel-core{border-radius:var(--rl);overflow:hidden;position:relative}
+
+/* ═══════════════════════════════  NAV — FLUID ISLAND  ═══════════════════════════════ */
+header.nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;justify-content:center;pointer-events:none}
+.nav-in{pointer-events:auto;margin-top:1.15rem;width:min(1160px,92vw);height:62px;
+  display:flex;align-items:center;justify-content:space-between;gap:1.5rem;padding:0 8px 0 22px;
+  background:rgba(241,239,228,.68);backdrop-filter:saturate(160%) blur(16px);-webkit-backdrop-filter:saturate(160%) blur(16px);
+  border:1px solid rgba(222,217,199,.7);border-radius:999px;
+  box-shadow:0 10px 34px rgba(28,30,21,.09),inset 0 1px 0 rgba(255,255,255,.5);
+  transition:box-shadow .4s var(--ease),background .4s var(--ease)}
+.nav-in.scrolled{background:rgba(241,239,228,.86);box-shadow:0 14px 40px rgba(28,30,21,.14),inset 0 1px 0 rgba(255,255,255,.55)}
+.brand{display:flex;align-items:center;gap:.6rem;font-family:'Spectral',serif;font-size:20px;color:var(--ink);letter-spacing:-.01em}
+.brand .mark{width:25px;height:25px;flex:none}
+.brand .tag{font-family:'DM Sans',sans-serif;font-size:9px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--pine);border:1px solid rgba(30,58,43,.4);border-radius:999px;padding:3px 8px}
+.nav-links{display:flex;align-items:center;gap:2.1rem;font-size:14px;color:var(--ink-2)}
+.nav-links a{position:relative;transition:color .25s var(--ease)}
+.nav-links a::after{content:"";position:absolute;left:0;right:100%;bottom:-4px;height:1.5px;background:var(--honey);
+  transition:right .4s var(--ease-2)}
+.nav-links a:hover{color:var(--ink)}
+.nav-links a:hover::after{right:0}
+.nav-right{display:flex;align-items:center;gap:.6rem}
+.nav-cta{display:inline-flex;align-items:center;gap:.55rem;font-size:13.5px;font-weight:600;color:var(--pine);
+  border:1.5px solid rgba(30,58,43,.28);padding:8px 9px 8px 17px;border-radius:999px;
+  transition:background .25s var(--ease),color .25s var(--ease),border-color .25s var(--ease)}
+.nav-cta .btn-ic{width:24px;height:24px;border-radius:999px;background:rgba(30,58,43,.08);display:inline-flex;align-items:center;justify-content:center;
+  transition:transform .5s var(--ease-2)}
+.nav-cta .btn-ic .ic{width:13px;height:13px}
+.nav-cta:hover{background:var(--pine);color:var(--on-pine);border-color:var(--pine)}
+.nav-cta:hover .btn-ic{background:rgba(237,239,224,.16);transform:translate(2px,-2px)}
+/* hamburger — morphs to X */
+.burger{display:none;position:relative;width:42px;height:42px;border-radius:999px;cursor:pointer;
+  border:1px solid rgba(222,217,199,.9);background:rgba(255,255,255,.35)}
+.burger span{position:absolute;left:12px;right:12px;height:1.6px;background:var(--ink);border-radius:2px;
+  transition:transform .5s var(--ease-2),top .4s var(--ease-2),opacity .25s}
+.burger span:nth-child(1){top:17px}
+.burger span:nth-child(2){top:23px}
+.burger.open span:nth-child(1){top:20px;transform:rotate(45deg)}
+.burger.open span:nth-child(2){top:20px;transform:rotate(-45deg)}
+@media(max-width:820px){.nav-links{display:none}.nav-cta{display:none}.burger{display:block}}
+
+/* full-screen glass overlay menu with staggered mask reveal */
+.overlay{position:fixed;inset:0;z-index:99;display:flex;flex-direction:column;justify-content:center;gap:2.4rem;padding:0 9vw;
+  background:rgba(241,239,228,.82);backdrop-filter:blur(26px) saturate(150%);-webkit-backdrop-filter:blur(26px) saturate(150%);
+  opacity:0;visibility:hidden;transition:opacity .55s var(--ease),visibility .55s var(--ease)}
+.overlay.open{opacity:1;visibility:visible}
+.ov-links{display:flex;flex-direction:column;gap:.1rem}
+.ov-links a{display:inline-flex;align-items:baseline;gap:1rem;font-family:'Spectral',serif;font-weight:500;
+  font-size:clamp(2.3rem,10vw,3.6rem);color:var(--ink);letter-spacing:-.02em;padding:.35rem 0;width:max-content;
+  opacity:0;transform:translateY(34px);filter:blur(8px);
+  transition:transform .7s var(--ease-2),opacity .7s var(--ease),filter .7s var(--ease),color .25s}
+.ov-links a .oi{font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;color:var(--ink-3);letter-spacing:.1em}
+.ov-links a:hover{color:var(--honey-d)}
+.overlay.open .ov-links a{opacity:1;transform:none;filter:blur(0);transition-delay:calc(var(--i) * .07s + .1s)}
+.ov-foot{display:flex;flex-wrap:wrap;gap:1rem;align-items:center;opacity:0;transform:translateY(20px);
+  transition:transform .7s var(--ease-2),opacity .7s var(--ease);transition-delay:.45s}
+.overlay.open .ov-foot{opacity:1;transform:none}
+.ov-foot .om{font-size:13.5px;color:var(--ink-3)}
+
+/* ═══════════════════════════════  HERO  ═══════════════════════════════ */
+.hero{background:var(--pine);color:var(--on-pine);position:relative;overflow:hidden}
+.hero::after{content:"";position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(120% 90% at 88% 6%,rgba(208,138,44,.22),transparent 55%),
+             radial-gradient(80% 70% at -5% 105%,rgba(15,32,22,.7),transparent 60%)}
+.hero-in{width:var(--mx);margin-inline:auto;position:relative;z-index:1;
+  display:grid;grid-template-columns:1.05fr .95fr;gap:3.5rem;align-items:center;
+  padding:clamp(7.5rem,11vw,9.5rem) 0 clamp(4rem,7vw,6rem)}
+.hero h1{font-size:clamp(2.7rem,5.6vw,4.6rem);margin:1.3rem 0 0;color:var(--on-pine)}
+.hero h1 em{font-style:italic;color:#fff}
+.hero .lede{margin-top:1.5rem;font-size:clamp(1rem,1.4vw,1.2rem);color:var(--on-pine-2);max-width:35ch}
+.hero-cta{display:flex;flex-wrap:wrap;gap:.9rem;margin-top:2.3rem}
+.hero-note{margin-top:1.7rem;font-size:13px;color:var(--on-pine-2);display:flex;align-items:center;gap:.6rem}
+.hero-note::before{content:"";width:6px;height:6px;border-radius:999px;background:var(--honey);flex:none}
+.hero-note b{color:var(--on-pine);font-weight:600}
+/* hero visual — double-bezel tray */
+.hero-bezel{width:100%}
+.hero-art{aspect-ratio:4/5}
+.hero-art img{width:100%;height:100%;object-fit:cover}
+.hero-art .plate{position:absolute;left:16px;bottom:16px;right:16px;
+  background:rgba(15,32,22,.6);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  border:1px solid rgba(237,239,224,.16);border-radius:14px;padding:13px 16px;
+  display:flex;justify-content:space-between;align-items:center;gap:1rem}
+.plate .pk{font-family:'Spectral',serif;font-size:15px;color:var(--on-pine)}
+.plate .pv{font-size:11px;color:var(--honey);font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+@media(max-width:860px){
+  .hero-in{grid-template-columns:1fr;gap:2.6rem;padding:7rem 0 3.5rem}
+  .hero-art{aspect-ratio:16/12}
+  .hero .lede,.hero h1{max-width:none}
+}
+
+/* ═══════════════════════════════  STAT STRIP  ═══════════════════════════════ */
+.stats{background:var(--pine-2);color:var(--on-pine);border-top:1px solid rgba(237,239,224,.08)}
+.stats-in{width:var(--mx);margin-inline:auto;display:grid;grid-template-columns:repeat(4,1fr)}
+.stat{padding:1.8rem 1.6rem;position:relative}
+.stat + .stat::before{content:"";position:absolute;left:0;top:22%;bottom:22%;width:1px;background:rgba(237,239,224,.12)}
+.stat .n{font-family:'Spectral',serif;font-size:clamp(1.8rem,3vw,2.4rem);color:#fff;line-height:1}
+.stat .l{margin-top:.55rem;font-size:12.5px;color:var(--on-pine-2);letter-spacing:.01em}
+@media(max-width:720px){.stats-in{grid-template-columns:repeat(2,1fr)}
+  .stat:nth-child(3)::before,.stat:nth-child(2)::before{content:none}}
+
+/* ═══════════════════════════════  SECTIONS  ═══════════════════════════════ */
+section.band{padding:clamp(5rem,9vw,8.5rem) 0}
+.head-l{max-width:60ch}
+.head-l .badge{margin-bottom:1.2rem}
+.head-l h2{font-size:clamp(2.1rem,4vw,3.15rem)}
+.head-l p{margin-top:1.1rem;color:var(--ink-2);font-size:1.07rem;max-width:56ch}
+
+/* product lines — asymmetric bento (6 cells) */
+.cats{display:grid;grid-template-columns:repeat(6,1fr);grid-auto-rows:minmax(160px,auto);gap:14px;margin-top:2.8rem}
+.cat{position:relative;border-radius:var(--r);overflow:hidden;padding:1.5rem;min-height:160px;isolation:isolate;
+  display:flex;flex-direction:column;justify-content:flex-end;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.06),inset 0 1px 1px rgba(255,255,255,.12);
+  transition:transform .5s var(--ease-2),box-shadow .5s var(--ease-2)}
+.cat:hover{transform:translateY(-4px);box-shadow:inset 0 0 0 1px rgba(255,255,255,.08),0 22px 46px rgba(28,30,21,.16)}
+.cat .bg{position:absolute;inset:0;z-index:-2;object-fit:cover;width:100%;height:100%;
+  transition:transform .8s var(--ease-2)}
+.cat:hover .bg{transform:scale(1.05)}
+.cat::before{content:"";position:absolute;inset:0;z-index:-1;
+  background:linear-gradient(180deg,rgba(15,32,22,.04) 0%,rgba(15,32,22,.76) 100%)}
+.cat h3{color:#fff;font-size:1.4rem}
+.cat p{color:rgba(255,255,255,.82);font-size:13px;margin-top:.3rem;max-width:30ch}
+.cat .kv{position:absolute;top:1.2rem;left:1.5rem;font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;
+  letter-spacing:.14em;color:var(--honey)}
+.cat-fill{background:var(--pine);color:var(--on-pine)}
+.cat-fill::before{display:none}
+.cat-fill h3{color:#fff}.cat-fill p{color:var(--on-pine-2)}
+.c1{grid-column:span 3}.c2{grid-column:span 3}
+.c3{grid-column:span 2}.c4{grid-column:span 2}.c5{grid-column:span 2}
+.c6{grid-column:span 6;min-height:180px;flex-direction:row;align-items:center;justify-content:space-between;gap:1.5rem}
+.c6 .c6-txt{max-width:48ch}
+.c6 .btn{flex:none}
+@media(max-width:900px){
+  .cats{grid-template-columns:repeat(2,1fr)}
+  .c1,.c2,.c3,.c4,.c5{grid-column:span 1}
+  .c6{grid-column:span 2;flex-direction:column;align-items:flex-start;gap:1.3rem}
+}
+@media(max-width:560px){.cats{grid-template-columns:1fr}.c6{grid-column:span 1}}
+
+/* value props — 3 stacked feature rows (distinct family from bento) */
+.values{margin-top:2.8rem;border-top:1px solid var(--bone-3)}
+.value{display:grid;grid-template-columns:auto 1fr auto;gap:1.7rem;align-items:baseline;
+  padding:1.9rem 0;border-bottom:1px solid var(--bone-3);transition:padding-left .5s var(--ease-2)}
+.value:hover{padding-left:.6rem}
+.value .vi{font-family:'Spectral',serif;font-size:1.5rem;color:var(--honey);width:2.4ch}
+.value h3{font-size:1.4rem}
+.value p{color:var(--ink-2);font-size:1rem;margin-top:.4rem;max-width:60ch}
+.value .vmeta{font-size:12px;color:var(--ink-3);white-space:nowrap;align-self:center;text-transform:uppercase;letter-spacing:.1em;
+  border:1px solid var(--bone-3);border-radius:999px;padding:5px 12px}
+@media(max-width:680px){.value{grid-template-columns:auto 1fr;gap:1.1rem}.value .vmeta{display:none}}
+
+/* process — 3 steps, verb-led, double-bezel on pine band */
+.process{background:var(--pine);color:var(--on-pine)}
+.process .head-l h2{color:#fff}.process .head-l p{color:var(--on-pine-2)}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;margin-top:2.8rem}
+.step-bezel{padding:7px}
+.step{border-radius:var(--r);padding:1.9rem;background:rgba(237,239,224,.035);height:100%;
+  box-shadow:inset 0 1px 1px rgba(255,255,255,.1);transition:transform .5s var(--ease-2),background .4s var(--ease)}
+.step-bezel:hover .step{transform:translateY(-3px);background:rgba(237,239,224,.06)}
+.step .sn{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:999px;
+  font-family:'Spectral',serif;font-size:1.3rem;color:var(--honey);background:rgba(208,138,44,.1);
+  border:1px solid rgba(208,138,44,.28)}
+.step h3{color:#fff;font-size:1.32rem;margin-top:1.1rem}
+.step p{color:var(--on-pine-2);font-size:.98rem;margin-top:.55rem}
+@media(max-width:780px){.steps{grid-template-columns:1fr}}
+
+/* story band */
+.story-in{display:grid;grid-template-columns:1fr 1fr;gap:3.5rem;align-items:center}
+.story-art{aspect-ratio:5/4}
+.story-art img{width:100%;height:100%;object-fit:cover}
+.story-copy .badge{margin-bottom:1.2rem}
+.story-copy h2{font-size:clamp(1.9rem,3.4vw,2.7rem)}
+.story-copy p{color:var(--ink-2);margin-top:1.15rem;font-size:1.07rem;max-width:52ch}
+.story-copy .pull{font-family:'Spectral',serif;font-style:italic;font-size:1.35rem;color:var(--pine);
+  margin-top:1.7rem;padding-left:1.3rem;border-left:2px solid var(--honey);line-height:1.4}
+@media(max-width:820px){.story-in{grid-template-columns:1fr;gap:2.2rem}}
+
+/* final CTA */
+.cta{background:var(--pine-3);color:var(--on-pine);position:relative;overflow:hidden}
+.cta::after{content:"";position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(90% 120% at 50% 0%,rgba(208,138,44,.16),transparent 55%)}
+.cta-in{padding:clamp(4.5rem,9vw,7rem) 0;text-align:center;position:relative;z-index:1;
+  display:flex;flex-direction:column;align-items:center}
+.cta .badge{margin-bottom:1.4rem}
+.cta h2{font-size:clamp(2.2rem,4.8vw,3.6rem);color:#fff;max-width:18ch;margin-inline:auto}
+.cta p{color:var(--on-pine-2);margin-top:1.2rem;font-size:1.09rem;max-width:46ch;margin-inline:auto}
+.cta .hero-cta{justify-content:center}
+
+/* footer */
+footer.ft{background:var(--pine-3);color:var(--on-pine-2);border-top:1px solid rgba(237,239,224,.1)}
+.ft-in{width:var(--mx);margin-inline:auto;padding:2.8rem 0;display:flex;flex-wrap:wrap;
+  justify-content:space-between;gap:1.5rem;align-items:center;font-size:13.5px}
+.ft-in a{transition:color .25s var(--ease)}
+.ft-in a:hover{color:var(--on-pine)}
+.ft .brand{color:var(--on-pine)}
+.ft .brand .tag{color:var(--on-pine-2);border-color:rgba(237,239,224,.25)}
+.ft-links{display:flex;gap:1.6rem;flex-wrap:wrap}
+
+/* honey mark */
+.mark path{fill:var(--honey)}
+.nav .mark path,.ft .mark path{fill:var(--honey)}
+</style>
+</head>
+<body>
+
+<!-- ============ NAV — FLUID ISLAND ============ -->
+<header class="nav">
+  <div class="nav-in" id="navPill">
+    <a class="brand" href="/heildsala.html" aria-label="Seiðkarlinn heildsala">
+      <svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2c1.6 3 4.5 4.2 4.5 8A4.5 4.5 0 0 1 12 14a4.5 4.5 0 0 1-4.5-4C7.5 6.2 10.4 5 12 2Zm0 13c3 0 5 1.7 5 4.2V22H7v-2.8C7 16.7 9 15 12 15Z"/></svg>
+      Seiðkarlinn <span class="tag">Heildsala</span>
+    </a>
+    <nav class="nav-links" aria-label="Aðalvalmynd">
+      <a href="#vorur">Vöruflokkar</a>
+      <a href="#kjor">Kjör</a>
+      <a href="#ferli">Ferlið</a>
+    </nav>
+    <div class="nav-right">
+      <a class="nav-cta" href="/">Innskrá
+        <span class="btn-ic"><svg class="ic" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12L12 4M6 4h6v6"/></svg></span>
+      </a>
+      <button class="burger" id="burger" aria-label="Opna valmynd" aria-expanded="false" aria-controls="ov"><span></span><span></span></button>
+    </div>
+  </div>
+</header>
+
+<!-- full-screen glass overlay -->
+<div class="overlay" id="ov" aria-hidden="true">
+  <nav class="ov-links" aria-label="Valmynd">
+    <a href="#vorur" style="--i:1"><span class="oi">01</span>Vöruflokkar</a>
+    <a href="#kjor" style="--i:2"><span class="oi">02</span>Kjör</a>
+    <a href="#ferli" style="--i:3"><span class="oi">03</span>Ferlið</a>
+    <a href="/" style="--i:4"><span class="oi">04</span>Innskrá</a>
+  </nav>
+  <div class="ov-foot">
+    <a class="btn btn-pine" href="mailto:seidkarlinn@seidkarlinn.is?subject=Ums%C3%B3kn%20um%20heilds%C3%B6luaðgang">Sækja um aðgang
+      <span class="btn-ic"><svg class="ic" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12L12 4M6 4h6v6"/></svg></span>
+    </a>
+    <span class="om">seidkarlinn@seidkarlinn.is</span>
+  </div>
+</div>
+
+<!-- ============ HERO ============ -->
+<section class="hero">
+  <div class="hero-in">
+    <div class="hero-copy">
+      <span class="badge badge-l rise">Heildsala fyrir fagaðila</span>
+      <h1 class="rise d1">Íslenskar náttúruvörur, <em>beint í hilluna þína.</em></h1>
+      <p class="lede rise d2">Hunang, sveppir, shilajit og ceremonial cacao frá Seiðkarlinum. Eitt aðgengi, eitt lágmark, alltaf sama heildsöluverðið.</p>
+      <div class="hero-cta rise d3">
+        <a class="btn btn-honey" href="#ferli">Sækja um aðgang
+          <span class="btn-ic"><svg class="ic" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12L12 4M6 4h6v6"/></svg></span>
+        </a>
+        <a class="btn btn-ghost-l" href="/">Innskrá í vefverslun
+          <span class="btn-ic"><svg class="ic" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h10M9 4l4 4-4 4"/></svg></span>
+        </a>
+      </div>
+      <p class="hero-note rise d4"><b>25% afsláttur</b> af smásöluverði. Lágmarkspöntun 50.000 kr.</p>
+    </div>
+    <div class="bezel bezel-d hero-bezel rise d2">
+      <div class="bezel-core hero-art">
+        <!-- TODO: replace with real product photo (raw honey / apothecary shelf), 1200x1500 -->
+        <img src="https://picsum.photos/seed/seidkarlinn-honey-apothecary/1200/1500" alt="Náttúruvörur Seiðkarlinn" loading="eager">
+        <div class="plate">
+          <span class="pk">Hráhunang, 12 stk. kassi</span>
+          <span class="pv">Heildsöluverð</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ STAT STRIP ============ -->
+<div class="stats">
+  <div class="stats-in">
+    <div class="stat"><div class="n">25%</div><div class="l">Fastur heildsöluafsláttur</div></div>
+    <div class="stat"><div class="n">50.000 kr</div><div class="l">Lágmarkspöntun</div></div>
+    <div class="stat"><div class="n">6</div><div class="l">Vöruflokkar á lager</div></div>
+    <div class="stat"><div class="n">Ísland</div><div class="l">Sending um allt land</div></div>
+  </div>
+</div>
+
+<!-- ============ PRODUCT LINES ============ -->
+<section class="band wrap" id="vorur">
+  <div class="head-l rise">
+    <span class="badge badge-d">Vöruflokkar</span>
+    <h2>Það sem þú setur í hilluna.</h2>
+    <p>Sex vöruflokkar, valdir fyrir heilsuverslanir, apótek og veitingahús sem vilja hráar, ósvindlaðar vörur með sögu.</p>
+  </div>
+  <div class="cats">
+    <article class="cat c1 rise">
+      <img class="bg" src="https://picsum.photos/seed/seidkarlinn-hunang/900/600" alt="">
+      <span class="kv">01</span><h3>Hunang</h3>
+      <p>Hráhunang í krukkum og kössum, tilbúið fyrir borðið eða bakaríið.</p>
+    </article>
+    <article class="cat c2 rise d1">
+      <img class="bg" src="https://picsum.photos/seed/seidkarlinn-sveppir/900/600" alt="">
+      <span class="kv">02</span><h3>Lyfjasveppir</h3>
+      <p>Lion's mane, reishi og chaga sem duft og seyði.</p>
+    </article>
+    <article class="cat c3 rise">
+      <img class="bg" src="https://picsum.photos/seed/seidkarlinn-shilajit/800/700" alt="">
+      <span class="kv">03</span><h3>Shilajit</h3>
+      <p>Hreint fjallaresín.</p>
+    </article>
+    <article class="cat c4 rise d1">
+      <img class="bg" src="https://picsum.photos/seed/seidkarlinn-cacao/800/700" alt="">
+      <span class="kv">04</span><h3>Ceremonial cacao</h3>
+      <p>Fyrir kaffihús og athafnir.</p>
+    </article>
+    <article class="cat c5 cat-fill rise d2">
+      <span class="kv">05</span><h3>Fæðubótarefni</h3>
+      <p>Prótein, jurtir og rætur í lausu og pökkuðu.</p>
+    </article>
+    <article class="cat c6 cat-fill rise">
+      <div class="c6-txt">
+        <span class="kv">06</span>
+        <h3>Dýrafóður og fleira</h3>
+        <p>Náttúrulegt fóður og heimilisvörur. Fullur listi opnast þegar þú færð aðgang að vefversluninni.</p>
+      </div>
+      <a class="btn btn-honey" href="#ferli">Sjá allan lagerinn
+        <span class="btn-ic"><svg class="ic" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12L12 4M6 4h6v6"/></svg></span>
+      </a>
+    </article>
+  </div>
+</section>
+
+<!-- ============ VALUE PROPS ============ -->
+<section class="band wrap" id="kjor" style="padding-top:0">
+  <div class="head-l rise">
+    <span class="badge badge-d">Kjör</span>
+    <h2>Af hverju að versla í heildsölu hjá okkur.</h2>
+    <p>Engir milliliðir, engin óvissa um verð. Þú pantar þegar þér hentar og fylgist með öllu á einum stað.</p>
+  </div>
+  <div class="values">
+    <div class="value rise">
+      <span class="vi">01</span>
+      <div><h3>Gagnsætt verð, enginn afsláttarleikur</h3>
+        <p>Sami 25% heildsöluafslátturinn af öllum vörum, sýnilegur um leið og þú skráir þig inn. Ekkert prútt, engin fela verð á bak við tölvupóst.</p></div>
+      <span class="vmeta">Uppfært í rauntíma</span>
+    </div>
+    <div class="value rise">
+      <span class="vi">02</span>
+      <div><h3>Pantaðu sjálf, allan sólarhringinn</h3>
+        <p>Vefverslunin sýnir lager, verð og fyrri pantanir. Þú endurpantar á mínútu og færð reikning og kvittun beint í hólfið.</p></div>
+      <span class="vmeta">Netgreiðsla</span>
+    </div>
+    <div class="value rise">
+      <span class="vi">03</span>
+      <div><h3>Vörur sem selja sig sjálfar</h3>
+        <p>Þekkt íslenskt vörumerki með sögu í hverri krukku. Viðskiptavinir þínir þekkja Seiðkarlinn og leita að honum.</p></div>
+      <span class="vmeta">Sending um allt land</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PROCESS ============ -->
+<section class="process">
+  <div class="band wrap">
+    <div class="head-l rise">
+      <span class="badge badge-l">Ferlið</span>
+      <h2>Þrjú skref að fyrstu pöntun.</h2>
+      <p>Frá umsókn að afhendingu tekur það oftast innan við sólarhring að fá aðgang.</p>
+    </div>
+    <div class="steps">
+      <div class="bezel bezel-d step-bezel rise"><div class="step"><div class="sn">01</div><h3>Sæktu um</h3>
+        <p>Sendu okkur nafn fyrirtækis, kennitölu og netfang. Við staðfestum að þú sért með rekstur.</p></div></div>
+      <div class="bezel bezel-d step-bezel rise d1"><div class="step"><div class="sn">02</div><h3>Fáðu aðgang</h3>
+        <p>Þú færð innskráningu á wholesale.seidkarlinn.is með heildsöluverði á öllum vörum.</p></div></div>
+      <div class="bezel bezel-d step-bezel rise d2"><div class="step"><div class="sn">03</div><h3>Pantaðu</h3>
+        <p>Fylltu körfuna, greiddu á netinu og fáðu sendinguna heim að dyrum verslunarinnar.</p></div></div>
+    </div>
+    <div class="hero-cta rise" id="ferli" style="margin-top:2.8rem">
+      <a class="btn btn-honey" href="mailto:seidkarlinn@seidkarlinn.is?subject=Ums%C3%B3kn%20um%20heilds%C3%B6luaðgang">Sækja um aðgang
+        <span class="btn-ic"><svg class="ic" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12L12 4M6 4h6v6"/></svg></span>
+      </a>
+      <a class="btn btn-ghost-l" href="/">Ég er þegar með aðgang
+        <span class="btn-ic"><svg class="ic" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h10M9 4l4 4-4 4"/></svg></span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ============ STORY ============ -->
+<section class="band wrap">
+  <div class="story-in">
+    <div class="bezel story-art-bezel rise">
+      <div class="bezel-core story-art">
+        <!-- TODO: replace with real brand / sourcing photo (Icelandic landscape or apothecary), 1000x800 -->
+        <img src="https://picsum.photos/seed/seidkarlinn-nordic-nature/1000/800" alt="Seiðkarlinn uppruni">
+      </div>
+    </div>
+    <div class="story-copy">
+      <span class="badge badge-d rise">Uppruni</span>
+      <h2 class="rise">Nafnið kemur úr fornri íslenskri hefð.</h2>
+      <p class="rise">Seiðkarlinn sótti nafn sitt í seið, gamla norræna kunnáttu um jurtir, rætur og lækningamátt náttúrunnar. Við veljum vörur í sama anda: hráar, ósvindlaðar og með raunverulegan uppruna.</p>
+      <p class="rise">Fyrir verslunina þína þýðir það vörur sem standa undir loforðinu í hillunni, ekki bara á umbúðunum.</p>
+      <p class="pull rise">Náttúruvörur, hunang, jurtir, rætur og sveppir.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FINAL CTA ============ -->
+<section class="cta">
+  <div class="cta-in wrap">
+    <span class="badge badge-l rise">Umsókn</span>
+    <h2 class="rise d1">Gerðu Seiðkarlinn að birgi þínum.</h2>
+    <p class="rise d2">Sæktu um heildsöluaðgang í dag og fáðu verðlistann sendan strax.</p>
+    <div class="hero-cta rise d3">
+      <a class="btn btn-honey" href="mailto:seidkarlinn@seidkarlinn.is?subject=Ums%C3%B3kn%20um%20heilds%C3%B6luaðgang">Sækja um aðgang
+        <span class="btn-ic"><svg class="ic" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12L12 4M6 4h6v6"/></svg></span>
+      </a>
+      <a class="btn btn-ghost-l" href="/">Innskrá
+        <span class="btn-ic"><svg class="ic" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h10M9 4l4 4-4 4"/></svg></span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FOOTER ============ -->
+<footer class="ft">
+  <div class="ft-in">
+    <a class="brand" href="/heildsala.html">
+      <svg class="mark" viewBox="0 0 24 24" aria-hidden="true" style="width:22px;height:22px"><path d="M12 2c1.6 3 4.5 4.2 4.5 8A4.5 4.5 0 0 1 12 14a4.5 4.5 0 0 1-4.5-4C7.5 6.2 10.4 5 12 2Zm0 13c3 0 5 1.7 5 4.2V22H7v-2.8C7 16.7 9 15 12 15Z"/></svg>
+      Seiðkarlinn <span class="tag">Heildsala</span>
+    </a>
+    <div class="ft-links">
+      <a href="#vorur">Vöruflokkar</a>
+      <a href="#kjor">Kjör</a>
+      <a href="#ferli">Umsókn</a>
+      <a href="/">Innskrá</a>
+      <a href="mailto:seidkarlinn@seidkarlinn.is">seidkarlinn@seidkarlinn.is</a>
+    </div>
+    <div>© 2026 Seiðkarlinn</div>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+
+  /* ── scroll reveal ── */
+  var items = document.querySelectorAll('.rise');
+  if(reduce || !('IntersectionObserver' in window)){
+    items.forEach(function(el){el.classList.add('in')});
+  } else {
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); }
+      });
+    },{threshold:.12,rootMargin:'0px 0px -8% 0px'});
+    items.forEach(function(el){io.observe(el)});
+  }
+
+  /* ── nav pill: densify on scroll ── */
+  var pill = document.getElementById('navPill');
+  var onScroll = function(){ if(pill) pill.classList.toggle('scrolled', window.scrollY > 24); };
+  onScroll();
+  window.addEventListener('scroll', onScroll, {passive:true});
+
+  /* ── overlay menu ── */
+  var burger = document.getElementById('burger');
+  var ov = document.getElementById('ov');
+  var setMenu = function(open){
+    burger.classList.toggle('open', open);
+    ov.classList.toggle('open', open);
+    burger.setAttribute('aria-expanded', open ? 'true' : 'false');
+    ov.setAttribute('aria-hidden', open ? 'false' : 'true');
+    burger.setAttribute('aria-label', open ? 'Loka valmynd' : 'Opna valmynd');
+    document.body.style.overflow = open ? 'hidden' : '';
+  };
+  burger.addEventListener('click', function(){ setMenu(!ov.classList.contains('open')); });
+  ov.querySelectorAll('a').forEach(function(a){ a.addEventListener('click', function(){ setMenu(false); }); });
+  document.addEventListener('keydown', function(e){ if(e.key === 'Escape' && ov.classList.contains('open')) setMenu(false); });
+
+  /* ── magnetic button physics (pointer devices only) ── */
+  if(!reduce && window.matchMedia && window.matchMedia('(hover:hover) and (pointer:fine)').matches){
+    document.querySelectorAll('.btn').forEach(function(btn){
+      btn.addEventListener('pointermove', function(e){
+        var r = btn.getBoundingClientRect();
+        var x = (e.clientX - r.left - r.width/2) * .18;
+        var y = (e.clientY - r.top - r.height/2) * .28;
+        btn.style.transform = 'translate(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px)';
+      });
+      btn.addEventListener('pointerleave', function(){ btn.style.transform = ''; });
+    });
+  }
+})();
+</script>
+</body>
+</html>
