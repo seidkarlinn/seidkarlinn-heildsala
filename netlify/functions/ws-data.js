@@ -1,3 +1,7 @@
+// [redeploy 2026-07-01] No-logic change — forces a fresh function bundle and a
+// new runtime Netlify Blobs context to recover from a site-wide Blobs 401
+// (all keys were returning "Netlify Blobs has generated an internal error
+// (401 status code)"; data in the store is intact, access was failing).
 const { getStore } = require("@netlify/blobs");
 
 const ALLOWED_KEYS = [
