@@ -234,3 +234,240 @@
     } catch(e) {}
   });
 })();
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Shopify sync hardening (hotfix override layer)
+   ---------------------------------------------------------------------------
+   Overrides window.syncShopifyImages / window.syncWithShopify (defined inline
+   in index.html). Installed on DOMContentLoaded so it runs AFTER those inline
+   declarations and therefore wins when the "Samstilla" buttons are clicked
+   (the buttons resolve the function by name at click time).
+
+   Fixes two production issues:
+     1) IMAGE SYNC RATE-LIMITING — the old loop fired 10 concurrent requests
+        per batch with no delay and no retry, so Shopify replied HTTP 429 and
+        ~half the products silently kept their old image on a full run. Now:
+        concurrency 4, a short delay between batches, and 429 back-off that
+        honours Retry-After.
+     2) STALE (RENAMED) HANDLES — 13 products were renamed on Shopify; their
+        old handle now 404s with no redirect, so neither stock nor image sync
+        could ever reach them. SHOPIFY_HANDLE_FIXES remaps the stale handle to
+        the current live handle *at fetch time only* — product.url is left
+        untouched so getProdKey() identity and saved per-customer pricing
+        overrides are preserved.
+
+   NOTE: 33 further products (26 DRAFT, 7 ARCHIVED in Shopify) are simply not
+   published to the Online Store sales channel, so the public storefront JSON
+   these functions read cannot see them. They will still be reported as "fannst
+   ekki" / "villa" until they are either published or the sync is moved to the
+   Admin API. That is a separate decision and is intentionally NOT changed here.
+   ═══════════════════════════════════════════════════════════════════════════ */
+(function () {
+/* ─── Shopify sync helpers (rate-limit safe + stale-handle remap) ─── */
+// Products renamed/replaced on Shopify after this catalog snapshot. Maps the
+// STALE handle embedded in a product's url -> the current live handle.
+// NOTE: we deliberately do NOT rewrite product.url, so getProdKey() identity
+// (and any saved per-customer pricing/overrides) stays intact — only the
+// network fetch uses the corrected handle.
+const SHOPIFY_HANDLE_FIXES = {
+  'vitamin-d3-dropar-30ml': 'seidkarlinn-propolis-tincture-30ml',
+  'zh-immune-premium-60-hylki-1': 'seidkarlinn-skogarbloma-1kg',
+  'wildesland-beauty-2f1-300g-1': 'seidkarlinn-hafjalla-hunang-med-kamb-500g',
+  'vibrant-health-green-vibrance-25-billions-probiotics-330gr-1': 'seidkarlinn-moringa-350mg-60-hylki',
+  'wildesland-balance-2f1-300g-1': 'seidkarlinn-orange-honey-vinegar-250ml',
+  'vibrant-health-green-vibrance-25-billions-probiotics-660gr-1': 'seidkarlinn-lignosus-450mg-60-hylki',
+  'wildesland-mobility-2f1-300g-1': 'seidkarlinn-colloidal-silver-50ml',
+  'virkja-islensk-burnirot-100ml-1': 'seidkarlinn-honey-pollen-propolis-300g',
+  'wildesland-belly-2f1-300g-1': 'seidkarlinn-colloidal-silver-1l',
+  'ventrusca-tuna-in-olive-oil-120g': 'seidkarlinn-raudrofur-450mg-60-hylki',
+  'vitamin-d3-k2-180-toflur-1': 'seidkarlinn-fig-jam-and-orange-honey-260g',
+  'vitamin-d3-k2-dropar-30ml': 'seidkarlinn-honey-pollen-propolis-480g',
+  'arbosana-palacio-olifuolia-500ml': 'seidkarlinn-olifuolia-early-harvest-unfiltered-arbequina-500ml'
+};
+function resolveShopifyHandle(h){ return SHOPIFY_HANDLE_FIXES[h] || h; }
+function _syncSleep(ms){ return new Promise(function(r){ setTimeout(r, ms); }); }
+// fetch that backs off and retries on HTTP 429 (honours Retry-After header)
+async function shopifyFetch(url, tries){
+  tries = tries || 4;
+  for (var attempt = 0; attempt < tries; attempt++){
+    var r = await fetch(url);
+    if (r.status !== 429) return r;
+    var ra = parseFloat(r.headers.get('retry-after')) || (0.8 * Math.pow(2, attempt));
+    await _syncSleep(ra * 1000);
+  }
+  return fetch(url);
+}
+
+
+async function syncShopifyImages() {
+  if (!confirm('Sækja nýjustu myndir frá Shopify fyrir allar vörur? Þetta getur tekið nokkrar mínútur.')) return;
+
+  var base = window.PRODUCTS_BASE || PRODUCTS;
+  var btn = document.getElementById('syncShopifyImagesBtn');
+  var origBtnText = btn ? btn.textContent : '';
+
+  function normImg(url) {
+    if (!url) return '';
+    return String(url).replace(/^http:/, 'https:').replace(/\?v=\d+$/, '').replace(/\?v=\d+&/, '?');
+  }
+
+  // Build list of products with Shopify handles (stale handles remapped)
+  var tasks = [];
+  base.forEach(function(p, i) {
+    var m = (p.url||'').match(/\/products\/([^\/?]+)/);
+    if (m) tasks.push({ product: p, idx: i, handle: resolveShopifyHandle(m[1]) });
+  });
+
+  var total = tasks.length;
+  var updated = 0, unchanged = 0, errors = 0;
+  var ov = getPricingOverrides();
+  if (!ov.prods) ov.prods = {};
+
+  // Concurrency 4 + 429-retry + inter-batch delay to stay under Shopify's
+  // public-endpoint rate limit (the old 10-wide no-delay loop got throttled
+  // and silently dropped ~half the images on a full run).
+  var BATCH = 4;
+  for (var i = 0; i < tasks.length; i += BATCH) {
+    var batch = tasks.slice(i, i + BATCH);
+    await Promise.all(batch.map(async function(t) {
+      try {
+        var r = await shopifyFetch('https://www.seidkarlinn.is/products/' + t.handle + '.json');
+        if (!r.ok) { errors++; return; }
+        var d = await r.json();
+        var firstImg = d.product && d.product.images && d.product.images[0];
+        if (!firstImg || !firstImg.src) { errors++; return; }
+        var latest = normImg(firstImg.src);
+        var key = getProdKey(t.product);
+        var prev = ov.prods[key] || {};
+        var currentImg = normImg(prev.img || t.product.img || '');
+        if (latest && latest !== currentImg) {
+          ov.prods[key] = Object.assign({}, prev, { img: latest });
+          updated++;
+        } else {
+          unchanged++;
+        }
+      } catch(e) {
+        errors++;
+      }
+    }));
+    var done = Math.min(i + BATCH, total);
+    if (btn) btn.textContent = '⏳ Samstilli ' + done + '/' + total + '...';
+    showToast('⏳ Sæki myndir ' + done + '/' + total + ' (+' + updated + ' uppfærðar)', 1500);
+    await _syncSleep(300);
+  }
+
+  savePricingOverrides(ov);
+  applyPricingOverrides();
+  if (typeof rebuildLiveCatalog === 'function') rebuildLiveCatalog();
+  if (typeof renderProductsPanel === 'function') renderProductsPanel();
+  if (typeof renderGrid === 'function') renderGrid();
+
+  if (btn) btn.textContent = origBtnText;
+  showToast('✓ Myndir samstilltar: ' + updated + ' uppfærðar, ' + unchanged + ' óbreyttar, ' + errors + ' villur', 8000);
+}
+
+async function syncWithShopify() {
+  if (!confirm('Sækja birgðarstatus frá Shopify og uppfæra vörur sem eru uppseldar?')) return;
+  showToast('⏳ Sæki gögn frá Shopify...', 5000);
+
+  (async function() {
+    try {
+      var all = [];
+      for (var page = 1; page <= 10; page++) {
+        var r = await shopifyFetch('https://www.seidkarlinn.is/products.json?limit=250&page=' + page);
+        if (!r.ok) break;
+        var d = await r.json();
+        if (!d.products || d.products.length === 0) break;
+        all = all.concat(d.products);
+        if (d.products.length < 250) break;
+      }
+      var byHandle = {};
+      all.forEach(function(s) {
+        var anyAvail = (s.variants || []).some(function(v) { return v.available; });
+        byHandle[s.handle] = anyAvail;
+      });
+
+      var ov = getPricingOverrides();
+      if (!ov.prods) ov.prods = {};
+      var base = window.PRODUCTS_BASE || PRODUCTS;
+      var soldOut = 0, restocked = 0, missing = 0, unchanged = 0;
+      var missingNames = [];
+
+      // First pass: bulk byHandle lookup (stale handles remapped to live ones,
+      // so renamed products now resolve straight from the bulk feed). Anything
+      // still not found goes to a per-product .js fetch that follows Shopify's
+      // handle-history redirects.
+      var resolveNeeded = [];
+      base.forEach(function(p, i) {
+        var m = (p.url||'').match(/\/products\/([^\/?]+)/);
+        if (!m) { missing++; missingNames.push(p.name || ('#' + i)); return; }
+        var handle = resolveShopifyHandle(m[1]);
+        if (handle in byHandle) {
+          applyResult(p, byHandle[handle]);
+        } else {
+          resolveNeeded.push({ p: p, i: i, handle: handle });
+        }
+      });
+
+      // Second pass: resolve renamed/edge-case handles, concurrency 4 + 429 retry.
+      var BATCH = 4;
+      for (var bi = 0; bi < resolveNeeded.length; bi += BATCH) {
+        var batch = resolveNeeded.slice(bi, bi + BATCH);
+        await Promise.all(batch.map(async function(t) {
+          try {
+            var pr = await shopifyFetch('https://www.seidkarlinn.is/products/' + t.handle + '.js');
+            if (!pr.ok) { missing++; missingNames.push(t.p.name || ('#' + t.i)); return; }
+            var pd = await pr.json();
+            applyResult(t.p, !!pd.available);
+          } catch(e) {
+            missing++; missingNames.push(t.p.name || ('#' + t.i));
+          }
+        }));
+        await _syncSleep(300);
+      }
+
+      function applyResult(p, shopifyInStock) {
+        var key = getProdKey(p);
+        var prev = ov.prods[key] || {};
+        var currentInStock = (typeof prev.inStock === 'boolean') ? prev.inStock : (p.inStock !== false);
+        if (currentInStock !== shopifyInStock) {
+          ov.prods[key] = Object.assign({}, prev, { inStock: shopifyInStock });
+          if (shopifyInStock) restocked++; else soldOut++;
+        } else {
+          unchanged++;
+        }
+      }
+
+      savePricingOverrides(ov);
+      applyPricingOverrides();
+      if (typeof rebuildLiveCatalog === 'function') rebuildLiveCatalog();
+      if (typeof renderProductsPanel === 'function') renderProductsPanel();
+      if (typeof renderGrid === 'function') renderGrid();
+
+      var msg = '✓ Shopify sync lokið: ' + soldOut + ' uppseldar, ' + restocked + ' á lager aftur, ' + unchanged + ' óbreyttar';
+      if (missing) {
+        var preview = missingNames.slice(0, 3).join(', ');
+        if (missingNames.length > 3) preview += ' +' + (missingNames.length - 3);
+        msg += ' (' + missing + ' fundust ekki: ' + preview + ')';
+        console.warn('[syncWithShopify] Vörur sem ekki fundust í Shopify:', missingNames);
+      }
+      showToast(msg, 9000);
+    } catch(e) {
+      console.error('Shopify sync failed:', e);
+      showToast('✗ Shopify sync mistókst: ' + e.message, 5000);
+    }
+  })();
+}
+
+  function _installSyncOverrides() {
+    window.syncShopifyImages = syncShopifyImages;
+    window.syncWithShopify   = syncWithShopify;
+  }
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", _installSyncOverrides);
+  } else {
+    _installSyncOverrides();
+  }
+  window.addEventListener("load", _installSyncOverrides); // extra safety
+})();
