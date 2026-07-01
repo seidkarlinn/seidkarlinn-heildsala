@@ -4,16 +4,17 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Seiðkarlinn — Heildsöluverslun</title>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Söhne:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet">
 <style>
 /* ── TOKENS ── */h
 :root {
-  --ink:#1A1710; --ink2:#5C5848; --ink3:#9E9A8E;
+  --ink:#1A1710; --ink2:#54503F; --ink3:#837E6F;
   --paper:#FAF8F3; --paper2:#F3F0E8; --paper3:#EAE5D8;
   --sf:#FAF8F3;
   --gold:#B8860B; --gold-l:#F5EED8; --gold-b:#8B6508;
-  --green:#2A5C2A; --green-l:#E6F0E6;
+  --green:#2A5C2A; --green-d:#1E431E; --green-l:#E6F0E6;
   --red:#C0392B; --red-l:#FDECEA;
   --r:10px; --rs:6px;
   --shadow: 0 1px 3px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.06);
@@ -22,7 +23,7 @@
 /* Eliminate 300ms tap delay on all interactive elements for mobile */
 a,button,input,select,textarea,[role="button"]{touch-action:manipulation;}
 html{scroll-behavior:smooth;}
-body{font-family:'DM Sans',sans-serif;background:var(--paper);color:var(--ink);min-height:100vh;font-size:14px;line-height:1.6;}
+body{font-family:'DM Sans',sans-serif;background:var(--paper);color:var(--ink);min-height:100vh;font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased;}
 
 /* ─── LOGIN GATE ─── */
 #gate{
@@ -36,7 +37,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--paper);color:var(--ink);m
   width:min(420px, 90vw);text-align:center;
   box-shadow:0 24px 64px rgba(0,0,0,.4);
 }
-.gate-logo{font-family:'Times New Roman',Times,serif;font-size:28px;color:#1A1710;font-weight:400;letter-spacing:.02em;margin-bottom:4px;}
+.gate-logo{font-family:'Playfair Display',serif;font-size:30px;color:#1A1710;font-weight:400;letter-spacing:.01em;margin-bottom:4px;}
 .gate-sub{font-size:12px;color:var(--ink3);letter-spacing:.12em;text-transform:uppercase;margin-bottom:2rem;}
 .gate-label{display:block;text-align:left;font-size:11px;font-weight:500;color:var(--ink2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px;}
 .gate-input{
@@ -52,7 +53,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--paper);color:var(--ink);m
   font-family:'DM Sans',sans-serif;cursor:pointer;transition:background .15s;
   letter-spacing:.03em;
 }
-.gate-btn:hover{background:#1e431e;}
+.gate-btn:hover{background:var(--green-d);}
 .gate-err{font-size:12px;color:var(--red);margin-top:8px;min-height:18px;}
 .gate-contact{font-size:11px;color:var(--ink3);margin-top:1.5rem;}
 .gate-contact a{color:var(--green);text-decoration:none;}
@@ -188,10 +189,10 @@ main.catalog{padding:1.5rem;overflow-y:auto;}
 @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 .pcard{
   background:var(--paper);border:1.5px solid var(--paper3);border-radius:var(--r);
-  overflow:hidden;cursor:pointer;transition:all .15s;animation:fadeUp .2s ease both;
+  overflow:hidden;cursor:pointer;transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease;animation:fadeUp .2s ease both;
   position:relative;
 }
-.pcard:hover{border-color:var(--green);box-shadow:var(--shadow);}
+.pcard:hover{border-color:var(--green);box-shadow:var(--shadow);transform:translateY(-3px);}
 .pcard.sel{border-color:var(--green);box-shadow:0 0 0 3px var(--green-l);}
 .pcard.dragging{opacity:.4;border:2px dashed var(--green);}
 .pcard.drag-over{box-shadow:0 0 0 3px var(--green);border-color:var(--green);transform:scale(1.02);}
@@ -206,10 +207,10 @@ main.catalog{padding:1.5rem;overflow-y:auto;}
 .pcard-body{padding:.875rem;}
 .pcard-cats{display:flex;align-items:center;gap:5px;margin-bottom:6px;flex-wrap:wrap;}
 .cbadge{font-size:9px;font-weight:500;padding:2px 6px;border-radius:3px;text-transform:uppercase;letter-spacing:.04em;}
-.sold-out-badge{font-size:8px;background:var(--red-l);color:var(--red);padding:2px 5px;border-radius:3px;font-weight:500;}
-.pname{font-size:12px;font-weight:500;line-height:1.35;margin-bottom:8px;color:var(--ink);}
+.sold-out-badge{font-size:10px;background:var(--red-l);color:var(--red);padding:2px 6px;border-radius:3px;font-weight:500;}
+.pname{font-size:13px;font-weight:500;line-height:1.35;margin-bottom:8px;color:var(--ink);}
 .price-row{display:flex;flex-direction:column;gap:1px;margin-bottom:10px;}
-.ws-price{font-size:15px;font-weight:600;color:var(--green);}
+.ws-price{font-size:16px;font-weight:600;color:var(--green);}
 .retail-price{font-size:10px;color:var(--ink3);text-decoration:line-through;}
 .saving{font-size:9px;color:var(--gold-b);font-weight:500;}
 .add-btn{
@@ -218,7 +219,7 @@ main.catalog{padding:1.5rem;overflow-y:auto;}
   font-family:'DM Sans',sans-serif;transition:background .15s;letter-spacing:.02em;
   display:flex;align-items:center;justify-content:center;gap:5px;
 }
-.add-btn:hover{background:#1e431e;}
+.add-btn:hover{background:var(--green-d);}
 .add-btn.added{background:var(--gold-b);}
 .add-btn:disabled{background:var(--paper3);color:var(--ink3);cursor:not-allowed;}
 .qty-row{display:flex;align-items:center;gap:6px;margin-bottom:8px;}
@@ -251,7 +252,7 @@ main.catalog{padding:1.5rem;overflow-y:auto;}
   font-size:11px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;
   white-space:nowrap;transition:background .15s;
 }
-.row-add:hover{background:#1e431e;}
+.row-add:hover{background:var(--green-d);}
 .row-add:disabled{background:var(--paper3);color:var(--ink3);cursor:not-allowed;}
 .empty{grid-column:1/-1;text-align:center;padding:4rem 1rem;color:var(--ink3);}
 
@@ -305,7 +306,7 @@ aside.detail{
   font-family:'DM Sans',sans-serif;transition:background .15s;
   display:flex;align-items:center;justify-content:center;gap:6px;
 }
-.dp-add-btn:hover{background:#1e431e;}
+.dp-add-btn:hover{background:var(--green-d);}
 .dp-add-btn.added{background:var(--gold-b);}
 .dp-add-btn:disabled{background:var(--paper3);color:var(--ink3);cursor:not-allowed;}
 .dp-retail-link{
@@ -381,7 +382,7 @@ aside.detail{
   font-family:'DM Sans',sans-serif;transition:background .15s;letter-spacing:.02em;
   display:flex;align-items:center;justify-content:center;gap:8px;
 }
-.checkout-btn:hover{background:#1e431e;}
+.checkout-btn:hover{background:var(--green-d);}
 .checkout-btn:disabled{background:var(--paper3);color:var(--ink3);cursor:not-allowed;}
 .checkout-note{font-size:10px;color:var(--ink3);text-align:center;margin-top:8px;}
 
@@ -477,7 +478,7 @@ aside.detail{
 .adm-btn{padding:6px 12px;border-radius:var(--rs);border:none;font-size:11px;font-weight:500;
   cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s;}
 .adm-btn.primary{background:var(--green);color:#fff;}
-.adm-btn.primary:hover{background:#1e431e;}
+.adm-btn.primary:hover{background:var(--green-d);}
 .adm-btn.secondary{background:var(--paper2);color:var(--ink2);border:1.5px solid var(--paper3);}
 .adm-btn.secondary:hover{background:var(--paper3);}
 .adm-btn.danger{background:#FDECEA;color:var(--red);border:1.5px solid rgba(192,57,43,.2);}
@@ -617,7 +618,7 @@ aside.detail{
 
 
 /* Invoice button */
-.checkout-btn:hover:not(:disabled){background:#1e431e;}
+.checkout-btn:hover:not(:disabled){background:var(--green-d);}
 #invoiceBtn:hover:not(:disabled){background:#333 !important;}
 #invoiceBtn:disabled{background:var(--paper3) !important;color:var(--ink3);cursor:not-allowed;}
 
@@ -752,7 +753,7 @@ aside.detail{
   font-family:'DM Sans',sans-serif;transition:all .12s;}
 .dp-ai-edit-btn:hover{background:var(--paper3);}
 .dp-ai-edit-btn.primary{background:var(--green);color:#fff;border-color:var(--green);}
-.dp-ai-edit-btn.primary:hover{background:#1e431e;}
+.dp-ai-edit-btn.primary:hover{background:var(--green-d);}
 .dp-ai-edit-btn.danger{background:#FDECEA;color:var(--red);border-color:rgba(192,57,43,.2);}
 .dp-ai-textarea{width:100%;min-height:140px;padding:8px 10px;border:1.5px solid var(--green);
   border-radius:var(--rs);font-size:12px;font-family:'DM Sans',sans-serif;line-height:1.7;
@@ -7551,7 +7552,7 @@ const THEME_DEFAULTS = {
   colorHeader:  '#1A1710',
   // Typography
   fontBody:     'DM Sans',
-  fontLogo:     'Times New Roman',
+  fontLogo:     'Playfair Display',
   logoSize:     '22',
   // Text content
   logoText:     'Seiðkarlinn',
@@ -7621,7 +7622,7 @@ function applyTheme(t) {
 // ── Render theme panel ────────────────────────────────
 function renderThemePanel() {
   const t = getTheme();
-  const fonts = ['DM Sans','Times New Roman','Georgia','Arial','Helvetica','Verdana','Trebuchet MS','Palatino'];
+  const fonts = ['DM Sans','Playfair Display','Times New Roman','Georgia','Arial','Helvetica','Verdana','Trebuchet MS','Palatino'];
 
   const colorRow = (key, label) => `
     <div class="theme-row">
