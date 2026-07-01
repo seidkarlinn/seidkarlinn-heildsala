@@ -1,7 +1,7 @@
-// [redeploy 2026-07-01] No-logic change — forces a fresh function bundle and a
-// new runtime Netlify Blobs context to recover from a site-wide Blobs 401
-// (all keys were returning "Netlify Blobs has generated an internal error
-// (401 status code)"; data in the store is intact, access was failing).
+// [Blobs 401 recovery 2026-07-01] The site's auto-injected Netlify Blobs context
+// started returning 401 on every operation (data was intact; only auth failed).
+// resolveStore() now prefers explicit credentials (SITE_ID + NETLIFY_API_TOKEN)
+// and keeps auto-context only as a fallback.
 const { getStore } = require("@netlify/blobs");
 
 const ALLOWED_KEYS = [
@@ -10,34 +10,17 @@ const ALLOWED_KEYS = [
   "ws_orders_lm", // last-modified timestamp — set only on force:true writes (admin deletions)
 ];
 
-// Resolve a Blob store handle by trying auto-injected context first and
-// falling back to explicit SITE_ID + NETLIFY_API_TOKEN if the runtime
-// doesn't have the auto-context (e.g. Netlify Blobs extension not yet
-// enabled for this site). The latter is the legacy mode that broke when
-// the NETLIFY_API_TOKEN was rotated; either path working is enough.
+// Resolve a Blob store handle. Prefer EXPLICIT credentials because this site's
+// auto-injected context is currently rejected with 401. siteID is not secret
+// (it is public deploy metadata); the token is provided via the NETLIFY_API_TOKEN
+// env var (functions/runtime scope). Auto-context remains as a last resort.
 function resolveStore() {
-  // Path 1 — auto-injected context. Works when Netlify runtime sets
-  // NETLIFY_BLOBS_CONTEXT (default for Functions on sites with the
-  // Blobs extension active). Throws a TypeError-style message if not.
-  try {
-    return getStore("wholesale-data");
-  } catch (autoErr) {
-    // Path 2 — explicit credentials. Requires both env vars to be set
-    // AND for the token to be a valid Netlify Personal Access Token
-    // with access to this site's blob store. Will throw / 401 if not.
-    const siteID = process.env.SITE_ID;
-    const token = process.env.NETLIFY_API_TOKEN;
-    if (!siteID || !token) {
-      const err = new Error(
-        "Netlify Blobs unavailable: auto-context disabled and explicit " +
-        "credentials missing. Set SITE_ID + NETLIFY_API_TOKEN, or enable " +
-        "the Netlify Blobs extension. Auto-context error: " + autoErr.message
-      );
-      err.autoErr = autoErr;
-      throw err;
-    }
+  const siteID = process.env.SITE_ID || "22a63579-5658-4bde-9a62-cf59aa4891ab";
+  const token = process.env.NETLIFY_API_TOKEN;
+  if (siteID && token) {
     return getStore({ name: "wholesale-data", siteID, token });
   }
+  return getStore("wholesale-data");
 }
 
 exports.handler = async (event) => {
