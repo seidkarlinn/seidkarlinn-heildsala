@@ -12,6 +12,13 @@
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
 
+# category-order runs BEFORE inject-catalog so it is the OUTER wrapper and
+# post-processes inject-catalog's already-transformed HTML (covers the
+# edge-injected CordyFresh + 2026-05-28 products too).
+[[edge_functions]]
+  path = "/"
+  function = "category-order"
+
 [[edge_functions]]
   path = "/"
   function = "inject-catalog"
