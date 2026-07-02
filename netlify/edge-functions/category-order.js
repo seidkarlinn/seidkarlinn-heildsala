@@ -19,7 +19,7 @@
  *      roll-up to include Sveppir).
  *   2. Wraps window.renderGrid so that, after each default-sorted render, the
  *      grid is regrouped by EFFECTIVE category (Shilajit/Sveppir -> Fæðubótarefni),
- *      then capsule bags (name contains "hylki") first, then brand -> product
+ *      then the Seiðkarlinn kraft-pouch capsule bags first, then brand -> product
  *      -> size (largest first) — so all the kraft-pouch capsule bags sit side
  *      by side. window._filtered and each card's data-idx are kept in sync so
  *      click/cart lookups stay correct.
@@ -35,11 +35,15 @@ const CATEGORY_PATCH = `
   var CAT_GROUP = { "Shilajit": "Fæðubótarefni", "Sveppir": "Fæðubótarefni" };
   function effCat(cat){ return CAT_GROUP[cat] || cat; }
 
-  // Capsule "bag" products (name contains "hylki") are grouped together so all
-  // the kraft-pouch capsule bags sit side by side instead of being interleaved
-  // with powders, broths, tinctures and oils.
+  // Seiðkarlinn kraft-pouch capsule line: the house-brand capsule bags
+  // (name contains both "seiðkarlinn" and "hylki"). Grouped together so all the
+  // kraft-pouch bags sit side by side instead of being scattered among other
+  // brands and product forms. Third-party capsule bottles are NOT included.
   function isCapsule(p){
-    return !!(p && p.name && p.name.toLowerCase().indexOf("hylki") !== -1);
+    if (!p || !p.name) return false;
+    var n = p.name.toLowerCase();
+    if (n.indexOf("hylki") === -1) return false;
+    return n.indexOf("seiðkarlinn") !== -1 || n.indexOf("seidkarlinn") !== -1;
   }
 
   // parent -> [child cats], derived from CAT_GROUP.
@@ -67,8 +71,8 @@ const CATEGORY_PATCH = `
     } catch(e){ return []; }
   }
 
-  // 2) Ordering: regroup the default view by effective category, then capsule
-  //    bags first, so related supplement capsule bags are contiguous.
+  // 2) Ordering: regroup the default view by effective category, then the
+  //    Seiðkarlinn kraft-pouch bags first, so they are contiguous.
   function regroup(){
     try {
       var sortSel = document.getElementById("sortSel");
@@ -85,7 +89,7 @@ const CATEGORY_PATCH = `
         var a = f[ia], b = f[ib];
         var cc = effCat(a.cat).localeCompare(effCat(b.cat), "is");
         if (cc !== 0) return cc;
-        // All capsule bags cluster together (before non-capsule supplements).
+        // Seiðkarlinn kraft-pouch bags cluster together (before everything else).
         var capA = isCapsule(a), capB = isCapsule(b);
         if (capA !== capB) return capA ? -1 : 1;
         if (custom.length){
