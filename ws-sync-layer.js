@@ -480,3 +480,75 @@ async function syncWithShopify() {
   }
   window.addEventListener("load", _installSyncOverrides); // extra safety
 })();
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Custom-products visibility fix (buyer catalog)
+   ---------------------------------------------------------------------------
+   applyPricingOverrides() rebuilds window.PRODUCTS from PRODUCTS_BASE only and
+   drops ws_custom_products, so admin-added custom products (e.g. bulk wholesale
+   boxes) appeared in the admin "Vörur" panel but never in the buyer grid. We
+   wrap applyPricingOverrides so that after each rebuild the custom products are
+   appended — honouring noDisc (fixed price) and the deleted list — then trigger
+   a re-render. Installed from ws-sync-layer to avoid editing the ~500 KB
+   index.html. Because index.html is a classic script, window.applyPricingOverrides
+   is the same binding bare internal calls resolve to, so category clicks/search
+   that call applyPricingOverrides() also get the wrapped version.
+   ═══════════════════════════════════════════════════════════════════════════ */
+(function () {
+  function _isk(n) { try { return Number(n).toLocaleString("is-IS") + " ISK"; } catch (e) { return n + " ISK"; } }
+
+  function appendCustomProducts() {
+    try {
+      if (!Array.isArray(window.PRODUCTS)) return;
+      var custom = [];
+      try { custom = JSON.parse(localStorage.getItem("ws_custom_products") || "[]"); } catch (e) {}
+      if (!Array.isArray(custom) || !custom.length) return;
+      var del = [];
+      try { del = JSON.parse(localStorage.getItem("ws_deleted_products") || "[]"); } catch (e) {}
+      var seen = {};
+      window.PRODUCTS.forEach(function (p) { if (p) seen[p.url || p.name] = true; });
+      custom.forEach(function (cp) {
+        if (!cp) return;
+        var id = cp.url || cp.name;
+        if (seen[id]) return;                                          // already in catalog
+        if (del.indexOf(cp.url) > -1 || del.indexOf(cp.name) > -1) return; // deleted by admin
+        var p = Object.assign({}, cp);
+        if (p.noDisc) {
+          p.wholesale = p.wholesale || p.price;                        // fixed price (discount included)
+        } else if (!p.wholesale) {
+          var r = parseInt((p.price || "").replace(/[^\d]/g, "")) || 0; // fallback: global 25% off
+          if (r) p.wholesale = _isk(Math.round(r * 0.75));
+        }
+        window.PRODUCTS.push(p);
+        seen[id] = true;
+      });
+    } catch (e) { console.warn("[ws-custom] append failed:", e); }
+  }
+
+  function install() {
+    if (typeof window.applyPricingOverrides !== "function") return false;
+    if (window.applyPricingOverrides._customWrapped) return true;
+    var orig = window.applyPricingOverrides;
+    window.applyPricingOverrides = function () {
+      var r = orig.apply(this, arguments);
+      appendCustomProducts();
+      return r;
+    };
+    window.applyPricingOverrides._customWrapped = true;
+    return true;
+  }
+
+  function installAndRefresh() {
+    if (install()) {
+      try { window.applyPricingOverrides(); } catch (e) {}
+      try { if (typeof buildSidebar === "function") buildSidebar(); } catch (e) {}
+      try { if (typeof renderGrid === "function") renderGrid(); } catch (e) {}
+    }
+  }
+
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", installAndRefresh);
+  else installAndRefresh();
+  window.addEventListener("load", installAndRefresh);
+  window.addEventListener("ws-sync-ready", function () { setTimeout(installAndRefresh, 150); });
+})();
