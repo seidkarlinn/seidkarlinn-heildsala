@@ -1,0 +1,259 @@
+diff --git a/index.html b/index.html
+index c8f3362..c7b33c6 100644
+--- a/index.html
++++ b/index.html
+@@ -1639,7 +1639,7 @@ const PRODUCTS = [
+     "desc": "",
+     "inStock": true,
+     "url": "https://www.seidkarlinn.is/is-is/products/seidkarlinn-hafjallahunang-1kg",
+-    "img": "https://www.seidkarlinn.is/cdn/shop/files/Seidkarlinn-6_2ea8a0dd-1fe2-4da0-9fca-349f40376a30.jpg",
++    "img": "https://cdn.shopify.com/s/files/1/0657/8264/4910/files/hafjalla_1kg.jpg?v=1782421917",
+     "wholesale": "6.367 ISK"
+   },
+   {
+@@ -1671,7 +1671,7 @@ const PRODUCTS = [
+     "desc": "",
+     "inStock": true,
+     "url": "https://www.seidkarlinn.is/is-is/products/timianbloma-hunang-1kg",
+-    "img": "https://www.seidkarlinn.is/cdn/shop/files/282_c2fd7627-2410-4f4a-886e-3d90122d47ed.png",
++    "img": "https://cdn.shopify.com/s/files/1/0657/8264/4910/files/timian_1kg.jpg?v=1782421935",
+     "wholesale": "4.867 ISK"
+   },
+   {
+@@ -1687,7 +1687,7 @@ const PRODUCTS = [
+     "desc": "",
+     "inStock": true,
+     "url": "https://www.seidkarlinn.is/is-is/products/seidkarlinn-lyngbloma-hunang-1kg",
+-    "img": "https://www.seidkarlinn.is/cdn/shop/files/2_3380ad3b-8b44-4df0-9c89-70b2a7109373.png",
++    "img": "https://cdn.shopify.com/s/files/1/0657/8264/4910/files/lyngbloma_1kg.jpg?v=1782421814",
+     "wholesale": "4.867 ISK"
+   },
+   {
+@@ -1703,7 +1703,7 @@ const PRODUCTS = [
+     "desc": "",
+     "inStock": true,
+     "url": "https://www.seidkarlinn.is/is-is/products/zh-immune-premium-60-hylki-1",
+-    "img": "https://www.seidkarlinn.is/cdn/shop/files/3_f8186178-278a-417f-a97d-f202d2905f1a.png",
++    "img": "https://cdn.shopify.com/s/files/1/0657/8264/4910/files/skogarbloma_93f7f150-9234-42ad-80e6-db5dc5b49a0a.jpg?v=1782335685",
+     "wholesale": "4.867 ISK"
+   },
+   {
+@@ -1751,7 +1751,7 @@ const PRODUCTS = [
+     "desc": "",
+     "inStock": true,
+     "url": "https://www.seidkarlinn.is/is-is/products/hafjallahunang-500g",
+-    "img": "https://www.seidkarlinn.is/cdn/shop/files/280_91771671-44ca-4a91-a487-cdbc47344ca4.png",
++    "img": "https://cdn.shopify.com/s/files/1/0657/8264/4910/files/hafjalla_500g.jpg?v=1782421950",
+     "wholesale": "4.492 ISK"
+   },
+   {
+@@ -1767,7 +1767,7 @@ const PRODUCTS = [
+     "desc": "",
+     "inStock": true,
+     "url": "https://www.seidkarlinn.is/is-is/products/seidkarlinn-appelsinu-hunang-500g",
+-    "img": "https://www.seidkarlinn.is/cdn/shop/files/Seidkarlinn_4_f9da6331-4732-46f7-8279-e5649839359c.png",
++    "img": "https://cdn.shopify.com/s/files/1/0657/8264/4910/files/appelsinu_500g.jpg?v=1782421929",
+     "wholesale": "3.367 ISK"
+   },
+   {
+@@ -1815,7 +1815,7 @@ const PRODUCTS = [
+     "desc": "",
+     "inStock": true,
+     "url": "https://www.seidkarlinn.is/is-is/products/timianbloma-hunang-500g",
+-    "img": "https://www.seidkarlinn.is/cdn/shop/files/281_dca519c5-784b-409e-b4b2-8850e871c636.png",
++    "img": "https://cdn.shopify.com/s/files/1/0657/8264/4910/files/timian_500g.jpg?v=1782421943",
+     "wholesale": "3.367 ISK"
+   },
+   {
+@@ -1847,7 +1847,7 @@ const PRODUCTS = [
+     "desc": "",
+     "inStock": true,
+     "url": "https://www.seidkarlinn.is/is-is/products/seidkarlinn-hunangsgjafaaskja-3x350gr",
+-    "img": "https://www.seidkarlinn.is/cdn/shop/files/Seidkarlinn_1_56c73cda-c85a-444d-bc45-564de0b99a03.png",
++    "img": "https://cdn.shopify.com/s/files/1/0657/8264/4910/files/gjafaaskja_3x300_5c373cf5-2332-4df8-bb1f-ef51b4e2fbdd.jpg?v=1782421923",
+     "wholesale": "6.367 ISK"
+   },
+   {
+@@ -1863,7 +1863,7 @@ const PRODUCTS = [
+     "desc": "",
+     "inStock": true,
+     "url": "https://www.seidkarlinn.is/is-is/products/wildesland-balance-2f1-300g-1",
+-    "img": "https://www.seidkarlinn.is/cdn/shop/files/5_85271f0d-9e36-4751-a3a3-954b955c750a.png",
++    "img": "https://cdn.shopify.com/s/files/1/0657/8264/4910/files/vinegar_b0a79a0d-676f-43b6-8389-010597f040fe.jpg?v=1782335673",
+     "wholesale": "1.242 ISK"
+   },
+   {
+@@ -1880,7 +1880,7 @@ const PRODUCTS = [
+     "desc": "",
+     "inStock": true,
+     "url": "https://www.seidkarlinn.is/is-is/products/vitamin-d3-dropar-30ml",
+-    "img": "https://www.seidkarlinn.is/cdn/shop/files/7.png",
++    "img": "https://cdn.shopify.com/s/files/1/0657/8264/4910/files/propolistinkt.jpg?v=1782339016",
+     "wholesale": ""
+   },
+   {
+@@ -1912,7 +1912,7 @@ const PRODUCTS = [
+     "desc": "",
+     "inStock": true,
+     "url": "https://www.seidkarlinn.is/is-is/products/seidkarlinn-byflugnafrjo-480g",
+-    "img": "https://www.seidkarlinn.is/cdn/shop/files/Seidkarlinn.jpg",
++    "img": "https://cdn.shopify.com/s/files/1/0657/8264/4910/files/byflugnafrjo_480g.jpg?v=1782423292",
+     "wholesale": "4.867 ISK"
+   },
+   {
+@@ -1944,7 +1944,7 @@ const PRODUCTS = [
+     "desc": "",
+     "inStock": true,
+     "url": "https://www.seidkarlinn.is/is-is/products/seidkarlinn-hindber-150g",
+-    "img": "https://www.seidkarlinn.is/cdn/shop/files/285.png",
++    "img": "https://cdn.shopify.com/s/files/1/0657/8264/4910/files/f20948.jpg?v=1782388676",
+     "wholesale": "3.307 ISK"
+   },
+   {
+@@ -1960,7 +1960,7 @@ const PRODUCTS = [
+     "desc": "",
+     "inStock": true,
+     "url": "https://www.seidkarlinn.is/is-is/products/seidkarlinn-blaber-200g",
+-    "img": "https://www.seidkarlinn.is/cdn/shop/files/284.png",
++    "img": "https://cdn.shopify.com/s/files/1/0657/8264/4910/files/f20965_match.jpg?v=1782397491",
+     "wholesale": "3.721 ISK"
+   },
+   {
+@@ -1992,7 +1992,7 @@ const PRODUCTS = [
+     "desc": "",
+     "inStock": true,
+     "url": "https://www.seidkarlinn.is/is-is/products/seidkarlinn-mango-250g",
+-    "img": "https://www.seidkarlinn.is/cdn/shop/files/289.png",
++    "img": "https://cdn.shopify.com/s/files/1/0657/8264/4910/files/f20958.jpg?v=1782388682",
+     "wholesale": "3.169 ISK"
+   },
+   {
+@@ -2024,7 +2024,7 @@ const PRODUCTS = [
+     "desc": "",
+     "inStock": true,
+     "url": "https://www.seidkarlinn.is/is-is/products/seidkarlinn-rifsber-200g",
+-    "img": "https://www.seidkarlinn.is/cdn/shop/files/290.png",
++    "img": "https://cdn.shopify.com/s/files/1/0657/8264/4910/files/f20912_match.jpg?v=1782397852",
+     "wholesale": "2.480 ISK"
+   },
+   {
+@@ -2040,7 +2040,7 @@ const PRODUCTS = [
+     "desc": "",
+     "inStock": true,
+     "url": "https://www.seidkarlinn.is/is-is/products/seidkarlinn-solber-250g",
+-    "img": "https://www.seidkarlinn.is/cdn/shop/files/291.png",
++    "img": "https://cdn.shopify.com/s/files/1/0657/8264/4910/files/f20919_match.jpg?v=1782397858",
+     "wholesale": "3.307 ISK"
+   },
+   {
+@@ -2088,7 +2088,7 @@ const PRODUCTS = [
+     "desc": "",
+     "inStock": false,
+     "url": "https://www.seidkarlinn.is/is-is/products/seidkarlinn-rifsber-30g",
+-    "img": "https://www.seidkarlinn.is/cdn/shop/files/3_124cd6b9-8df5-4721-bb79-d4ef8f2ac3b.png",
++    "img": "https://cdn.shopify.com/s/files/1/0657/8264/4910/files/3_124cd6b9-8df5-4721-bb79-d4ef8f2abc3b.png?v=1776184885",
+     "wholesale": "518 ISK"
+   },
+   {
+@@ -2137,7 +2137,7 @@ const PRODUCTS = [
+     "desc": "",
+     "inStock": true,
+     "url": "https://www.seidkarlinn.is/is-is/products/seidkarlinn-ananas-250g",
+-    "img": "https://www.seidkarlinn.is/cdn/shop/files/Seidkarlinn_24ca4a78-a51f-41d4-add5-8f08d58659c8.png",
++    "img": "https://cdn.shopify.com/s/files/1/0657/8264/4910/files/f20931.jpg?v=1782388669",
+     "wholesale": "3.858 ISK"
+   },
+   {
+@@ -3905,7 +3905,7 @@ const PRODUCTS = [
+     "desc": "",
+     "inStock": true,
+     "url": "https://www.seidkarlinn.is/is-is/products/seidkarlinn-batana-oil-120ml-1",
+-    "img": "https://www.seidkarlinn.is/cdn/shop/files/Seidkarlinn-BatanaOilPakkningar-2_1.jpg",
++    "img": "https://cdn.shopify.com/s/files/1/0657/8264/4910/files/batana_694cd509-e89e-497d-ba5a-1756d94c6ce4.jpg?v=1782337795",
+     "wholesale": "7.492 ISK"
+   },
+   {
+@@ -4067,7 +4067,7 @@ const PRODUCTS = [
+     "desc": "",
+     "inStock": true,
+     "url": "https://www.seidkarlinn.is/is-is/products/vitamin-d3-k2-dropar-30ml",
+-    "img": "https://www.seidkarlinn.is/cdn/shop/files/3_28dba466-008d-4f22-ac53-256aa6f51538.png",
++    "img": "https://cdn.shopify.com/s/files/1/0657/8264/4910/files/propolis480_e5bbaa2b-de17-4224-babe-2ae183165657.jpg?v=1782337801",
+     "wholesale": "4.492 ISK"
+   },
+   {
+@@ -4115,7 +4115,7 @@ const PRODUCTS = [
+     "desc": "",
+     "inStock": true,
+     "url": "https://www.seidkarlinn.is/is-is/products/seidkarlinn-lyngbloma-hunang-500g",
+-    "img": "https://www.seidkarlinn.is/cdn/shop/files/1_44523a56-04f4-49dc-96c1-b77d980bfa46.png",
++    "img": "https://cdn.shopify.com/s/files/1/0657/8264/4910/files/lyngbloma_500g.jpg?v=1782421818",
+     "wholesale": "3.367 ISK"
+   },
+   {
+@@ -4506,7 +4506,7 @@ const PRODUCTS = [
+     "desc": "",
+     "inStock": true,
+     "url": "https://www.seidkarlinn.is/is-is/products/varia-fermented-nac-500mg-60-hylki",
+-    "img": "",
++    "img": "https://cdn.shopify.com/s/files/1/0657/8264/4910/files/CopyofSeidkarlinn_3f2356d4-ae03-46a3-bd79-e7ba97946cfc.png?v=1779283475",
+     "wholesale": "3.743 ISK"
+   },
+   {
+@@ -5078,7 +5078,7 @@ const PRODUCTS = [
+     "desc": "",
+     "inStock": true,
+     "url": "https://www.seidkarlinn.is/is-is/products/seidkarlinn-fjorir-sveppir-600mg-60-hylki",
+-    "img": "https://cdn.shopify.com/s/files/1/0657/8264/4910/files/Seidkarlinn_9.png",
++    "img": "https://cdn.shopify.com/s/files/1/0657/8264/4910/files/mushroom_f_7d24cdb5-bc41-4c22-a7a7-d1ea3e43b9b8.jpg?v=1782335718",
+     "wholesale": "3.368 ISK"
+   },
+   {
+@@ -5315,7 +5315,7 @@ const PRODUCTS = [
+     "desc": "Hrátt og rennandi appelsínuhunang — 10 kg fata.",
+     "inStock": true,
+     "url": "https://www.seidkarlinn.is/is-is/products/bucket-runny-orange-honey-10kg",
+-    "img": "https://cdn.shopify.com/s/files/1/0657/8264/4910/files/IMG_6396_orange_white.jpg?v=1780413482",
++    "img": "https://cdn.shopify.com/s/files/1/0657/8264/4910/files/bucket_orange_10kg.jpg?v=1782422009",
+     "sku": "1650",
+     "noDisc": true,
+     "wholesale": "39.990 ISK"
+@@ -5333,7 +5333,7 @@ const PRODUCTS = [
+     "desc": "Hrátt og rennandi fjallahunang frá Pýreneafjöllum — 10 kg fata.",
+     "inStock": true,
+     "url": "https://www.seidkarlinn.is/is-is/products/bucket-runny-pyrenees-honey-10kg",
+-    "img": "https://cdn.shopify.com/s/files/1/0657/8264/4910/files/IMG_6397_pyrenees_white.jpg?v=1780413485",
++    "img": "https://cdn.shopify.com/s/files/1/0657/8264/4910/files/bucket_pyrenees_10kg.jpg?v=1782422016",
+     "sku": "1651",
+     "noDisc": true,
+     "wholesale": "39.990 ISK"
+diff --git a/netlify/edge-functions/inject-catalog.js b/netlify/edge-functions/inject-catalog.js
+index e263b69..d491f1a 100644
+--- a/netlify/edge-functions/inject-catalog.js
++++ b/netlify/edge-functions/inject-catalog.js
+@@ -47,7 +47,7 @@
+ // below is kept for cart-fallback paths that read p.wholesale before
+ // applyPricingOverrides() has run.
+ const CORDYFRESH = `
+-  {"name":"Cordyceps 20% Cordyfresh 30ml","price":"5.990 ISK","cat":"Sveppir","tags":["cordyceps","dropar","tvíextrakt","Cordyfresh"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/cordyceps-20-cordyfresh-30ml","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/Cordyceps-20.jpg?v=1777761668","wholesale":"4.193 ISK"},
++  {"name":"Cordyceps 20% Cordyfresh 30ml","price":"5.990 ISK","cat":"Sveppir","tags":["cordyceps","dropar","tvíextrakt","Cordyfresh"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/cordyceps-20-cordyfresh-30ml","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/Cordyceps-20_1533ee35-4f17-43ee-81ee-f13c8081b402.jpg?v=1778717644","wholesale":"4.193 ISK"},
+   {"name":"Lions Mane 20% Cordyfresh 30ml","price":"5.990 ISK","cat":"Sveppir","tags":["lions mane","dropar","tvíextrakt","NGF","Cordyfresh"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/lions-mane-20-cordyfresh-30ml","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/Lions-Mane-20.jpg?v=1777761653","wholesale":"4.193 ISK"},
+   {"name":"Reishi 20% Cordyfresh 30ml","price":"5.990 ISK","cat":"Sveppir","tags":["reishi","dropar","tvíextrakt","Cordyfresh"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/reishi-20-cordyfresh-30ml","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/Reishi-20.jpg?v=1777761640","wholesale":"4.193 ISK"},
+   {"name":"Chaga 20% Cordyfresh 30ml","price":"5.990 ISK","cat":"Sveppir","tags":["chaga","dropar","tvíextrakt","Cordyfresh"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/chaga-20-cordyfresh-30ml","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/Chaga-20.jpg?v=1777761629","wholesale":"4.193 ISK"},
+@@ -63,11 +63,11 @@ const CORDYFRESH = `
+ // marker so this can later be migrated into index.html without
+ // double-injecting.
+ const NEW_PRODUCTS_20260528 = `
+-  {"name":"Seiðkarlinn Irish Sea Moss with bladderwrack 60 hylki","price":"6.990 ISK","cat":"Fæðubótarefni","tags":["sea moss","bladderwrack","ofurfæða","joð","steinefni"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/seidkarlinn-sea-moss-60-hylki","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/2_e06f226f-9ead-4f7a-b499-2f95cbf5bfb1.png?v=1780001234","wholesale":"5.242 ISK"},
+-  {"name":"Seiðkarlinn Moringa 350mg 60 hylki","price":"3.990 ISK","cat":"Fæðubótarefni","tags":["moringa","supermat","andoxun","þreyta","næring"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/seidkarlinn-moringa-350mg-60-hylki","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/4_2a40b944-a6f4-4d11-a49b-e28658315a3d.png?v=1780001095","wholesale":"2.992 ISK"},
+-  {"name":"Seiðkarlinn Full Spectrum Maca 600mg 120 hylki","price":"4.990 ISK","cat":"Fæðubótarefni","tags":["maca","hormónabalans","orkugjafi","frjósemi","Peru"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/seidkarlinn-maca-600mg-120hylki","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/3_5e37c0ff-cb5c-433b-8b54-906d67c7b85b.png?v=1780001057","wholesale":"3.742 ISK"},
+-  {"name":"Seiðkarlinn Lignosus 450mg 60 hylki","price":"5.990 ISK","cat":"Sveppir","tags":["lignosus","tiger milk","sveppur","ónæmiskerfi"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/seidkarlinn-lignosus-450mg-60-hylki","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/1_528e6f7a-7f66-4c82-9ea3-c7315d2d3c44.png?v=1780001022","wholesale":"4.492 ISK"},
+-  {"name":"Seiðkarlinn Shilajit 60 hylki","price":"6.990 ISK","cat":"Fæðubótarefni","tags":["shilajit","fulvic acid","steinefni","orkugjafi"],"desc":"500mg Shilajit hylki 83% Fulvic Acid sem er um það bil 2-3x sterkara en meðalshilajit í töflum á markaði.","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/seidkarlinn-shilajit-60-hylki","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/1_d410b220-2211-46dd-b9af-6521f5d76f8a.png?v=1778671558","wholesale":"5.242 ISK"},`;
++  {"name":"Seiðkarlinn Irish Sea Moss with bladderwrack 60 hylki","price":"6.990 ISK","cat":"Fæðubótarefni","tags":["sea moss","bladderwrack","ofurfæða","joð","steinefni"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/seidkarlinn-sea-moss-60-hylki","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/seamoss_f_1bbc1dc3-2b5b-4d42-9529-cb6b39458576.jpg?v=1782335725","wholesale":"5.242 ISK"},
++  {"name":"Seiðkarlinn Moringa 350mg 60 hylki","price":"3.990 ISK","cat":"Fæðubótarefni","tags":["moringa","supermat","andoxun","þreyta","næring"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/seidkarlinn-moringa-350mg-60-hylki","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/moringa_f_5ce2662e-87da-4a76-9da7-884c46ed06a4.jpg?v=1782335926","wholesale":"2.992 ISK"},
++  {"name":"Seiðkarlinn Full Spectrum Maca 600mg 120 hylki","price":"4.990 ISK","cat":"Fæðubótarefni","tags":["maca","hormónabalans","orkugjafi","frjósemi","Peru"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/seidkarlinn-maca-600mg-120hylki","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/maca_f_d0db7430-06a2-4479-8b9a-b690cdf22f9d.jpg?v=1782336016","wholesale":"3.742 ISK"},
++  {"name":"Seiðkarlinn Lignosus 450mg 60 hylki","price":"5.990 ISK","cat":"Sveppir","tags":["lignosus","tiger milk","sveppur","ónæmiskerfi"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/seidkarlinn-lignosus-450mg-60-hylki","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/lignosus_f_87bf3222-a401-45f9-b039-9596b99678fd.jpg?v=1782336004","wholesale":"4.492 ISK"},
++  {"name":"Seiðkarlinn Shilajit 60 hylki","price":"6.990 ISK","cat":"Fæðubótarefni","tags":["shilajit","fulvic acid","steinefni","orkugjafi"],"desc":"500mg Shilajit hylki 83% Fulvic Acid sem er um það bil 2-3x sterkara en meðalshilajit í töflum á markaði.","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/seidkarlinn-shilajit-60-hylki","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/shilajit_f_195ea32e-97f8-4067-aa74-b30755335c18.jpg?v=1782336010","wholesale":"5.242 ISK"},`;
+ 
+ // Stale entries that need to come back out of the deleted list, because the
+ // fresh NEW_PRODUCTS_20260528 entries reuse their Shopify URLs. If we leave
