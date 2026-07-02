@@ -553,3 +553,26 @@ async function syncWithShopify() {
   window.addEventListener("load", installAndRefresh);
   window.addEventListener("ws-sync-ready", function () { setTimeout(installAndRefresh, 150); });
 })();
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Detail sidebar scroll fix
+   ---------------------------------------------------------------------------
+   aside.detail is a fixed-height flex column (height:calc(100vh-64px);
+   overflow:hidden) and .dp-body is its flex:1 scroll area (overflow-y:auto).
+   But a flex item defaults to min-height:auto, so when the product panel is
+   tall (image + prices + AI info + add-to-cart) .dp-body expands to its full
+   content height and is clipped by the parent's overflow:hidden INSTEAD of
+   scrolling — leaving the bottom (the "Bæta í körfu" button) unreachable.
+   Adding min-height:0 lets the flex item shrink so its own overflow-y:auto
+   engages. Injected as a <style> to avoid editing the ~500 KB index.html.
+   ═══════════════════════════════════════════════════════════════════════════ */
+(function () {
+  try {
+    var css = "aside.detail .dp-body{min-height:0;}";
+    var s = document.createElement("style");
+    s.setAttribute("data-ws-fix", "detail-scroll");
+    s.appendChild(document.createTextNode(css));
+    (document.head || document.documentElement).appendChild(s);
+  } catch (e) { console.warn("[ws-detail-scroll] inject failed:", e); }
+})();
