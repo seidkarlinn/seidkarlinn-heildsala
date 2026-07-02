@@ -18,11 +18,11 @@
  *      Shilajit and Sveppir products (extends the app's existing Shilajit
  *      roll-up to include Sveppir).
  *   2. Wraps window.renderGrid so that, after each default-sorted render, the
- *      grid is regrouped by EFFECTIVE category (Shilajit/Sveppir -> Fæðubótarefni)
- *      then brand -> product -> size (largest first) — matching the app's own
- *      default ordering but with the rolled-up category, so capsule sizes and
- *      related capsule bags sit next to each other. window._filtered and each
- *      card's data-idx are kept in sync so click/cart lookups stay correct.
+ *      grid is regrouped by EFFECTIVE category (Shilajit/Sveppir -> Fæðubótarefni),
+ *      then capsule bags (name contains "hylki") first, then brand -> product
+ *      -> size (largest first) — so all the kraft-pouch capsule bags sit side
+ *      by side. window._filtered and each card's data-idx are kept in sync so
+ *      click/cart lookups stay correct.
  *      Drag-and-drop (admin) is keyed on data-url, so manual ordering still
  *      works and is honoured within the grouped block.
  */
@@ -34,6 +34,13 @@ const CATEGORY_PATCH = `
   // Sub-categories that roll up into a parent category.
   var CAT_GROUP = { "Shilajit": "Fæðubótarefni", "Sveppir": "Fæðubótarefni" };
   function effCat(cat){ return CAT_GROUP[cat] || cat; }
+
+  // Capsule "bag" products (name contains "hylki") are grouped together so all
+  // the kraft-pouch capsule bags sit side by side instead of being interleaved
+  // with powders, broths, tinctures and oils.
+  function isCapsule(p){
+    return !!(p && p.name && p.name.toLowerCase().indexOf("hylki") !== -1);
+  }
 
   // parent -> [child cats], derived from CAT_GROUP.
   var REVERSE = {};
@@ -60,8 +67,8 @@ const CATEGORY_PATCH = `
     } catch(e){ return []; }
   }
 
-  // 2) Ordering: regroup the default view by effective category so related
-  //    supplement capsule products are contiguous and sizes line up.
+  // 2) Ordering: regroup the default view by effective category, then capsule
+  //    bags first, so related supplement capsule bags are contiguous.
   function regroup(){
     try {
       var sortSel = document.getElementById("sortSel");
@@ -78,6 +85,9 @@ const CATEGORY_PATCH = `
         var a = f[ia], b = f[ib];
         var cc = effCat(a.cat).localeCompare(effCat(b.cat), "is");
         if (cc !== 0) return cc;
+        // All capsule bags cluster together (before non-capsule supplements).
+        var capA = isCapsule(a), capB = isCapsule(b);
+        if (capA !== capB) return capA ? -1 : 1;
         if (custom.length){
           var ai = custom.indexOf(a.url), bi = custom.indexOf(b.url);
           if (ai !== -1 && bi !== -1) return ai - bi;
