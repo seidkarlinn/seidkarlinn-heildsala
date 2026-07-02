@@ -229,6 +229,8 @@
     }
   }
 
+  window._wsSeedDefaultPricing = seedDefaultPricing;   // exposed so new-user creation can seed instantly
+
   // Run seed after sync completes. Listener AND timeout poll, in case
   // event fires before our listener registers.
   window.addEventListener("ws-sync-ready", function () { setTimeout(seedDefaultPricing, 250); });
@@ -703,6 +705,47 @@ async function syncWithShopify() {
   function boot() {
     if (install()) return;
     var n = 0, t = setInterval(function () { if (install() || ++n > 40) clearInterval(t); }, 150);
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
+  else boot();
+  window.addEventListener("load", boot);
+  window.addEventListener("ws-sync-ready", boot);
+})();
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Instant pricing seed on new-user creation
+   ---------------------------------------------------------------------------
+   The standard category-discount profile is normally seeded by the background
+   seeder (seedDefaultPricing) on sync/load. To give a brand-new customer that
+   profile the INSTANT the admin saves them, wrap saveVm() so the seeder runs
+   immediately after the new ws_vidskm / ws_buyer_accounts records are written.
+   Idempotent and admin-guarded: only users with no profile (or an empty one)
+   are seeded, using the same STANDARD_PRICING_TEMPLATE above as the single
+   source of truth — so new users get exactly what gym800 and the others have.
+   ═══════════════════════════════════════════════════════════════════════════ */
+(function () {
+  function wrap() {
+    if (typeof window.saveVm !== "function") return false;
+    if (window.saveVm._pricingSeedWrapped) return true;
+    var orig = window.saveVm;
+    window.saveVm = function () {
+      var r = orig.apply(this, arguments);
+      try {
+        if (typeof window._wsSeedDefaultPricing === "function") {
+          // after saveVidskm() + syncVidskToAccounts() have written the new records
+          setTimeout(window._wsSeedDefaultPricing, 60);
+          setTimeout(window._wsSeedDefaultPricing, 400); // safety re-run
+        }
+      } catch (e) {}
+      return r;
+    };
+    window.saveVm._pricingSeedWrapped = true;
+    return true;
+  }
+  function boot() {
+    if (wrap()) return;
+    var n = 0, t = setInterval(function () { if (wrap() || ++n > 60) clearInterval(t); }, 200);
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
   else boot();
