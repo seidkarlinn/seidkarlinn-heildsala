@@ -516,6 +516,7 @@ async function syncWithShopify() {
         var p = Object.assign({}, cp);
         if (p.noDisc) {
           p.wholesale = p.wholesale || p.price;                        // fixed price (discount included)
+          p._priceOverridden = true;                                   // mark fixed: grid/cart use stored wholesale, never apply buyer discount on top
         } else if (!p.wholesale) {
           var r = parseInt((p.price || "").replace(/[^\d]/g, "")) || 0; // fallback: global 25% off
           if (r) p.wholesale = _isk(Math.round(r * 0.75));
