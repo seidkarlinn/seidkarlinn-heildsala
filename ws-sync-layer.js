@@ -556,27 +556,70 @@ async function syncWithShopify() {
 
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   Detail sidebar scroll fix
+   Detail sidebar scroll fix  (CSS + authoritative JS sizing)
    ---------------------------------------------------------------------------
-   aside.detail is a fixed-height flex column (height:calc(100vh-64px);
-   overflow:hidden) and .dp-body is its flex:1 scroll area (overflow-y:auto).
-   But a flex item defaults to min-height:auto, so when the product panel is
-   tall (image + prices + AI info + add-to-cart) .dp-body expands to its full
-   content height and is clipped by the parent's overflow:hidden INSTEAD of
-   scrolling — leaving the bottom (the "Bæta í körfu" button) unreachable.
-   min-height:0 lets the flex item shrink so its own overflow-y:auto engages;
-   the desktop max-height is a belt-and-suspenders cap that forces the internal
-   scrollbar even if the flex min-height doesn't take on a given browser.
-   Injected as a <style> to avoid editing the ~500 KB index.html.
+   The sticky product panel (aside.detail) must scroll INTERNALLY so the bottom
+   "Bæta í körfu" button is reachable. The pure-CSS approach (flex + min-height:0
+   + max-height) can silently fail if the grid row stretches the panel taller
+   than the viewport, or if `dvh` is unsupported (the max-height declaration is
+   then dropped). So in addition to the CSS we set an INLINE max-height on
+   .dp-body directly from JS — inline styles beat every stylesheet rule — and
+   re-apply it whenever the panel content changes (MutationObserver) and on
+   resize. Desktop only; the mobile slide-over keeps its own CSS.
    ═══════════════════════════════════════════════════════════════════════════ */
 (function () {
+  // 1) CSS layer (vh, not dvh, for max browser support)
   try {
     var css = "aside.detail{overflow:hidden;}"
             + "aside.detail .dp-body{min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;}"
-            + "@media(min-width:1101px){aside.detail .dp-body{max-height:calc(100dvh - 124px);}}";
-    var s = document.createElement("style");
-    s.setAttribute("data-ws-fix", "detail-scroll");
-    s.appendChild(document.createTextNode(css));
-    (document.head || document.documentElement).appendChild(s);
-  } catch (e) { console.warn("[ws-detail-scroll] inject failed:", e); }
+            + "@media(min-width:1101px){aside.detail .dp-body{max-height:calc(100vh - 122px);}}";
+    var st = document.createElement("style");
+    st.setAttribute("data-ws-fix", "detail-scroll");
+    st.appendChild(document.createTextNode(css));
+    (document.head || document.documentElement).appendChild(st);
+  } catch (e) {}
+
+  // 2) Authoritative JS sizing — inline max-height measured from the live header
+  function applyDetailScrollFix() {
+    try {
+      var aside = document.querySelector("aside.detail");
+      if (!aside) return;
+      var body = aside.querySelector(".dp-body");
+      if (!body) return;
+      if (window.innerWidth <= 1100) {            // mobile slide-over → leave to CSS
+        body.style.maxHeight = ""; body.style.minHeight = ""; body.style.overflowY = "";
+        return;
+      }
+      var hdr = aside.querySelector(".dp-hdr");
+      var hdrH = hdr ? Math.ceil(hdr.getBoundingClientRect().height) : 56;
+      var avail = window.innerHeight - 64 - hdrH; // 64px sticky page header
+      if (!(avail > 150)) avail = window.innerHeight - 120;
+      body.style.minHeight = "0";
+      body.style.maxHeight = avail + "px";
+      body.style.overflowY = "auto";
+      body.style.webkitOverflowScrolling = "touch";
+    } catch (e) {}
+  }
+
+  function install() {
+    var aside = document.querySelector("aside.detail");
+    var body = aside && aside.querySelector(".dp-body");
+    if (!body) return false;
+    applyDetailScrollFix();
+    try {
+      var mo = new MutationObserver(function () { applyDetailScrollFix(); });
+      mo.observe(body, { childList: true });     // re-apply whenever a product is opened
+    } catch (e) {}
+    window.addEventListener("resize", applyDetailScrollFix);
+    return true;
+  }
+
+  function boot() {
+    if (install()) return;
+    var n = 0, t = setInterval(function () { if (install() || ++n > 40) clearInterval(t); }, 150);
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
+  else boot();
+  window.addEventListener("load", boot);
+  window.addEventListener("ws-sync-ready", boot);
 })();
