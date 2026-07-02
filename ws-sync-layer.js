@@ -623,3 +623,89 @@ async function syncWithShopify() {
   window.addEventListener("load", boot);
   window.addEventListener("ws-sync-ready", boot);
 })();
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Detail panel hide/show (fela/sýna) toggle
+   ---------------------------------------------------------------------------
+   The right product-info panel (aside.detail) was permanently visible on
+   desktop with no way to collapse it — unlike the left sidebar, which has its
+   own #sbToggle. Add a matching edge tab on the RIGHT that hides/shows the
+   panel and, when hidden, reclaims its 360px column for the product grid.
+   Desktop only (≤1100px the panel is already a slide-over). Clicking a product
+   re-opens the panel so its details are visible. State is stored locally in
+   ws_detail_collapsed (not synced — it's a per-device UI preference).
+   ═══════════════════════════════════════════════════════════════════════════ */
+(function () {
+  var KEY = "ws_detail_collapsed";
+
+  try {
+    var css =
+      ".detail-toggle{position:fixed;top:50vh;right:360px;transform:translateY(-50%);" +
+      "width:18px;height:40px;border-radius:6px 0 0 6px;background:var(--paper2,#EFEADD);" +
+      "border:1.5px solid var(--paper3,#DBD3C2);border-right:none;cursor:pointer;display:flex;" +
+      "align-items:center;justify-content:center;font-size:9px;z-index:500;" +
+      "box-shadow:-2px 0 4px rgba(0,0,0,.1);transition:right .25s ease;color:var(--ink3,#8A8472);}" +
+      ".detail-toggle:hover{color:var(--ink,#1A1710);}" +
+      "body.wsDetailCollapsed .detail-toggle{right:8px;}" +
+      "@media(min-width:1101px){" +
+        "body.wsDetailCollapsed .layout{grid-template-columns:240px 1fr 0 !important;}" +
+        "body.wsDetailCollapsed aside.detail{display:none !important;}" +
+      "}" +
+      "@media(max-width:1100px){.detail-toggle{display:none !important;}}";
+    var st = document.createElement("style");
+    st.setAttribute("data-ws-fix", "detail-toggle");
+    st.appendChild(document.createTextNode(css));
+    (document.head || document.documentElement).appendChild(st);
+  } catch (e) {}
+
+  function setCollapsed(collapsed) {
+    try {
+      document.body.classList.toggle("wsDetailCollapsed", collapsed);
+      var btn = document.getElementById("detailToggle");
+      if (btn) {
+        btn.textContent = collapsed ? "\u25C0" : "\u25B6";        // ◀ show / ▶ hide
+        btn.title = collapsed ? "S\u00FDna v\u00F6ruuppl\u00FDsingar" : "Fela v\u00F6ruuppl\u00FDsingar";
+      }
+      localStorage.setItem(KEY, collapsed ? "1" : "0");
+    } catch (e) {}
+  }
+
+  function install() {
+    if (document.getElementById("detailToggle")) return true;
+    var aside = document.querySelector("aside.detail");
+    if (!aside || !document.body) return false;
+
+    var btn = document.createElement("button");
+    btn.id = "detailToggle";
+    btn.className = "detail-toggle";
+    btn.type = "button";
+    btn.textContent = "\u25B6";
+    btn.title = "Fela v\u00F6ruuppl\u00FDsingar";
+    btn.addEventListener("click", function () {
+      setCollapsed(!document.body.classList.contains("wsDetailCollapsed"));
+    });
+    document.body.appendChild(btn);
+
+    var saved = false;
+    try { saved = localStorage.getItem(KEY) === "1"; } catch (e) {}
+    setCollapsed(saved);
+
+    // Opening a product should reveal the panel again if it was hidden.
+    if (typeof window.showDetail === "function" && !window.showDetail._collapseWrapped) {
+      var _origShow = window.showDetail;
+      window.showDetail = function () { setCollapsed(false); return _origShow.apply(this, arguments); };
+      window.showDetail._collapseWrapped = true;
+    }
+    return true;
+  }
+
+  function boot() {
+    if (install()) return;
+    var n = 0, t = setInterval(function () { if (install() || ++n > 40) clearInterval(t); }, 150);
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
+  else boot();
+  window.addEventListener("load", boot);
+  window.addEventListener("ws-sync-ready", boot);
+})();
