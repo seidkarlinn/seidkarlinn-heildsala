@@ -564,12 +564,16 @@ async function syncWithShopify() {
    tall (image + prices + AI info + add-to-cart) .dp-body expands to its full
    content height and is clipped by the parent's overflow:hidden INSTEAD of
    scrolling — leaving the bottom (the "Bæta í körfu" button) unreachable.
-   Adding min-height:0 lets the flex item shrink so its own overflow-y:auto
-   engages. Injected as a <style> to avoid editing the ~500 KB index.html.
+   min-height:0 lets the flex item shrink so its own overflow-y:auto engages;
+   the desktop max-height is a belt-and-suspenders cap that forces the internal
+   scrollbar even if the flex min-height doesn't take on a given browser.
+   Injected as a <style> to avoid editing the ~500 KB index.html.
    ═══════════════════════════════════════════════════════════════════════════ */
 (function () {
   try {
-    var css = "aside.detail .dp-body{min-height:0;}";
+    var css = "aside.detail{overflow:hidden;}"
+            + "aside.detail .dp-body{min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;}"
+            + "@media(min-width:1101px){aside.detail .dp-body{max-height:calc(100dvh - 124px);}}";
     var s = document.createElement("style");
     s.setAttribute("data-ws-fix", "detail-scroll");
     s.appendChild(document.createTextNode(css));
