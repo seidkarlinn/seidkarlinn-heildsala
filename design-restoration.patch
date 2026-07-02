@@ -1,0 +1,269 @@
+diff --git a/index.html b/index.html
+index b027ea6..1bdbf04 100644
+--- a/index.html
++++ b/index.html
+@@ -4,11 +4,17 @@
+ <meta charset="UTF-8">
+ <meta name="viewport" content="width=device-width, initial-scale=1.0">
+ <title>Seiðkarlinn — Heildsöluverslun</title>
++<meta name="description" content="Heildsöluverslun Seiðkarlsins fyrir endursöluaðila. Hunang, fæðubótarefni, sveppir, shilajit og seremóníu kakó á heildsöluverði.">
++<meta property="og:title" content="Seiðkarlinn — Heildsöluverslun">
++<meta property="og:description" content="Vefverslun fyrir endursöluaðila Seiðkarlsins. Innskráning nauðsynleg.">
++<meta property="og:type" content="website">
++<meta property="og:url" content="https://wholesale.seidkarlinn.is/">
++<meta name="theme-color" content="#1A1710">
+ <link rel="preconnect" href="https://fonts.googleapis.com">
+ <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+ <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet">
+ <style>
+-/* ── TOKENS ── */h
++/* ── TOKENS ── */
+ :root {
+   --ink:#1A1710; --ink2:#54503F; --ink3:#837E6F;
+   --paper:#FAF8F3; --paper2:#F3F0E8; --paper3:#EAE5D8;
+@@ -17,13 +23,28 @@
+   --green:#2A5C2A; --green-d:#1E431E; --green-l:#E6F0E6;
+   --red:#C0392B; --red-l:#FDECEA;
+   --r:10px; --rs:6px;
+-  --shadow: 0 1px 3px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.06);
++  --shadow: 0 1px 3px rgba(26,23,16,.05), 0 4px 16px rgba(26,23,16,.07);
++  --shadow-lg: 0 16px 48px rgba(26,23,16,.18);
+ }
+ *{box-sizing:border-box;margin:0;padding:0;}
+ /* Eliminate 300ms tap delay on all interactive elements for mobile */
+ a,button,input,select,textarea,[role="button"]{touch-action:manipulation;}
+ html{scroll-behavior:smooth;}
+-body{font-family:'DM Sans',sans-serif;background:var(--paper);color:var(--ink);min-height:100vh;font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased;}
++body{font-family:'DM Sans',sans-serif;background:var(--paper);color:var(--ink);min-height:100vh;min-height:100dvh;font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased;}
++
++/* ── POLISH: numerals, wrapping, focus, press feedback ── */
++.ws-price,.retail-price,.saving,.rws-price,.rretail,.stat-val,.order-id,
++.dp-price-val,.dp-price-amt,.ci-price,.ci-retail,.ci-qty-val,.cart-totals,
++.info-table,.orders-table,.cat-disc-table,.vm-table,.vst-tbl,.price-calc,
++.qty-input,.dp-qty,.price-inp,.disc-input{font-variant-numeric:tabular-nums;}
++.cat-title,.w-title,.dp-name,.cart-title,.adm-modal-title,.vm-modal-title{text-wrap:balance;letter-spacing:-.01em;}
++.dp-desc,.w-sub,.ws-info-text{text-wrap:pretty;}
++button:focus-visible,a:focus-visible,select:focus-visible,
++input[type=checkbox]:focus-visible,[role=button]:focus-visible{outline:2px solid var(--green);outline-offset:2px;}
++.gate-btn:active,.cart-btn:active,.wchip:active,.adm-btn:active,
++.add-btn:active:not(:disabled),.row-add:active:not(:disabled),
++.dp-add-btn:active:not(:disabled),.checkout-btn:active:not(:disabled){transform:translateY(1px);}
++.adm-side-btn svg,.cat-btn svg,.cart-btn svg,.logout-btn svg,.sync-btn svg{flex-shrink:0;display:block;}
+ 
+ /* ─── LOGIN GATE ─── */
+ #gate{
+@@ -35,7 +56,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--paper);color:var(--ink);m
+ .gate-box{
+   background:var(--paper);border-radius:16px;padding:3rem 2.5rem;
+   width:min(420px, 90vw);text-align:center;
+-  box-shadow:0 24px 64px rgba(0,0,0,.4);
++  box-shadow:0 24px 64px rgba(26,23,16,.45);
+ }
+ .gate-logo{font-family:'Playfair Display',serif;font-size:30px;color:#1A1710;font-weight:400;letter-spacing:.01em;margin-bottom:4px;}
+ .gate-sub{font-size:12px;color:var(--ink3);letter-spacing:.12em;text-transform:uppercase;margin-bottom:2rem;}
+@@ -334,7 +355,7 @@ aside.detail{
+ /* ─── CART DRAWER ─── */
+ #cartDrawer{
+   position:fixed;top:0;right:0;bottom:0;width:min(460px,100vw);
+-  background:var(--paper);box-shadow:-4px 0 32px rgba(0,0,0,.15);
++  background:var(--paper);box-shadow:-4px 0 32px rgba(26,23,16,.18);
+   z-index:500;transform:translateX(100%);transition:transform .3s ease;
+   display:flex;flex-direction:column;
+ }
+@@ -401,7 +422,6 @@ aside.detail{
+ }
+ .shopify-note strong{color:var(--gold-b);}
+ 
+-@media(max-width:1100px){.layout{grid-template-columns:200px 1fr;}}
+ @media(max-width:1100px){.layout{grid-template-columns:240px 1fr};}@media(max-width:820px){.layout{grid-template-columns:1fr};aside.sb{display:none;}}
+ 
+ /* ── Mobile detail modal (slide-up overlay) ── */
+@@ -555,7 +575,7 @@ aside.detail{
+   display:flex;align-items:center;justify-content:center;padding:1rem;}
+ .adm-modal-overlay.hidden{display:none;}
+ .adm-modal{background:var(--sf);border:1.5px solid var(--paper3);border-radius:12px;
+-  width:min(520px,100%);max-height:90vh;overflow-y:auto;box-shadow:0 16px 48px rgba(0,0,0,.15);}
++  width:min(520px,100%);max-height:90vh;overflow-y:auto;box-shadow:var(--shadow-lg);}
+ .adm-modal-hdr{padding:1.125rem 1.5rem;border-bottom:1px solid var(--paper3);
+   display:flex;align-items:center;justify-content:space-between;}
+ .adm-modal-title{font-family:'Playfair Display',serif;font-size:17px;}
+@@ -611,7 +631,7 @@ aside.detail{
+   position:fixed;bottom:80px;right:20px;z-index:400;
+   background:var(--ink);color:#fff;border:none;border-radius:99px;
+   padding:8px 14px;font-size:11px;font-weight:500;cursor:pointer;
+-  font-family:'DM Sans',sans-serif;box-shadow:0 4px 16px rgba(0,0,0,.25);
++  font-family:'DM Sans',sans-serif;box-shadow:0 4px 16px rgba(26,23,16,.28);
+   display:none;align-items:center;gap:5px;transition:background .15s;
+ }
+ #floatThemeBtn:hover{background:#2A5C2A;}
+@@ -628,7 +648,7 @@ aside.detail{
+   display:flex;align-items:center;justify-content:center;padding:1rem;}
+ .refund-modal-overlay.hidden{display:none;}
+ .refund-modal{background:var(--sf);border:1.5px solid var(--paper3);border-radius:12px;
+-  width:min(460px,100%);box-shadow:0 16px 48px rgba(0,0,0,.15);}
++  width:min(460px,100%);box-shadow:var(--shadow-lg);}
+ .refund-modal-hdr{padding:1.125rem 1.5rem;border-bottom:1px solid var(--paper3);
+   display:flex;align-items:center;justify-content:space-between;}
+ .refund-modal-title{font-family:'Playfair Display',serif;font-size:17px;color:var(--red);}
+@@ -810,7 +830,7 @@ aside.detail{
+   display:flex;align-items:center;justify-content:center;padding:1rem;}
+ .vm-modal-overlay.hidden{display:none;}
+ .vm-modal{background:var(--sf);border:1.5px solid var(--paper3);border-radius:12px;
+-  width:min(640px,100%);max-height:90vh;overflow-y:auto;box-shadow:0 16px 48px rgba(0,0,0,.15);}
++  width:min(640px,100%);max-height:90vh;overflow-y:auto;box-shadow:var(--shadow-lg);}
+ .vm-modal-hdr{padding:1.125rem 1.5rem;border-bottom:1px solid var(--paper3);
+   display:flex;align-items:center;justify-content:space-between;gap:8px;}
+ .vm-modal-title{font-family:'Playfair Display',serif;font-size:18px;}
+@@ -999,13 +1019,13 @@ aside.detail{
+   </div>
+   <div class="hright">
+     <button class="cart-btn" id="hCartBtn" onclick="toggleCart()" style="display:none">
+-      🛒 Karfa
++      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.3 8h11.4l-1 12H7.3l-1-12z"/><path d="M9 8V6.5a3 3 0 0 1 6 0V8"/></svg> Karfa
+       <span class="cart-count" id="cartCount">0</span>
+     </button>
+     <!-- Logged out -->
+     <button class="logout-btn" id="hLoginBtn" onclick="document.getElementById('gate').classList.remove('hidden')"
+       style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);border-radius:6px;padding:6px 14px;font-size:12px;color:#fff;font-weight:500">
+-      🔑 Innskrá
++      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-1px"><circle cx="8" cy="15.5" r="4.5"/><path d="M11.2 12.3L21 2.5"/><path d="M16.5 7l3 3"/></svg> Innskrá
+     </button>
+     <!-- Logged in -->
+     <div id="hUserChip" style="display:none;align-items:center;gap:10px">
+@@ -1025,27 +1045,27 @@ aside.detail{
+     <!-- Admin dropdown — only visible when logged in as admin -->
+     <div class="adm-drop" id="admDropWrap" style="display:none">
+       <div class="adm-drop-hdr" id="admDropHdr" onclick="toggleAdmDrop()">
+-        <span>⚙️ Stjórnborð</span>
++        <span style="display:flex;align-items:center;gap:7px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h8"/><path d="M18 8h2"/><circle cx="15" cy="8" r="2.2"/><path d="M4 16h2"/><path d="M12 16h8"/><circle cx="9" cy="16" r="2.2"/></svg> Stjórnborð</span>
+         <span class="adm-arrow">▼</span>
+       </div>
+       <div class="adm-drop-body" id="admDropBody">
+         <button class="adm-side-btn" id="admBtnCatalog" onclick="showPanel('catalog')">
+-          🛒 Vörulisti
++          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg> Vörulisti
+         </button>
+         <button class="adm-side-btn" id="admBtnOrders" onclick="showPanel('orders')">
+-          📋 Pantanir <span id="pendingBadge" style="margin-left:auto;font-size:9px;background:var(--gold-l);color:var(--gold-b);padding:1px 6px;border-radius:99px;"></span>
++          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 3.5h6V7H9z"/><path d="M9 12h6"/><path d="M9 16h4"/></svg> Pantanir <span id="pendingBadge" style="margin-left:auto;font-size:9px;background:var(--gold-l);color:var(--gold-b);padding:1px 6px;border-radius:99px;"></span>
+         </button>
+         <button class="adm-side-btn" id="admBtnProducts" onclick="showPanel('products')">
+-          📦 Vörustjórnun
++          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z"/><path d="M4 7.5l8 4.5 8-4.5"/><path d="M12 12v9"/></svg> Vörustjórnun
+         </button>
+         <button class="adm-side-btn" id="admBtnTheme" onclick="showPanel('theme')">
+-          🎨 Útlit / þema
++          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a9 9 0 0 0 0 18c1.4 0 2.4-1 2.4-2.2 0-1.3-1.1-1.8-1.1-2.9 0-1.1.9-1.9 2.1-1.9H18a3.6 3.6 0 0 0 3-5.5A9 9 0 0 0 12 3z"/><circle cx="8" cy="10.5" r="1" fill="currentColor" stroke="none"/><circle cx="12" cy="7.8" r="1" fill="currentColor" stroke="none"/><circle cx="16" cy="10.5" r="1" fill="currentColor" stroke="none"/></svg> Útlit / þema
+         </button>
+         <button class="adm-side-btn" id="admBtnPricing" onclick="showPanel('pricing')">
+-          💰 Verð og afsláttir
++          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 5L5 19"/><circle cx="7.5" cy="7.5" r="2.5"/><circle cx="16.5" cy="16.5" r="2.5"/></svg> Verð og afsláttir
+         </button>
+         <button class="adm-side-btn" id="admBtnViðskm" onclick="showPanel('vidskm')">
+-          🏢 Viðskiptamenn
++          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21h18"/><path d="M5 21V5l7-2v18"/><path d="M12 21V10l7 2v9"/><path d="M8.5 7.5v.01"/><path d="M8.5 11.5v.01"/><path d="M8.5 15.5v.01"/></svg> Viðskiptamenn
+         </button>
+ 
+       </div>
+@@ -1054,14 +1074,14 @@ aside.detail{
+     <!-- Buyer section — only visible when logged in as buyer -->
+     <div class="adm-drop" id="buyerActionsWrap" style="display:none">
+       <div class="adm-drop-hdr" style="cursor:default;pointer-events:none">
+-        <span>🛍️ Mínar pantanir</span>
++        <span style="display:flex;align-items:center;gap:7px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.3 8h11.4l-1 12H7.3l-1-12z"/><path d="M9 8V6.5a3 3 0 0 1 6 0V8"/></svg> Mínar pantanir</span>
+       </div>
+       <div class="adm-drop-body open" style="padding:6px">
+         <button class="adm-side-btn" id="buyerBtnCatalog" onclick="showPanel('catalog')">
+-          🛒 Vörulisti
++          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg> Vörulisti
+         </button>
+         <button class="adm-side-btn" id="buyerBtnOrders" onclick="showPanel('buyerOrders')">
+-          📋 Pantanir
++          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 3.5h6V7H9z"/><path d="M9 12h6"/><path d="M9 16h4"/></svg> Pantanir
+         </button>
+       </div>
+     </div>
+@@ -1073,7 +1093,7 @@ aside.detail{
+ 
+ 
+     <div class="ws-info" id="wsInfoBox" style="display:none">
+-      <div class="ws-info-title">⚡ Heildsöluskilmálar</div>
++      <div class="ws-info-title">Heildsöluskilmálar</div>
+       <div class="ws-info-text" id="wsInfoText">
+         25% afsláttur af smásöluverði á allar vörur.<br>
+         Lágmarksverðmæti pöntunar: <span id="sbMoqAmt">50.000 ISK</span>.
+@@ -1141,7 +1161,7 @@ aside.detail{
+   <aside class="detail">
+     <button class="mobile-detail-close" onclick="closeMobileDetail()" aria-label="Loka">✕</button>
+     <div class="dp-hdr">
+-      <div class="dp-icon">📦</div>
++      <div class="dp-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z"/><path d="M4 7.5l8 4.5 8-4.5"/><path d="M12 12v9"/></svg></div>
+       <div>
+         <div class="dp-title" id="dpTitle">Vöruupplýsingar</div>
+         <div class="dp-sub" id="dpSub">Smelltu á vöru</div>
+@@ -1172,7 +1192,7 @@ aside.detail{
+ <div id="cartOverlay" onclick="toggleCart()"></div>
+ <div id="cartDrawer">
+   <div class="cart-hdr">
+-    <div class="cart-title">🛒 Pöntunarkarfa</div>
++    <div class="cart-title">Pöntunarkarfa</div>
+     <button class="cart-close" onclick="toggleCart()">✕</button>
+   </div>
+   <div class="cart-body" id="cartBody">
+@@ -5514,7 +5534,7 @@ function renderCartBody() {
+ 
+   totals.innerHTML = `
+     <div class="ct-row"><span>Heildsöluverð</span><span>${fmt(totalWs)}</span></div>
+-    <div class="ct-row saving"><span>💰 Afsláttur (${totalRt > 0 ? Math.round(saved / totalRt * 100) : 0}%)</span><span>-${fmt(saved)}</span></div>
++    <div class="ct-row saving"><span>Afsláttur (${totalRt > 0 ? Math.round(saved / totalRt * 100) : 0}%)</span><span>-${fmt(saved)}</span></div>
+     ${!metMOQ ? `<div class="ct-row" style="color:var(--red);font-size:11px">
+       <span>⚠️ Lágmarksverð: ${fmt(MOQ)}</span><span>Vantar: ${fmt(MOQ - totalWs)}</span>
+     </div>` : `<div class="ct-row" style="color:var(--green);font-size:11px"><span>✓ Lágmarksverð náð</span><span></span></div>`}
+@@ -6002,8 +6022,8 @@ function renderGrid() {
+             ${li
+               ? `<div class="ws-price">${esc(wsText)}</div>
+                  ${p.price && p.wholesale ? `<div class="retail-price">${esc(p.price)}</div>` : ''}
+-                 ${saving ? `<div class="saving">💰 ${saving}</div>` : ''}`
+-              : `<div class="price-locked" onclick="event.stopPropagation();document.getElementById('gate').classList.remove('hidden')">🔒 Innskrá til að sjá verð</div>`
++                 ${saving ? `<div class="saving">${saving}</div>` : ''}`
++              : `<div class="price-locked" onclick="event.stopPropagation();document.getElementById('gate').classList.remove('hidden')"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-1px"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg> Innskrá til að sjá verð</div>`
+             }
+           </div>
+           ${li ? `
+@@ -6017,7 +6037,7 @@ function renderGrid() {
+           </button>` : `
+           <button class="add-btn" onclick="event.stopPropagation();document.getElementById('gate').classList.remove('hidden')"
+             style="background:var(--paper2);color:var(--ink2);border:1.5px solid var(--paper3)">
+-            🔑 Innskrá
++            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="15.5" r="4.5"/><path d="M11.2 12.3L21 2.5"/><path d="M16.5 7l3 3"/></svg> Innskrá
+           </button>`}
+         </div>
+       </div>`;
+@@ -6149,9 +6169,9 @@ function showDetail(p) {
+         </div>
+         ${p.price ? `<div class="dp-price-card"><div class="dp-price-lbl">Smásöluverð</div><div class="dp-price-amt retail">${p.price}</div></div>` : ''}
+       </div>
+-      ${savedPct ? `<div class="dp-saving-chip">💰 Afsláttur: ${savedPct}%</div>` : ''}`
++      ${savedPct ? `<div class="dp-saving-chip">Afsláttur: ${savedPct}%</div>` : ''}`
+     : `<div style="background:var(--paper2);border:1.5px solid var(--paper3);border-radius:var(--r);padding:1rem;text-align:center;margin-bottom:.875rem">
+-        <div style="font-size:13px;color:var(--ink3);margin-bottom:.5rem">🔒 Innskráning krafist til að sjá verð</div>
++        <div style="font-size:13px;color:var(--ink3);margin-bottom:.5rem"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-1px"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg> Innskráning krafist til að sjá verð</div>
+         <button onclick="document.getElementById('gate').classList.remove('hidden')" style="background:var(--green);color:#fff;border:none;border-radius:var(--rs);padding:8px 20px;font-size:13px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif">🔑 Innskrá</button>
+       </div>`;
+ 
+@@ -6223,13 +6243,13 @@ function showDetail(p) {
+       </div>
+       <button class="dp-add-btn" id="dpAddBtn" onclick="dpAdd('${esc(p.name)}')"
+         style="margin-top:.75rem" ${!p.inStock?'disabled':''}>
+-        ${p.inStock ? '🛒 Bæta í körfu' : '✕ Uppselt'}
++        ${p.inStock ? '+ Bæta í körfu' : 'Uppselt'}
+       </button>
+     </div>` : `
+     <div style="margin-bottom:1rem">
+       <button onclick="document.getElementById('gate').classList.remove('hidden')"
+         style="width:100%;padding:11px;background:var(--green);color:#fff;border:none;border-radius:var(--rs);font-size:13px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif">
+-        🔑 Innskrá til að kaupa
++        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="15.5" r="4.5"/><path d="M11.2 12.3L21 2.5"/><path d="M16.5 7l3 3"/></svg> Innskrá til að kaupa
+       </button>
+     </div>`}
+ 
