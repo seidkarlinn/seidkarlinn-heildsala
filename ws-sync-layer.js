@@ -777,3 +777,75 @@ async function syncWithShopify() {
     (document.head || document.documentElement).appendChild(st);
   } catch (e) {}
 })();
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Product-image self-heal (transient-failure retry)
+   ---------------------------------------------------------------------------
+   Each catalog card renders <img class="pcard-img" ... onerror="…blank…"> (and
+   list rows use .prow-img with onerror display:none). That inline onerror gives
+   up on the FIRST failed load and permanently blanks the card — so a single
+   transient CDN hiccup (429/timeout/dropped connection while dozens of images
+   lazy-load) leaves a product with an empty cream tile even though its image
+   URL is perfectly valid (verified: 200 + real JPEG). Two honey products hit
+   exactly this.
+   Fix: a document-level capture listener (image error events don't bubble, so
+   capture is required) that retries a failed product image up to twice with a
+   cache-busting param — which also bypasses any broken response the browser
+   cached — before letting the original onerror blank it. A startup sweep also
+   re-triggers images that failed before this handler was installed. Pure
+   client-side, self-contained, index.html untouched.
+   ═══════════════════════════════════════════════════════════════════════════ */
+(function () {
+  var MAX_RETRY = 2;
+
+  function bust(src, n) {
+    if (!src) return src;
+    var clean = String(src).replace(/([?&])_cb=\d+/, "$1").replace(/[?&]$/, "");
+    return clean + (clean.indexOf("?") > -1 ? "&" : "?") + "_cb=" + (Date.now() + n);
+  }
+
+  function isProductImg(el) {
+    return el && el.tagName === "IMG" &&
+      el.classList &&
+      (el.classList.contains("pcard-img") || el.classList.contains("prow-img"));
+  }
+
+  function retry(img) {
+    var n = parseInt(img.getAttribute("data-heal") || "0", 10);
+    if (n >= MAX_RETRY) return false;                 // exhausted → let onerror blank it
+    n++;
+    img.setAttribute("data-heal", String(n));
+    var orig = img.getAttribute("data-heal-src") || img.src;
+    img.setAttribute("data-heal-src", orig);
+    // Undo any "give-up" styling the inline onerror may have applied so a
+    // successful retry actually becomes visible again.
+    try { img.style.display = ""; if (img.style.background) img.style.background = ""; } catch (e) {}
+    setTimeout(function () { try { img.src = bust(orig, n); } catch (e) {} }, 350 * n);
+    return true;
+  }
+
+  document.addEventListener("error", function (e) {
+    var img = e.target;
+    if (!isProductImg(img)) return;
+    // While retries remain, stop the event before it reaches the element's
+    // inline onerror (target phase) so the card isn't prematurely blanked.
+    if (retry(img)) { e.stopPropagation(); }
+  }, true);
+
+  function sweep() {
+    try {
+      var imgs = document.querySelectorAll("img.pcard-img, img.prow-img");
+      Array.prototype.forEach.call(imgs, function (img) {
+        if (img.complete && img.naturalWidth === 0 && img.src) retry(img);
+      });
+    } catch (e) {}
+  }
+
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", sweep);
+  else sweep();
+  window.addEventListener("load", sweep);
+  window.addEventListener("ws-sync-ready", function () { setTimeout(sweep, 300); });
+  setTimeout(sweep, 1500);
+  setTimeout(sweep, 4000);
+})();
