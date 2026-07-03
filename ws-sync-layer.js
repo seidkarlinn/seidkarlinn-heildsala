@@ -854,14 +854,13 @@ async function syncWithShopify() {
 /* ═══════════════════════════════════════════════════════════════════════════
    Force-fixed product images (fresh CDN path)
    ---------------------------------------------------------------------------
-   Two products — "Raw Seiðkarlinn honey pollen propolis 480g" and "Raw
-   Seiðkarlinn lyngblóma hunang 500g" — rendered as blank cream tiles for some
-   users even though their image URLs return HTTP 200 with a valid JPEG from
-   every server-side check (verified end-to-end). Root cause is edge-side, not
-   data: Shopify's CDN cache-keys by PATH and ignores the query string, so the
-   usual ?v=/cache-bust tricks can't dislodge a corrupted cached object sitting
-   on a particular Cloudflare POP — the original file path just keeps serving
-   the bad cached copy to affected clients.
+   Some products render as blank cream tiles for a subset of users even though
+   their image URLs return HTTP 200 with a valid JPEG from every server-side
+   check. Root cause is edge-side, not data: Shopify's CDN cache-keys by PATH
+   and ignores the query string, so the usual ?v=/cache-bust tricks can't
+   dislodge a corrupted cached object sitting on a particular Cloudflare POP —
+   the original file path just keeps serving the bad cached copy to affected
+   clients.
    Fix: repoint these products to Shopify's on-the-fly size-variant path
    (…_800x800.jpg), which is a DIFFERENT CDN path → a fresh cache key → a clean
    object regardless of POP. Same mechanism/idea as SHOPIFY_HANDLE_FIXES above:
@@ -1029,4 +1028,78 @@ async function syncWithShopify() {
   window.addEventListener("ws-sync-ready", function () { setTimeout(run, 200); });
   setTimeout(run, 1500);
   setTimeout(run, 4000);
+})();
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Category consolidation — Seiðkarlinn capsule line
+   ---------------------------------------------------------------------------
+   The Seiðkarlinn capsule line was scattered on the front page because two of
+   the capsules (Lignosus, Lions Mane) sat in category "Sveppir" while the rest
+   of the line — INCLUDING the other mushroom capsules (Fjórir sveppir, Reishi,
+   Chaga) — sat in "Fæðubótarefni". The default front-page sort groups strictly
+   by category, so those two landed in a separate block many categories away
+   from the rest of the line.
+   Fix: reassign those two products to "Fæðubótarefni" so the entire Seiðkarlinn
+   capsule line clusters as ONE contiguous group. They all share brand
+   "Seiðkarlinn" (the intra-category sort is brand → name), and every other
+   Seiðkarlinn item in Fæðubótarefni is hidden, so the capsules render side by
+   side. Pricing is UNAFFECTED: all buyer profiles carry both Fæðubótarefni and
+   Sveppir at 35%, so wholesale is identical either way.
+   Applied to PRODUCTS_BASE (its element objects are shared with the base
+   catalog, so the change survives re-renders) and the live PRODUCTS array —
+   same mechanism as IMG_FIXES; index.html untouched. Keyed by getProdKey(p).
+   ═══════════════════════════════════════════════════════════════════════════ */
+(function () {
+  var CAT_FIXES = {
+    "https___www_seidkarlinn_is_is_is_products_seidkarlinn_lignosus_450mg_60_hylki": "Fæðubótarefni",
+    "https___www_seidkarlinn_is_is_is_products_seidkarlinn_lions_mane_500mg_90_hylki": "Fæðubótarefni"
+  };
+
+  function keyOf(p) {
+    try { if (typeof window.getProdKey === "function") return window.getProdKey(p); } catch (e) {}
+    return String((p && (p.url || p.name)) || "")
+      .replace(/[^a-zA-Z0-9íáéóúýðþæöÍÁÉÓÚÝÐÞÆÖ]/g, "_").toLowerCase();
+  }
+
+  function applyCatFixes() {
+    try {
+      ["PRODUCTS", "PRODUCTS_BASE"].forEach(function (which) {
+        var arr = window[which];
+        if (!Array.isArray(arr)) return;
+        arr.forEach(function (p) {
+          if (!p) return;
+          var fx = CAT_FIXES[keyOf(p)];
+          if (fx && p.cat !== fx) p.cat = fx;
+        });
+      });
+    } catch (e) { console.warn("[ws-catfix] failed:", e); }
+  }
+
+  function install() {
+    if (typeof window.applyPricingOverrides !== "function") return false;
+    if (window.applyPricingOverrides._catFixWrapped) return true;
+    var orig = window.applyPricingOverrides;
+    window.applyPricingOverrides = function () {
+      var r = orig.apply(this, arguments);
+      applyCatFixes();                 // re-assert after every catalog rebuild
+      return r;
+    };
+    window.applyPricingOverrides._catFixWrapped = true;
+    return true;
+  }
+
+  function installAndRefresh() {
+    applyCatFixes();                   // patch whatever is already loaded
+    if (install()) {
+      try { window.applyPricingOverrides(); } catch (e) {}
+      try { if (typeof buildSidebar === "function") buildSidebar(); } catch (e) {}
+      try { if (typeof renderGrid === "function") renderGrid(); } catch (e) {}
+    }
+  }
+
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", installAndRefresh);
+  else installAndRefresh();
+  window.addEventListener("load", installAndRefresh);
+  window.addEventListener("ws-sync-ready", function () { setTimeout(installAndRefresh, 250); });
 })();
