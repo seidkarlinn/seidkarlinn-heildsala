@@ -849,3 +849,78 @@ async function syncWithShopify() {
   setTimeout(sweep, 1500);
   setTimeout(sweep, 4000);
 })();
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Force-fixed product images (fresh CDN path)
+   ---------------------------------------------------------------------------
+   Two products — "Raw Seiðkarlinn honey pollen propolis 480g" and "Raw
+   Seiðkarlinn lyngblóma hunang 500g" — rendered as blank cream tiles for some
+   users even though their image URLs return HTTP 200 with a valid JPEG from
+   every server-side check (verified end-to-end). Root cause is edge-side, not
+   data: Shopify's CDN cache-keys by PATH and ignores the query string, so the
+   usual ?v=/cache-bust tricks can't dislodge a corrupted cached object sitting
+   on a particular Cloudflare POP — the original file path just keeps serving
+   the bad cached copy to affected clients.
+   Fix: repoint these two products to Shopify's on-the-fly size-variant path
+   (…_800x800.jpg), which is a DIFFERENT CDN path → a fresh cache key → a clean
+   object regardless of POP. Same mechanism/idea as SHOPIFY_HANDLE_FIXES above:
+   a small key→url map applied to the live catalog after each rebuild, so
+   index.html and the blob store are both left untouched. To retire a fix once
+   the original object heals, just delete its line here.
+   Keyed by getProdKey(p) = (p.url||p.name) slugified.
+   ═══════════════════════════════════════════════════════════════════════════ */
+(function () {
+  var IMG_FIXES = {
+    "https___www_seidkarlinn_is_is_is_products_vitamin_d3_k2_dropar_30ml":
+      "https://cdn.shopify.com/s/files/1/0657/8264/4910/files/propolis480_e5bbaa2b-de17-4224-babe-2ae183165657_800x800.jpg?v=1782337801",
+    "https___www_seidkarlinn_is_is_is_products_seidkarlinn_lyngbloma_hunang_500g":
+      "https://cdn.shopify.com/s/files/1/0657/8264/4910/files/lyngbloma_500g_800x800.jpg?v=1782421818"
+  };
+
+  function keyOf(p) {
+    try { if (typeof window.getProdKey === "function") return window.getProdKey(p); } catch (e) {}
+    return String((p && (p.url || p.name)) || "")
+      .replace(/[^a-zA-Z0-9íáéóúýðþæöÍÁÉÓÚÝÐÞÆÖ]/g, "_").toLowerCase();
+  }
+
+  function applyImgFixes() {
+    try {
+      ["PRODUCTS", "PRODUCTS_BASE"].forEach(function (which) {
+        var arr = window[which];
+        if (!Array.isArray(arr)) return;
+        arr.forEach(function (p) {
+          if (!p) return;
+          var fx = IMG_FIXES[keyOf(p)];
+          if (fx && p.img !== fx) p.img = fx;
+        });
+      });
+    } catch (e) { console.warn("[ws-imgfix] failed:", e); }
+  }
+
+  function install() {
+    if (typeof window.applyPricingOverrides !== "function") return false;
+    if (window.applyPricingOverrides._imgFixWrapped) return true;
+    var orig = window.applyPricingOverrides;
+    window.applyPricingOverrides = function () {
+      var r = orig.apply(this, arguments);
+      applyImgFixes();                 // re-assert after every catalog rebuild
+      return r;
+    };
+    window.applyPricingOverrides._imgFixWrapped = true;
+    return true;
+  }
+
+  function installAndRefresh() {
+    applyImgFixes();                   // patch whatever is already loaded
+    if (install()) {
+      try { window.applyPricingOverrides(); } catch (e) {}
+      try { if (typeof renderGrid === "function") renderGrid(); } catch (e) {}
+    }
+  }
+
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", installAndRefresh);
+  else installAndRefresh();
+  window.addEventListener("load", installAndRefresh);
+  window.addEventListener("ws-sync-ready", function () { setTimeout(installAndRefresh, 200); });
+})();
