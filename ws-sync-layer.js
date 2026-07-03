@@ -862,7 +862,7 @@ async function syncWithShopify() {
    usual ?v=/cache-bust tricks can't dislodge a corrupted cached object sitting
    on a particular Cloudflare POP — the original file path just keeps serving
    the bad cached copy to affected clients.
-   Fix: repoint these two products to Shopify's on-the-fly size-variant path
+   Fix: repoint these products to Shopify's on-the-fly size-variant path
    (…_800x800.jpg), which is a DIFFERENT CDN path → a fresh cache key → a clean
    object regardless of POP. Same mechanism/idea as SHOPIFY_HANDLE_FIXES above:
    a small key→url map applied to the live catalog after each rebuild, so
@@ -875,7 +875,12 @@ async function syncWithShopify() {
     "https___www_seidkarlinn_is_is_is_products_vitamin_d3_k2_dropar_30ml":
       "https://cdn.shopify.com/s/files/1/0657/8264/4910/files/propolis480_e5bbaa2b-de17-4224-babe-2ae183165657_800x800.jpg?v=1782337801",
     "https___www_seidkarlinn_is_is_is_products_seidkarlinn_lyngbloma_hunang_500g":
-      "https://cdn.shopify.com/s/files/1/0657/8264/4910/files/lyngbloma_500g_800x800.jpg?v=1782421818"
+      "https://cdn.shopify.com/s/files/1/0657/8264/4910/files/lyngbloma_500g_800x800.jpg?v=1782421818",
+    // KSM-66 / Ashwagandha — old 374.png path was a poisoned CDN object for some
+    // clients (200 server-side but blank in-browser); point to Shopify's current
+    // featured image via the _800x800 size-variant path = fresh CDN cache key.
+    "https___www_seidkarlinn_is_is_is_products_seidkarlinn_ksm_66_450mg_90_hylki":
+      "https://cdn.shopify.com/s/files/1/0657/8264/4910/files/ashwagandha_f_6fc94dec-3e3b-4cea-8ed0-cdd928c87177_800x800.jpg?v=1782336023"
   };
 
   function keyOf(p) {
@@ -929,33 +934,33 @@ async function syncWithShopify() {
 /* ═══════════════════════════════════════════════════════════════════════════
    Restore wrongly-deleted Seiðkarlinn capsule products
    ---------------------------------------------------------------------------
-   Six ACTIVE, in-stock Seiðkarlinn capsule SKUs were sitting on the deleted
-   list and were therefore hidden from every visitor (users AND guests). Two
+   Active, in-stock Seiðkarlinn capsule SKUs were sitting on the deleted list
+   and were therefore hidden from every visitor (users AND guests). Two
    independent hide-sources are in play:
      • ADMIN_DELETED — the list baked into index.html. For non-admins it is used
        to PRE-FILTER window.PRODUCTS_BASE at load, and it is also unioned into
        the filter inside applyPricingOverrides. (Hides ksm-66/ashwagandha,
-       fjórir sveppir, reishi, chaga.)
+       fjórir sveppir, and — deliberately kept hidden — reishi, chaga.)
      • ws_deleted_products — the Netlify-Blob list synced into localStorage,
        also unioned into applyPricingOverrides. (Hides shilajit, maca.)
    ws-sync-layer.js is a classic <script>, so it shares the global lexical
    scope with index.html: ADMIN_DELETED (a top-level const array) is reachable
-   and its CONTENTS are mutable here. This block prunes the six handles from
+   and its CONTENTS are mutable here. This block prunes the RESTORE handles from
    BOTH sources — rewriting the localStorage copy via _wsReceiveFromServer so it
    does NOT trigger a spurious push to the shared blob — rebuilds
    window.PRODUCTS_BASE from the full catalog, then re-runs the real
    applyPricingOverrides so the products reappear with their correct pricing.
-   index.html and the blob store are left untouched; remove a line to re-hide a
-   product. (The underlying deleted-lists still list these; this override wins.)
+   index.html and the blob store are left untouched; add/remove a line to
+   show/hide a product. (Reishi + Chaga are intentionally left OFF this list, so
+   they stay hidden.)
    ═══════════════════════════════════════════════════════════════════════════ */
 (function () {
   var RESTORE = [
     "https://www.seidkarlinn.is/is-is/products/seidkarlinn-shilajit-60-hylki",
     "https://www.seidkarlinn.is/is-is/products/seidkarlinn-ksm-66-450mg-90-hylki",
     "https://www.seidkarlinn.is/is-is/products/seidkarlinn-maca-600mg-120hylki",
-    "https://www.seidkarlinn.is/is-is/products/seidkarlinn-fjorir-sveppir-600mg-60-hylki",
-    "https://www.seidkarlinn.is/is-is/products/seidkarlinn-reishi-600mg-90-hylki",
-    "https://www.seidkarlinn.is/is-is/products/seidkarlinn-chaga-500mg-90-hylki"
+    "https://www.seidkarlinn.is/is-is/products/seidkarlinn-fjorir-sveppir-600mg-60-hylki"
+    // Reishi + Chaga intentionally NOT restored (kept hidden — draft on Shopify)
   ];
   var RSET = {};
   RESTORE.forEach(function (u) { RSET[u] = 1; });
