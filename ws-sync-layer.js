@@ -924,3 +924,104 @@ async function syncWithShopify() {
   window.addEventListener("load", installAndRefresh);
   window.addEventListener("ws-sync-ready", function () { setTimeout(installAndRefresh, 200); });
 })();
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Restore wrongly-deleted Seiðkarlinn capsule products
+   ---------------------------------------------------------------------------
+   Six ACTIVE, in-stock Seiðkarlinn capsule SKUs were sitting on the deleted
+   list and were therefore hidden from every visitor (users AND guests). Two
+   independent hide-sources are in play:
+     • ADMIN_DELETED — the list baked into index.html. For non-admins it is used
+       to PRE-FILTER window.PRODUCTS_BASE at load, and it is also unioned into
+       the filter inside applyPricingOverrides. (Hides ksm-66/ashwagandha,
+       fjórir sveppir, reishi, chaga.)
+     • ws_deleted_products — the Netlify-Blob list synced into localStorage,
+       also unioned into applyPricingOverrides. (Hides shilajit, maca.)
+   ws-sync-layer.js is a classic <script>, so it shares the global lexical
+   scope with index.html: ADMIN_DELETED (a top-level const array) is reachable
+   and its CONTENTS are mutable here. This block prunes the six handles from
+   BOTH sources — rewriting the localStorage copy via _wsReceiveFromServer so it
+   does NOT trigger a spurious push to the shared blob — rebuilds
+   window.PRODUCTS_BASE from the full catalog, then re-runs the real
+   applyPricingOverrides so the products reappear with their correct pricing.
+   index.html and the blob store are left untouched; remove a line to re-hide a
+   product. (The underlying deleted-lists still list these; this override wins.)
+   ═══════════════════════════════════════════════════════════════════════════ */
+(function () {
+  var RESTORE = [
+    "https://www.seidkarlinn.is/is-is/products/seidkarlinn-shilajit-60-hylki",
+    "https://www.seidkarlinn.is/is-is/products/seidkarlinn-ksm-66-450mg-90-hylki",
+    "https://www.seidkarlinn.is/is-is/products/seidkarlinn-maca-600mg-120hylki",
+    "https://www.seidkarlinn.is/is-is/products/seidkarlinn-fjorir-sveppir-600mg-60-hylki",
+    "https://www.seidkarlinn.is/is-is/products/seidkarlinn-reishi-600mg-90-hylki",
+    "https://www.seidkarlinn.is/is-is/products/seidkarlinn-chaga-500mg-90-hylki"
+  ];
+  var RSET = {};
+  RESTORE.forEach(function (u) { RSET[u] = 1; });
+
+  // 1) Remove the handles from the baked ADMIN_DELETED array (shared global,
+  //    const binding but mutable contents). Guarded for TDZ / scope safety.
+  function pruneAdminDeleted() {
+    try {
+      if (typeof ADMIN_DELETED !== "undefined" && Array.isArray(ADMIN_DELETED)) {
+        for (var i = ADMIN_DELETED.length - 1; i >= 0; i--) {
+          if (RSET[ADMIN_DELETED[i]]) ADMIN_DELETED.splice(i, 1);
+        }
+      }
+    } catch (e) {}
+  }
+
+  // 2) Remove the handles from the blob-synced localStorage list. Use
+  //    _wsReceiveFromServer so this write is NOT pushed back to the shared blob
+  //    (otherwise every guest would rewrite server state).
+  function pruneLocalDeleted() {
+    try {
+      var raw = localStorage.getItem("ws_deleted_products");
+      if (!raw) return;
+      var arr = JSON.parse(raw);
+      if (!Array.isArray(arr)) return;
+      var filtered = arr.filter(function (u) { return !RSET[u]; });
+      if (filtered.length !== arr.length) {
+        if (typeof window._wsReceiveFromServer === "function") {
+          window._wsReceiveFromServer("ws_deleted_products", filtered);
+        } else {
+          localStorage.setItem("ws_deleted_products", JSON.stringify(filtered));
+        }
+      }
+    } catch (e) {}
+  }
+
+  // 3) Rebuild window.PRODUCTS_BASE from the full catalog, re-applying the
+  //    (now-pruned) ADMIN_DELETED filter for non-admins. The full unfiltered
+  //    copy lives in the top-level const PRODUCTS_BASE (falls back to PRODUCTS).
+  function rebuildBase() {
+    try {
+      var full = (typeof PRODUCTS_BASE !== "undefined" && Array.isArray(PRODUCTS_BASE)) ? PRODUCTS_BASE
+               : (typeof PRODUCTS !== "undefined" && Array.isArray(PRODUCTS)) ? PRODUCTS : null;
+      if (!full) return;
+      var isAdmin = false;
+      try { isAdmin = localStorage.getItem("ws_role") === "admin"; } catch (e) {}
+      var del = (typeof ADMIN_DELETED !== "undefined" && Array.isArray(ADMIN_DELETED)) ? ADMIN_DELETED : [];
+      window.PRODUCTS_BASE = isAdmin
+        ? full.slice()
+        : full.filter(function (p) { return del.indexOf(p.url) === -1 && del.indexOf(p.name) === -1; });
+    } catch (e) {}
+  }
+
+  function run() {
+    pruneAdminDeleted();
+    pruneLocalDeleted();
+    rebuildBase();
+    try { if (typeof window.applyPricingOverrides === "function") window.applyPricingOverrides(); } catch (e) {}
+    try { if (typeof buildSidebar === "function") buildSidebar(); } catch (e) {}
+    try { if (typeof renderGrid === "function") renderGrid(); } catch (e) {}
+  }
+
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", run);
+  else run();
+  window.addEventListener("load", run);
+  window.addEventListener("ws-sync-ready", function () { setTimeout(run, 200); });
+  setTimeout(run, 1500);
+  setTimeout(run, 4000);
+})();
