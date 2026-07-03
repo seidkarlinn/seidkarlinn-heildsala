@@ -752,3 +752,28 @@ async function syncWithShopify() {
   window.addEventListener("load", boot);
   window.addEventListener("ws-sync-ready", boot);
 })();
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Catalog category selector ("Allar vörur") — size trim
+   ---------------------------------------------------------------------------
+   The black category dropdown (select#catFilter.cat-title.cat-dropdown) reads
+   a bit oversized: on desktop the .cat-title editorial rule forces 31px with
+   8px/32px padding, so the pill is tall and wide. Scale it down for a tighter
+   header. Targeting the #catFilter id gives this rule higher specificity than
+   every single-class rule above, so it wins regardless of source order — no
+   !important needed and index.html is left untouched. Mobile (≤820px) gets a
+   matching, slightly smaller size. Injected as a <style> tag, same mechanism
+   as the other ws-fix layers in this file.
+   ═══════════════════════════════════════════════════════════════════════════ */
+(function () {
+  try {
+    var css =
+      "#catFilter.cat-dropdown{font-size:20px;line-height:1.2;padding:5px 28px 5px 11px;background-position:right 11px center;}" +
+      "@media(max-width:820px){#catFilter.cat-dropdown{font-size:16px;padding:4px 24px 4px 9px;background-position:right 9px center;}}";
+    var st = document.createElement("style");
+    st.setAttribute("data-ws-fix", "cat-dropdown-size");
+    st.appendChild(document.createTextNode(css));
+    (document.head || document.documentElement).appendChild(st);
+  } catch (e) {}
+})();
