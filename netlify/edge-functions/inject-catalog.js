@@ -286,7 +286,7 @@ const CORDYFRESH_PATCH = `
 // favicons.js handler keys on url.pathname, so the ?v=N query string is
 // transparent to it — but visible to browsers, which bust their cache on URL
 // change. Bump FAVICON_VERSION any time the favicon image bytes change.
-const FAVICON_VERSION = '2';
+const FAVICON_VERSION = '3';
 const FAVICON_LINKS = `
     <link rel="icon" type="image/x-icon" href="/favicon.ico?v=${FAVICON_VERSION}">
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png?v=${FAVICON_VERSION}">
