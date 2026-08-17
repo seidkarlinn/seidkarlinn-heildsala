@@ -1502,7 +1502,7 @@ body{font-optical-sizing:auto;font-kerning:normal;}
       style="background:var(--ink);margin-top:4px" disabled>
       📄 Reikningsviðskipti · 14 dagar
     </button>
-    <div class="checkout-note">Reikningur sendur á tölvupóst · Greiðist innan 14 daga</div>
+    <div class="checkout-note">Afhendingarseðill prentast við pöntun · Greiðist innan 14 daga</div>
   </div>
 </div>
 
@@ -7018,7 +7018,7 @@ function renderOrdersPanel() {
                   ${o.teyaSessionId?`<div class="od-note" style="color:var(--ink3)">🔑 Teya: ${esc(o.teyaSessionId.substring(0,20))}…</div>`:'<div class="od-note" style="color:var(--ink3)">⚠️ Enginn Teya session ID — endurgreiðsla ekki möguleg</div>'}
                   ${(o.refunds||[]).length?`<div class="od-note" style="color:var(--red)">↩ Endurgreiðslur: ${(o.refunds||[]).map(r=>r.fmtNum(amount)+' ISK').join(', ')}</div>`:''}
                   <div style="margin-top:10px">
-                    <button class="adm-btn primary" data-orderid="${esc(o.id)}" onclick="downloadOrderPDF(this.dataset.orderid)" style="width:100%">📄 Sækja reikning í PDF</button>
+                    <button class="adm-btn primary" data-orderid="${esc(o.id)}" onclick="downloadOrderPDF(this.dataset.orderid)" style="width:100%">📦 Sækja afhendingarseðil í PDF</button>
                   </div>
                 </div>
               </div>
@@ -7125,7 +7125,7 @@ function renderBuyerOrdersPanel() {
                   <div style="margin-top:10px">
                     <button class="adm-btn primary" data-orderid="${esc(o.id)}"
                       onclick="downloadOrderPDF(this.dataset.orderid)" style="width:100%">
-                      📄 Sækja reikning í PDF
+                      📦 Sækja afhendingarseðil í PDF
                     </button>
                   </div>
                 </div>
@@ -7155,13 +7155,13 @@ function renderBuyerInvoicesPanel() {
   document.getElementById('panelBuyerInvoices').innerHTML = `
     <div class="cat-hdr">
       <div>
-        <div class="cat-title">🧾 Reikningar</div>
-        <div class="cat-sub">${orders.length} reikningur${orders.length !== 1 ? 'ar' : ''}</div>
+        <div class="cat-title">📦 Afhendingarseðlar</div>
+        <div class="cat-sub">${orders.length} afhendingarseðill${orders.length !== 1 ? 'ar' : ''}</div>
       </div>
       <button class="adm-btn" onclick="replaceOrdersFromServer(renderBuyerInvoicesPanel)" style="display:flex;align-items:center;gap:5px">↻ Uppfæra</button>
     </div>
 
-    ${!orders.length ? `<div class="no-data">🧾 Engir reikningar fundust.</div>` : `
+    ${!orders.length ? `<div class="no-data">📦 Engir afhendingarseðlar fundust.</div>` : `
     <div style="display:flex;flex-direction:column;gap:12px;max-width:680px">
       ${orders.map(o => {
         const d = new Date(o.date);
@@ -7194,7 +7194,7 @@ function renderBuyerInvoicesPanel() {
             <button class="adm-btn primary" data-orderid="${esc(o.id)}"
               onclick="downloadOrderPDF(this.dataset.orderid)"
               style="display:flex;align-items:center;gap:6px">
-              📄 Sækja reikning í PDF
+              📦 Sækja afhendingarseðil í PDF
             </button>
           </div>
         </div>`;
@@ -8133,7 +8133,7 @@ async function invoiceCheckout() {
 
   const btn = document.getElementById('invoiceBtn');
   btn.disabled = true;
-  btn.textContent = '⏳ Bý til reikning…';
+  btn.textContent = '⏳ Bý til afhendingarseðil…';
 
   try {
     const invoiceNo = nextInvoiceNumber();
@@ -8165,10 +8165,11 @@ async function invoiceCheckout() {
     const totalVsk24    = lines.filter(l=>l.vskRate>0).reduce((s,l) => s + l.vskAmt, 0);
     const totalVsk0     = lines.filter(l=>l.vskRate===0).reduce((s,l) => s + l.total, 0);
 
-    // Generate and download PDF first (fail fast - don't log order if this throws)
-    generateInvoicePDF({
+    // Generate delivery note first (fail fast - don't log order if this throws)
+    generateDeliveryNote({
       invoiceNo, today, due, buyerName, buyerEmail, buyerKt, buyerAddr, note, lines,
       totalGross, totalExVsk, totalVsk24, totalVsk0,
+      payLabel: 'Reikningsviðskipti · greiðist innan 14 daga',
     });
 
     // Log order in admin (only after PDF succeeded)
@@ -8201,21 +8202,22 @@ async function invoiceCheckout() {
     toggleCart();
     localStorage.setItem('ws_last_order', invoiceNo);
 
-    showToast('✓ Reikningur ' + invoiceNo + ' búinn til!', 4000);
+    showToast('✓ Afhendingarseðill ' + invoiceNo + ' búinn til!', 4000);
 
   } catch(err) {
-    console.error('Invoice error:', err);
-    showToast('⚠️ Villa við að búa til reikning: ' + err.message, 4000);
+    console.error('Delivery note error:', err);
+    showToast('⚠️ Villa við að búa til afhendingarseðil: ' + err.message, 4000);
   } finally {
     btn.disabled = false;
     btn.textContent = '📄 Reikningsviðskipti · 14 dagar';
   }
 }
 
-// ── PDF Generation ────────────────────────────────────
-function generateInvoicePDF(data) {
+// ── Afhendingarseðill (delivery note / packing list) ──
+function generateDeliveryNote(data) {
   const { invoiceNo, today, due, buyerName, buyerEmail, buyerKt, buyerAddr,
           note, lines, totalGross, totalExVsk, totalVsk24, totalVsk0 } = data;
+  const payLabel = data.payLabel || 'Reikningsviðskipti · 14 dagar';
 
   const fmt = v => Math.round(v).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ' ISK';
   const fmtPct = r => (r * 100).toFixed(0) + '%';
@@ -8223,25 +8225,30 @@ function generateInvoicePDF(data) {
   // Build HTML for the invoice
   const lineRows = lines.map(l => `
     <tr>
+      <td style="padding:7px 8px;border-bottom:1px solid #eee;text-align:center"><span class="pick-box"></span></td>
       <td style="padding:7px 8px;border-bottom:1px solid #eee;font-size:11px">${esc(l.name)}</td>
-      <td style="padding:7px 8px;border-bottom:1px solid #eee;font-size:11px;text-align:center">${l.qty}</td>
+      <td style="padding:7px 8px;border-bottom:1px solid #eee;font-size:13px;font-weight:700;text-align:center">${l.qty}</td>
       <td style="padding:7px 8px;border-bottom:1px solid #eee;font-size:11px;text-align:right">${fmtNum(l.unit)}</td>
       <td style="padding:7px 8px;border-bottom:1px solid #eee;font-size:11px;text-align:center">${fmtPct(l.vskRate)}</td>
       <td style="padding:7px 8px;border-bottom:1px solid #eee;font-size:11px;text-align:right">${fmtNum(l.vsk != null ? l.vsk : l.vskAmt)}</td>
       <td style="padding:7px 8px;border-bottom:1px solid #eee;font-size:11px;text-align:right;font-weight:500">${fmtNum(l.total)}</td>
     </tr>`).join('');
 
+  const totalUnits = lines.reduce((s,l) => s + (parseInt(l.qty) || 0), 0);
+
   const vskSummary = `
+    <tr><td colspan="5" style="padding:4px 8px;font-size:11px;color:#555">Fjöldi vörulína / eininga</td>
+        <td style="padding:4px 8px;font-size:11px;text-align:right">${lines.length} / ${totalUnits}</td></tr>
     <tr><td colspan="5" style="padding:4px 8px;font-size:11px;color:#555">Samtals án VSK</td>
         <td style="padding:4px 8px;font-size:11px;text-align:right">${fmtNum(totalExVsk)}</td></tr>
-    ${(totalVsk24 + (totalVsk0 > 0 ? 0 : 0)) >= 0 ? `<tr><td colspan="5" style="padding:4px 8px;font-size:11px;color:#555">Samtals VSK</td>
-        <td style="padding:4px 8px;font-size:11px;text-align:right">${fmtNum(totalVsk24)}</td></tr>` : ''}`;
+    <tr><td colspan="5" style="padding:4px 8px;font-size:11px;color:#555">Samtals VSK</td>
+        <td style="padding:4px 8px;font-size:11px;text-align:right">${fmtNum(totalVsk24)}</td></tr>`;
 
-  const invoiceHTML = `<!DOCTYPE html>
+  const deliveryHTML = `<!DOCTYPE html>
 <html lang="is">
 <head>
 <meta charset="UTF-8">
-<title>Reikningur ${invoiceNo} — Seiðkarlinn</title>
+<title>Afhendingarseðill ${invoiceNo} — Seiðkarlinn</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: Arial, sans-serif; font-size: 12px; color: #1a1a1a; background: #fff; padding: 40px; max-width: 780px; margin: 0 auto; }
@@ -8273,6 +8280,11 @@ function generateInvoicePDF(data) {
   .payment-detail { font-size: 11px; color: #333; line-height: 1.8; }
   .legal-note { font-size: 9px; color: #888; line-height: 1.6; border-top: 1px solid #eee; padding-top: 12px; }
   .due-highlight { color: #2A5C2A; font-weight: 700; }
+  .invoice-subtitle { font-size: 10px; color: #888; margin-bottom: 8px; letter-spacing: .04em; }
+  .pick-box { display: inline-block; width: 13px; height: 13px; border: 1.5px solid #999; border-radius: 3px; }
+  .sign-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 18px; margin-top: 18px; }
+  .sign-cell { font-size: 9px; color: #777; text-transform: uppercase; letter-spacing: .06em; }
+  .sign-line { border-bottom: 1px solid #999; height: 26px; margin-bottom: 4px; }
   @media print { body { padding: 20px; } }
 </style>
 </head>
@@ -8289,18 +8301,19 @@ function generateInvoicePDF(data) {
     </div>
   </div>
   <div class="invoice-meta">
-    <div class="invoice-title">REIKNINGUR</div>
+    <div class="invoice-title">AFHENDINGARSEÐILL</div>
+    <div class="invoice-subtitle">Fylgiseðill / tínslulisti — ekki reikningur</div>
     <table class="meta-table">
-      <tr><td>Reikningsnúmer:</td><td>${invoiceNo}</td></tr>
-      <tr><td>Útgáfudagur:</td><td>${formatDate(today)}</td></tr>
-      <tr><td>Gjalddagi:</td><td class="due-highlight">${formatDate(due)}</td></tr>
+      <tr><td>Afhendingarseðill / pöntun nr.:</td><td>${invoiceNo}</td></tr>
+      <tr><td>Dagsetning:</td><td>${formatDate(today)}</td></tr>
+      <tr><td>Greiðslumáti:</td><td>${esc(payLabel)}</td></tr>
     </table>
   </div>
 </div>
 
 <div class="parties">
   <div class="party-box">
-    <div class="party-label">Seljandi</div>
+    <div class="party-label">Sendandi</div>
     <div class="party-name">Seiðkarlinn</div>
     <div class="party-detail">
       Faxafen 14, 108 Reykjavík<br>
@@ -8309,7 +8322,7 @@ function generateInvoicePDF(data) {
     </div>
   </div>
   <div class="party-box">
-    <div class="party-label">Kaupandi</div>
+    <div class="party-label">Móttakandi — afhendingarstaður</div>
     <div class="party-name">${esc(buyerName)}</div>
     <div class="party-detail">
       ${buyerKt ? `Kt. ${esc(buyerKt)}<br>` : ''}
@@ -8322,11 +8335,12 @@ function generateInvoicePDF(data) {
 <table class="items">
   <thead>
     <tr>
-      <th style="text-align:left;width:50%">Vara / þjónusta</th>
-      <th style="text-align:center;width:8%">Magn</th>
-      <th style="text-align:right;width:14%">Einingarverð</th>
-      <th style="text-align:center;width:8%">VSK%</th>
-      <th style="text-align:right;width:12%">VSK kr.</th>
+      <th style="text-align:center;width:5%">✓</th>
+      <th style="text-align:left;width:41%">Vara</th>
+      <th style="text-align:center;width:9%">Magn</th>
+      <th style="text-align:right;width:13%">Einingarverð</th>
+      <th style="text-align:center;width:7%">VSK%</th>
+      <th style="text-align:right;width:11%">VSK kr.</th>
       <th style="text-align:right;width:14%">Samtals (ISK)</th>
     </tr>
   </thead>
@@ -8338,21 +8352,22 @@ function generateInvoicePDF(data) {
 <table class="totals-table">
   ${vskSummary}
   <tr class="grand-total">
-    <td colspan="5" style="padding:8px">Heildarupphæð</td>
+    <td colspan="5" style="padding:8px">Verðmæti sendingar</td>
     <td style="text-align:right;padding:8px">${fmt(totalGross)}</td>
   </tr>
 </table>
 
 <div class="payment-box">
-  <div class="payment-title">💳 Greiðsluupplýsingar</div>
+  <div class="payment-title">📦 Afhending</div>
   <div class="payment-detail">
-    <strong>Greiðist innan 14 daga frá útgáfudegi reiknings.</strong><br>
-    Gjalddagi: <strong class="due-highlight">${formatDate(due)}</strong><br>
-    Reikningur: <strong>${invoiceNo}</strong><br>
-    <br>
-    Banki: <strong>0515 - Íslandsbanki</strong><br>
-    Reikningsnúmer: <strong>0515-26-011733</strong><br>
-    Tilvísunarnúmer: ${invoiceNo}
+    Fjöldi vörulína: <strong>${lines.length}</strong> &nbsp;|&nbsp; Fjöldi eininga: <strong>${totalUnits}</strong><br>
+    Greiðslumáti: <strong>${esc(payLabel)}</strong><br>
+    Farðu yfir listann og hakaðu við hverja vöru þegar hún hefur verið tínd og pakkað.
+  </div>
+  <div class="sign-row">
+    <div class="sign-cell"><div class="sign-line"></div>Tínt / pakkað af</div>
+    <div class="sign-cell"><div class="sign-line"></div>Dagsetning</div>
+    <div class="sign-cell"><div class="sign-line"></div>Móttekið af (undirskrift)</div>
   </div>
 </div>
 
@@ -8361,29 +8376,29 @@ ${note ? `<div style="background:#fffdf0;border:1px solid #e8e0b0;border-radius:
 </div>` : ''}
 
 <div class="legal-note">
-  Þessi reikningur er gefinn út í samræmi við lög nr. 50/1988 um virðisaukaskatt og reglur um bókhaldsskyldu
-  skv. lögum nr. 145/1994. VSK-skráning: ${SELLER.vsk}.
-  Vanskil bera dráttarvexti skv. lögum nr. 38/2001 frá gjalddaga.
-  Reikningur nr. ${invoiceNo} — ${SELLER.name} — Kt. ${SELLER.kt}.
+  <strong>Þetta skjal er afhendingarseðill (fylgiseðill) — ekki reikningur og ekki greiðslukvittun.</strong>
+  Verð eru sýnd til upplýsingar um verðmæti sendingar. Reikningur er gefinn út sérstaklega.
+  Athugasemdir við sendinguna skal tilkynna innan 7 daga frá afhendingu á ${SELLER.email}.
+  Afhendingarseðill nr. ${invoiceNo} — ${SELLER.name} — Kt. ${SELLER.kt}.
 </div>
 
 </body></html>`;
 
-  // Open invoice in new tab — browser prints/saves as PDF
-  const blob = new Blob([invoiceHTML], { type: 'text/html;charset=utf-8' });
+  // Open delivery note in new tab — browser prints/saves as PDF
+  const blob = new Blob([deliveryHTML], { type: 'text/html;charset=utf-8' });
   const url  = URL.createObjectURL(blob);
   const tab  = window.open(url, '_blank');
   if (tab) {
-    showToast('📄 Reikningur opnaður — veldu "Vista sem PDF" í prentglugganum', 4000);
+    showToast('📦 Afhendingarseðill opnaður — veldu "Vista sem PDF" í prentglugganum', 4000);
   } else {
     // Popup blocked — download as HTML file instead
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'Reikningur-' + invoiceNo + '.html';
+    a.download = 'Afhendingarsedill-' + invoiceNo + '.html';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    showToast('📄 Reikningur vistaður — opnaðu skrána í vafra og prentaðu sem PDF', 5000);
+    showToast('📦 Afhendingarseðill vistaður — opnaðu skrána í vafra og prentaðu sem PDF', 5000);
   }
   setTimeout(() => URL.revokeObjectURL(url), 30000);
 }
@@ -9637,7 +9652,7 @@ document.getElementById('vmModal').addEventListener('click', function(e) {
 
 
 // ══════════════════════════════════════════════════════
-// REIKNINGUR Í PDF — Sækja reikning fyrir pöntun
+// AFHENDINGARSEÐILL Í PDF — Sækja fylgiseðil fyrir pöntun
 // ══════════════════════════════════════════════════════
 
 function downloadOrderPDF(orderId) {
@@ -9672,7 +9687,7 @@ function downloadOrderPDF(orderId) {
       qty,
       unit,
       vskRate,
-      total:   lineTotal,   // generateInvoicePDF expects l.total
+      total:   lineTotal,   // generateDeliveryNote expects l.total
       exVsk:   lineExVsk,
       vsk:     lineVsk,
     };
@@ -9683,10 +9698,13 @@ function downloadOrderPDF(orderId) {
   const totalVsk24 = lines.filter(l => l.vskRate > 0).reduce((s,l) => s + l.vsk, 0);
   const totalVsk0  = lines.filter(l => l.vskRate === 0).reduce((s,l) => s + l.total, 0);
 
-  generateInvoicePDF({
+  generateDeliveryNote({
     invoiceNo,
     today,
     due,
+    payLabel: o.status === 'invoice'
+      ? 'Reikningsviðskipti · greiðist innan 14 daga'
+      : 'Staðgreitt · kortagreiðsla',
     buyerName:  o.buyerName  || o.buyerUser || '—',
     buyerEmail: o.buyerEmail || '',
     buyerKt:    '',
