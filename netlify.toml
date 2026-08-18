@@ -12,6 +12,24 @@
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
 
+# HTML must never be held by an intermediate cache: the app ships as a single
+# index.html, so a stale copy hides every deploy. Static assets keep their
+# default caching. CDN-Cache-Control is honoured by CDNs in front of Netlify
+# (e.g. Cloudflare); Netlify-CDN-Cache-Control covers Netlify's own edge.
+[[headers]]
+  for = "/"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+    CDN-Cache-Control = "public, max-age=0, must-revalidate"
+    Netlify-CDN-Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "/*.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+    CDN-Cache-Control = "public, max-age=0, must-revalidate"
+    Netlify-CDN-Cache-Control = "public, max-age=0, must-revalidate"
+
 # category-order runs BEFORE inject-catalog so it is the OUTER wrapper and
 # post-processes inject-catalog's already-transformed HTML (covers the
 # edge-injected CordyFresh + 2026-05-28 products too).
