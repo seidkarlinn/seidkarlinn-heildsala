@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """One-shot slot: afhendingarseðill -> afhendingarlisti (wording only).
 
+Payload version: 2 (re-push to fire the workflow's push trigger).
+
 The previous payload turned the generated document from an invoice into a
 delivery note (commit 351a179). Its bot commit carried [skip ci], so Netlify
 skipped that build and the change never reached production. This payload
