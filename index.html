@@ -1502,7 +1502,7 @@ body{font-optical-sizing:auto;font-kerning:normal;}
       style="background:var(--ink);margin-top:4px" disabled>
       📄 Reikningsviðskipti · 14 dagar
     </button>
-    <div class="checkout-note">Afhendingarseðill prentast við pöntun · Greiðist innan 14 daga</div>
+    <div class="checkout-note">Afhendingarlisti prentast við pöntun · Greiðist innan 14 daga</div>
   </div>
 </div>
 
@@ -7018,7 +7018,7 @@ function renderOrdersPanel() {
                   ${o.teyaSessionId?`<div class="od-note" style="color:var(--ink3)">🔑 Teya: ${esc(o.teyaSessionId.substring(0,20))}…</div>`:'<div class="od-note" style="color:var(--ink3)">⚠️ Enginn Teya session ID — endurgreiðsla ekki möguleg</div>'}
                   ${(o.refunds||[]).length?`<div class="od-note" style="color:var(--red)">↩ Endurgreiðslur: ${(o.refunds||[]).map(r=>r.fmtNum(amount)+' ISK').join(', ')}</div>`:''}
                   <div style="margin-top:10px">
-                    <button class="adm-btn primary" data-orderid="${esc(o.id)}" onclick="downloadOrderPDF(this.dataset.orderid)" style="width:100%">📦 Sækja afhendingarseðil í PDF</button>
+                    <button class="adm-btn primary" data-orderid="${esc(o.id)}" onclick="downloadOrderPDF(this.dataset.orderid)" style="width:100%">📦 Sækja afhendingarlista í PDF</button>
                   </div>
                 </div>
               </div>
@@ -7125,7 +7125,7 @@ function renderBuyerOrdersPanel() {
                   <div style="margin-top:10px">
                     <button class="adm-btn primary" data-orderid="${esc(o.id)}"
                       onclick="downloadOrderPDF(this.dataset.orderid)" style="width:100%">
-                      📦 Sækja afhendingarseðil í PDF
+                      📦 Sækja afhendingarlista í PDF
                     </button>
                   </div>
                 </div>
@@ -7155,13 +7155,13 @@ function renderBuyerInvoicesPanel() {
   document.getElementById('panelBuyerInvoices').innerHTML = `
     <div class="cat-hdr">
       <div>
-        <div class="cat-title">📦 Afhendingarseðlar</div>
-        <div class="cat-sub">${orders.length} afhendingarseðill${orders.length !== 1 ? 'ar' : ''}</div>
+        <div class="cat-title">📦 Afhendingarlistar</div>
+        <div class="cat-sub">${orders.length} afhendingarlist${orders.length !== 1 ? 'ar' : 'i'}</div>
       </div>
       <button class="adm-btn" onclick="replaceOrdersFromServer(renderBuyerInvoicesPanel)" style="display:flex;align-items:center;gap:5px">↻ Uppfæra</button>
     </div>
 
-    ${!orders.length ? `<div class="no-data">📦 Engir afhendingarseðlar fundust.</div>` : `
+    ${!orders.length ? `<div class="no-data">📦 Engir afhendingarlistar fundust.</div>` : `
     <div style="display:flex;flex-direction:column;gap:12px;max-width:680px">
       ${orders.map(o => {
         const d = new Date(o.date);
@@ -7194,7 +7194,7 @@ function renderBuyerInvoicesPanel() {
             <button class="adm-btn primary" data-orderid="${esc(o.id)}"
               onclick="downloadOrderPDF(this.dataset.orderid)"
               style="display:flex;align-items:center;gap:6px">
-              📦 Sækja afhendingarseðil í PDF
+              📦 Sækja afhendingarlista í PDF
             </button>
           </div>
         </div>`;
@@ -8133,7 +8133,7 @@ async function invoiceCheckout() {
 
   const btn = document.getElementById('invoiceBtn');
   btn.disabled = true;
-  btn.textContent = '⏳ Bý til afhendingarseðil…';
+  btn.textContent = '⏳ Bý til afhendingarlista…';
 
   try {
     const invoiceNo = nextInvoiceNumber();
@@ -8202,18 +8202,18 @@ async function invoiceCheckout() {
     toggleCart();
     localStorage.setItem('ws_last_order', invoiceNo);
 
-    showToast('✓ Afhendingarseðill ' + invoiceNo + ' búinn til!', 4000);
+    showToast('✓ Afhendingarlisti ' + invoiceNo + ' búinn til!', 4000);
 
   } catch(err) {
     console.error('Delivery note error:', err);
-    showToast('⚠️ Villa við að búa til afhendingarseðil: ' + err.message, 4000);
+    showToast('⚠️ Villa við að búa til afhendingarlista: ' + err.message, 4000);
   } finally {
     btn.disabled = false;
     btn.textContent = '📄 Reikningsviðskipti · 14 dagar';
   }
 }
 
-// ── Afhendingarseðill (delivery note / packing list) ──
+// ── Afhendingarlisti (delivery note / packing list) ──
 function generateDeliveryNote(data) {
   const { invoiceNo, today, due, buyerName, buyerEmail, buyerKt, buyerAddr,
           note, lines, totalGross, totalExVsk, totalVsk24, totalVsk0 } = data;
@@ -8248,7 +8248,7 @@ function generateDeliveryNote(data) {
 <html lang="is">
 <head>
 <meta charset="UTF-8">
-<title>Afhendingarseðill ${invoiceNo} — Seiðkarlinn</title>
+<title>Afhendingarlisti ${invoiceNo} — Seiðkarlinn</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: Arial, sans-serif; font-size: 12px; color: #1a1a1a; background: #fff; padding: 40px; max-width: 780px; margin: 0 auto; }
@@ -8301,10 +8301,10 @@ function generateDeliveryNote(data) {
     </div>
   </div>
   <div class="invoice-meta">
-    <div class="invoice-title">AFHENDINGARSEÐILL</div>
-    <div class="invoice-subtitle">Fylgiseðill / tínslulisti — ekki reikningur</div>
+    <div class="invoice-title">AFHENDINGARLISTI</div>
+    <div class="invoice-subtitle">Tínslu- og fylgilisti — ekki reikningur</div>
     <table class="meta-table">
-      <tr><td>Afhendingarseðill / pöntun nr.:</td><td>${invoiceNo}</td></tr>
+      <tr><td>Afhendingarlisti / pöntun nr.:</td><td>${invoiceNo}</td></tr>
       <tr><td>Dagsetning:</td><td>${formatDate(today)}</td></tr>
       <tr><td>Greiðslumáti:</td><td>${esc(payLabel)}</td></tr>
     </table>
@@ -8376,10 +8376,10 @@ ${note ? `<div style="background:#fffdf0;border:1px solid #e8e0b0;border-radius:
 </div>` : ''}
 
 <div class="legal-note">
-  <strong>Þetta skjal er afhendingarseðill (fylgiseðill) — ekki reikningur og ekki greiðslukvittun.</strong>
+  <strong>Þetta skjal er afhendingarlisti (fylgiskjal) — ekki reikningur og ekki greiðslukvittun.</strong>
   Verð eru sýnd til upplýsingar um verðmæti sendingar. Reikningur er gefinn út sérstaklega.
   Athugasemdir við sendinguna skal tilkynna innan 7 daga frá afhendingu á ${SELLER.email}.
-  Afhendingarseðill nr. ${invoiceNo} — ${SELLER.name} — Kt. ${SELLER.kt}.
+  Afhendingarlisti nr. ${invoiceNo} — ${SELLER.name} — Kt. ${SELLER.kt}.
 </div>
 
 </body></html>`;
@@ -8389,16 +8389,16 @@ ${note ? `<div style="background:#fffdf0;border:1px solid #e8e0b0;border-radius:
   const url  = URL.createObjectURL(blob);
   const tab  = window.open(url, '_blank');
   if (tab) {
-    showToast('📦 Afhendingarseðill opnaður — veldu "Vista sem PDF" í prentglugganum', 4000);
+    showToast('📦 Afhendingarlisti opnaður — veldu "Vista sem PDF" í prentglugganum', 4000);
   } else {
     // Popup blocked — download as HTML file instead
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'Afhendingarsedill-' + invoiceNo + '.html';
+    a.download = 'Afhendingarlisti-' + invoiceNo + '.html';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    showToast('📦 Afhendingarseðill vistaður — opnaðu skrána í vafra og prentaðu sem PDF', 5000);
+    showToast('📦 Afhendingarlisti vistaður — opnaðu skrána í vafra og prentaðu sem PDF', 5000);
   }
   setTimeout(() => URL.revokeObjectURL(url), 30000);
 }
@@ -9652,7 +9652,7 @@ document.getElementById('vmModal').addEventListener('click', function(e) {
 
 
 // ══════════════════════════════════════════════════════
-// AFHENDINGARSEÐILL Í PDF — Sækja fylgiseðil fyrir pöntun
+// AFHENDINGARLISTI Í PDF — Sækja afhendingarlista fyrir pöntun
 // ══════════════════════════════════════════════════════
 
 function downloadOrderPDF(orderId) {
