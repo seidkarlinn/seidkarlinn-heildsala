@@ -1,91 +1,30 @@
 #!/usr/bin/env python3
-"""One-shot slot: afhendingarseðill -> afhendingarlisti (wording only).
+"""One-shot slot — currently empty.
 
-Payload version: 2 (re-push to fire the workflow's push trigger).
+The last payload shipped in two commits:
 
-The previous payload turned the generated document from an invoice into a
-delivery note (commit 351a179). Its bot commit carried [skip ci], so Netlify
-skipped that build and the change never reached production. This payload
-renames the document to "afhendingarlisti" as requested and commits WITHOUT
-[skip ci] so Netlify deploys both changes together.
+  351a179  reikningur -> afhendingarsedill: both checkout paths
+           (reikningsvidskipti / invoiceCheckout and stadgreidsla-kortagreidsla /
+           downloadOrderPDF) now call generateDeliveryNote() and print a delivery
+           note instead of an invoice.
+  cb63297  wording renamed to "afhendingarlisti" (title AFHENDINGARLISTI,
+           buttons "Saekja afhendingarlista i PDF", panel "Afhendingarlistar",
+           filename Afhendingarlisti-SK-xxxx.html).
 
-Idempotent — exits 0 with no changes when index.html already says
-AFHENDINGARLISTI. Aborts if index.html is in neither expected state.
+Note for the next payload: the bot commit produced by this workflow must NOT
+contain [skip ci] if the change needs to reach production — Netlify honours it
+and silently skips the build (that is why 351a179 never deployed on its own).
+Netlify also appears not to build on this workflow's pushes at all, so follow
+up with a commit pushed from outside Actions to trigger the deploy.
+
+How to use this slot: replace the body below with a patch that edits
+index.html, then commit + push it. The fix-shopify-sync.yml workflow triggers
+on pushes to this file, runs it, and pushes the result. Keep it idempotent.
 """
-import io, pathlib, subprocess, sys
-
-P = pathlib.Path("index.html")
-
-# Exact anchors first (these must not be touched by the generic stem rules).
-EXACT = [
-    ('<div class="invoice-subtitle">Fylgiseðill / tínslulisti — ekki reikningur</div>',
-     '<div class="invoice-subtitle">Tínslu- og fylgilisti — ekki reikningur</div>'),
-    ('<strong>Þetta skjal er afhendingarseðill (fylgiseðill) — ekki reikningur og ekki greiðslukvittun.</strong>',
-     '<strong>Þetta skjal er afhendingarlisti (fylgiskjal) — ekki reikningur og ekki greiðslukvittun.</strong>'),
-    ('// AFHENDINGARSEÐILL Í PDF — Sækja fylgiseðil fyrir pöntun',
-     '// AFHENDINGARLISTI Í PDF — Sækja afhendingarlista fyrir pöntun'),
-    ("""        <div class="cat-sub">${orders.length} afhendingarseðill${orders.length !== 1 ? 'ar' : ''}</div>""",
-     """        <div class="cat-sub">${orders.length} afhendingarlist${orders.length !== 1 ? 'ar' : 'i'}</div>"""),
-    ("a.download = 'Afhendingarsedill-' + invoiceNo + '.html';",
-     "a.download = 'Afhendingarlisti-' + invoiceNo + '.html';"),
-]
-
-# Generic word forms, longest stem first.
-STEMS = [
-    ("AFHENDINGARSEÐILL", "AFHENDINGARLISTI"),
-    ("Afhendingarseðlar", "Afhendingarlistar"),
-    ("afhendingarseðlar", "afhendingarlistar"),
-    ("Afhendingarseðill", "Afhendingarlisti"),
-    ("afhendingarseðill", "afhendingarlisti"),
-    ("Afhendingarseðil", "Afhendingarlista"),
-    ("afhendingarseðil", "afhendingarlista"),
-]
-
-
-def apply_patch() -> bool:
-    s = io.open(P, encoding="utf-8").read()
-    if "AFHENDINGARLISTI" in s:
-        print("index.html already says AFHENDINGARLISTI; nothing to do.")
-        return False
-    if "AFHENDINGARSEÐILL" not in s:
-        sys.exit("PATCH ABORTED - index.html contains neither AFHENDINGARSEÐILL "
-                 "nor AFHENDINGARLISTI; refusing to guess.")
-
-    for old, new in EXACT:
-        if old not in s:
-            sys.exit("PATCH ABORTED - anchor not found:\n" + old[:200])
-        s = s.replace(old, new)
-
-    for old, new in STEMS:
-        s = s.replace(old, new)
-
-    io.open(P, "w", encoding="utf-8").write(s)
-    print("index.html patched: afhendingarseðill -> afhendingarlisti")
-    return True
 
 
 def main() -> None:
-    if not apply_patch():
-        return
-
-    changed = subprocess.run(["git", "diff", "--quiet", "--", "index.html"]).returncode != 0
-    if not changed:
-        print("index.html unchanged; nothing to commit.")
-        return
-    run = lambda *a: subprocess.run(list(a), check=True)
-    run("git", "config", "user.name", "seidkarlinn-bot")
-    run("git", "config", "user.email", "bot@seidkarlinn.is")
-    run("git", "add", "index.html")
-    # No [skip ci]: the previous delivery-note commit was skipped by Netlify,
-    # so this build must go out and carry both changes to production.
-    run("git", "commit", "-m",
-        "feat: endurnefna afhendingarsedil i afhendingarlista\n\n"
-        "Titill skjalsins verdur AFHENDINGARLISTI, undirtitill 'Tinslu- og\n"
-        "fylgilisti - ekki reikningur'. Hnappar: 'Saekja afhendingarlista i PDF',\n"
-        "spjald: 'Afhendingarlistar', skraarnafn: Afhendingarlisti-SK-xxxx.html,\n"
-        "tilkynningar og villuskilabod uppfaerd i somu ord.")
-    run("git", "push")
-    print("Pushed.")
+    print("One-shot slot is empty — nothing to do.")
 
 
 if __name__ == "__main__":
