@@ -21,6 +21,12 @@ in this slot's history, Netlify does not appear to build on this workflow's
 pushes at all, so a follow-up commit pushed from outside Actions is still
 needed to trigger the deploy.
 
+Note for the next payload: pushes made through the Claude GitHub connector do
+not appear to raise the push event Actions listens for, so arming this slot from
+there is not enough — start the run by hand from the Actions tab
+("Fix Shopify Sync (one-shot)" -> Run workflow), which this workflow allows via
+workflow_dispatch.
+
 Idempotent: re-running after the patch has landed changes nothing and exits 0.
 """
 import os
