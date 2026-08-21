@@ -149,7 +149,11 @@
   // ws_vidskm) that does not yet have an entry in ws_pricing_users — or has
   // an empty entry — is seeded with the standard category-discount template.
   // This guarantees new users get the right per-category percentages out of
-  // the box, instead of falling back to the 25% global default.
+  // the box. There is no global default discount any more (removed 2026-08-20):
+  // a category that is not listed here — or a user whose entry is edited to
+  // remove it — means full retail for that user, not a 25% fallback. Every
+  // discount is per user, so adjust individual customers in "Verð og afslættir"
+  // after they are seeded.
   //
   // Runs admin-side only: the seeding write is pushed to the server, so it
   // only needs to happen once for any given user. Edit STANDARD_PRICING_TEMPLATE
@@ -520,8 +524,11 @@ async function syncWithShopify() {
           p.wholesale = p.wholesale || p.price;                        // fixed price (discount included)
           p._priceOverridden = true;                                   // mark fixed: grid/cart use stored wholesale, never apply buyer discount on top
         } else if (!p.wholesale) {
-          var r = parseInt((p.price || "").replace(/[^\d]/g, "")) || 0; // fallback: global 25% off
-          if (r) p.wholesale = _isk(Math.round(r * 0.75));
+          // No baked wholesale price: fall back to full retail. There is no
+          // global 25% default any more — per-customer category discounts are
+          // applied by applyPricingOverrides().
+          var r = parseInt((p.price || "").replace(/[^\d]/g, "")) || 0;
+          if (r) p.wholesale = _isk(r);
         }
         window.PRODUCTS.push(p);
         seen[id] = true;

@@ -1363,7 +1363,7 @@ body{font-optical-sizing:auto;font-kerning:normal;}
     <div class="ws-info" id="wsInfoBox" style="display:none">
       <div class="ws-info-title">Heildsöluskilmálar</div>
       <div class="ws-info-text" id="wsInfoText">
-        25% afsláttur af smásöluverði á allar vörur.<br>
+        Afsláttur er sérstilltur fyrir hvern viðskiptamann.<br>
         Lágmarksverðmæti pöntunar: <span id="sbMoqAmt">50.000 ISK</span>.
       </div>
       <div class="moq-badge" id="sbMoqBadge">MOQ: 50.000 ISK</div>
@@ -5791,7 +5791,8 @@ function renderCartBody() {
   // Totals
   let totalWs = 0, totalRt = 0;
   cart.forEach(item => {
-    totalWs += parseISK(item.wholesale) * item.qty || parseISK(item.price) * item.qty * 0.75;
+    // No wholesale price on the line → full retail. Never an automatic 25%.
+    totalWs += parseISK(item.wholesale) * item.qty || parseISK(item.price) * item.qty;
     totalRt += parseISK(item.price) * item.qty;
   });
   const saved = totalRt - totalWs;
@@ -6230,7 +6231,7 @@ function renderGrid() {
       const col = CAT_COLORS[p.cat] || {bg:'#F3F0E8',text:'#5C5848'};
       const delay = Math.min(i*.015, .5);
       const liL = !!localStorage.getItem('ws_auth');
-      const discL = liL ? (typeof getMyDiscount==='function' ? getMyDiscount() : 25) : 25;
+      const discL = liL ? (typeof getMyDiscount==='function' ? getMyDiscount() : 0) : 0;
       const retailL = p.price ? parseInt(p.price.replace(/[^\d]/g,'')) : 0;
       const _hasOv = p._catOverridden || p._priceOverridden;
       const myWsL = _hasOv
@@ -6262,7 +6263,7 @@ function renderGrid() {
       const col = CAT_COLORS[p.cat] || {bg:'#F3F0E8',text:'#5C5848'};
       const delay = Math.min(i*.02, .6);
       const li = !!localStorage.getItem('ws_auth');
-      const disc = li ? (typeof getMyDiscount==='function' ? getMyDiscount() : 25) : 25;
+      const disc = li ? (typeof getMyDiscount==='function' ? getMyDiscount() : 0) : 0;
       const retail = p.price ? parseInt(p.price.replace(/[^\d]/g,'')) : 0;
       const _hasOv2 = p._catOverridden || p._priceOverridden;
       const myWs = _hasOv2
@@ -6416,7 +6417,7 @@ function showDetail(p) {
 
   // disc: null when not logged in (hides prices), number when logged in
   const _li = !!localStorage.getItem('ws_auth');
-  const disc = _li ? (typeof getMyDiscount === 'function' ? getMyDiscount() : 25) : null;
+  const disc = _li ? (typeof getMyDiscount === 'function' ? getMyDiscount() : 0) : null;
 
   document.getElementById('dpTitle').textContent = p.name.substring(0, 30) + (p.name.length > 30 ? '…' : '');
   document.getElementById('dpSub').textContent = p.cat;
@@ -7315,7 +7316,12 @@ function renderProductsPanel() {
             const retail = parseInt((p.price||'').replace(/[^\d]/g,'')) || 0;
             const vskRate = getVskRate(p.cat);
             const exVsk = vskRate > 0 ? Math.round(retail / (1 + vskRate)) : retail;
-            const wsNum = retail ? Math.round(retail * (1 - ((parseInt(getTheme().discountPct)||25)/100))) : 0;
+            // No global discount exists any more: show the explicit wholesale
+            // price if one is stored for this product, otherwise '—' (prices
+            // are set per customer under "Verð og afslættir").
+            const _ovProds = (getPricingOverrides() || {}).prods || {};
+            const _ovWs = (_ovProds[getProdKey(p)] || {}).ws || 0;
+            const wsNum = _ovWs > 0 ? _ovWs : 0;
             const wsStr = wsNum ? wsNum.toLocaleString('de-DE') + ' ISK' : '—';
             return `<tr class="${p._removed?'removed':''}" onclick="vstSelectRow(event,'${esc(p.name)}','${esc(key)}')" data-key="${esc(key)}">
               <td onclick="event.stopPropagation()">
@@ -7387,7 +7393,10 @@ function vstOpenDetail(name, key) {
   const retail = parseInt((p.price||'').replace(/[^\d]/g,'')) || 0;
   const vskRate = getVskRate(p.cat);
   const exVsk = vskRate > 0 ? Math.round(retail / (1 + vskRate)) : retail;
-  const wsNum = retail ? Math.round(retail * (1 - ((parseInt(getTheme().discountPct)||25)/100))) : 0;
+  // Prefill the wholesale fields ONLY from an explicitly stored price. Deriving
+  // them from a global % used to make an unrelated save (e.g. stock toggle)
+  // silently write a global wholesale price for the product.
+  const wsNum = (((getPricingOverrides() || {}).prods || {})[getProdKey(p)] || {}).ws || 0;
   const vskLabel = vskRate === 0.24 ? '24% — Efra þrep' : vskRate === 0.11 ? '11% — Neðra þrep' : '0% — Undanþeginn';
   const cats = [...new Set((window.PRODUCTS_BASE||PRODUCTS||[]).map(p=>p.cat))].sort();
 
@@ -7528,12 +7537,9 @@ function vstCalcPrice() {
   const exVsk = parseFloat(document.getElementById('vdExVsk')?.value) || 0;
   const vskRate = parseFloat(document.getElementById('vdVsk')?.value) || 0;
   const retail = Math.round(exVsk * (1 + vskRate));
-  const disc = parseInt(getTheme().discountPct) || 25;
-  const ws = Math.round(retail * (1 - disc/100));
-  const wsEx = vskRate > 0 ? Math.round(ws / (1 + vskRate)) : ws;
   if (document.getElementById('vdRetail')) document.getElementById('vdRetail').value = retail || '';
-  if (document.getElementById('vdWs')) document.getElementById('vdWs').value = ws || '';
-  if (document.getElementById('vdWsExVsk')) document.getElementById('vdWsExVsk').value = wsEx || '';
+  // Wholesale is NOT derived from a global discount any more — leave whatever
+  // the admin typed (or nothing) untouched, so no automatic price is written.
 }
 
 function vstCalcFromRetail() {
@@ -7658,7 +7664,7 @@ function rebuildLiveCatalog() {
     const srcBase = window.PRODUCTS_BASE || PRODUCTS;
     const src = _isAdmin ? srcBase.filter(p => !deleted.includes(p.url||p.name)) : srcBase;
     window.PRODUCTS = [...src,...custom].map(p=>{
-      const v=p.wholesale||(p.price?Math.round(parseInt((p.price||'').replace(/[^\d]/g,''))*0.75)+' ISK':'');
+      const v=p.wholesale||(p.price?Math.round(parseInt((p.price||'').replace(/[^\d]/g,'')))+' ISK':'');
       return {...p,wholesale:v};
     });
   }
@@ -7789,7 +7795,9 @@ function saveProd() {
   const vskRate  = parseFloat(document.getElementById('mVsk').value)||0.11;
   // Fallback: if Verð tab empty, use hidden mPrice (backwards compat)
   const priceStr = priceInc ? fmtNum(priceInc)+' ISK' : document.getElementById('mPrice').value.trim();
-  const wsStr    = wsInc ? fmtNum(wsInc)+' ISK' : (priceInc ? fmtNum(Math.round(priceInc*0.75))+' ISK' : '');
+  // Leave wholesale empty when not entered — pricing is resolved per customer
+  // by applyPricingOverrides() instead of baking in an automatic discount.
+  const wsStr    = wsInc ? fmtNum(wsInc)+' ISK' : '';
   const stockVal = document.getElementById('mStock2').value;
   const prod={
     name, cat:document.getElementById('mCat').value,
@@ -7847,7 +7855,10 @@ const THEME_DEFAULTS = {
   badgeText:    'Heildsala',
   gateTitle:    'Seiðkarlinn',
   gateSub:      'Heildsöluverslun · Wholesale Portal',
-  discountPct:  '25',
+  // discountPct removed 2026-08-20: there is no automatic global discount any
+  // more. Every discount is per customer, stored in ws_pricing_users and edited
+  // in "Verð og afslættir". A buyer with no configured discount pays full
+  // retail. Do NOT reintroduce a global default here.
   moqAmount:    '50.000 ISK',
   sidebarTitle: 'Heildsöluskilmálar',
 };
@@ -7900,7 +7911,14 @@ function applyTheme(t) {
   const wsTitle = document.querySelector('.ws-info-title');
   if (wsTitle) wsTitle.textContent = '⚡ ' + t.sidebarTitle;
   const wsText = document.getElementById('wsInfoText') || document.querySelector('.ws-info-text');
-  if (wsText) wsText.innerHTML = `${t.discountPct}% afsláttur af smásöluverði á allar vörur.<br>Lágmarksverðmæti pöntunar: ${t.moqAmount}.`;
+  if (wsText) {
+    // Discounts are per customer now — no global percentage to advertise.
+    const _d = (typeof getMyDiscount === 'function') ? getMyDiscount() : 0;
+    wsText.innerHTML = (_d > 0
+      ? `Þinn afsláttur: ${_d}% af smásöluverði (getur verið mismunandi eftir vöruflokki).`
+      : 'Afsláttur er sérstilltur fyrir hvern viðskiptamann.')
+      + `<br>Lágmarksverðmæti pöntunar: ${t.moqAmount}.`;
+  }
   const sbMoq = document.getElementById('sbMoqAmt');
   if (sbMoq) sbMoq.textContent = t.moqAmount || '50.000 ISK';
   const sbBadge = document.getElementById('sbMoqBadge');
@@ -7937,7 +7955,7 @@ function renderThemePanel() {
     <div class="theme-preview-bar" id="themePreview">
       <span class="theme-preview-logo" id="prevLogo" style="font-family:'${t.fontLogo}',Times,serif;font-size:${t.logoSize}px;color:${t.colorInk}">${t.logoText}</span>
       <span class="theme-preview-badge" id="prevBadge" style="background:${t.colorGold};color:${t.colorInk}">${t.badgeText}</span>
-      <span class="theme-preview-btn" style="background:${t.colorGreen};color:#fff">${t.discountPct}% afsláttur</span>
+      <span class="theme-preview-btn" style="background:${t.colorGreen};color:#fff">Afsláttur pr. viðskiptamann</span>
       <span style="font-size:11px;color:${t.colorInk};opacity:.5">Forskoðun · Live preview</span>
     </div>
 
@@ -8142,7 +8160,7 @@ async function invoiceCheckout() {
 
     // Build line items with VSK
     const lines = cart.map(item => {
-      const unitWs    = parseISKNum(item.wholesale) || Math.round(parseISKNum(item.price) * 0.75);
+      const unitWs    = parseISKNum(item.wholesale) || parseISKNum(item.price);
       const lineTotal = unitWs * item.qty;
       const _itCat    = item.cat || ((window.PRODUCTS||[]).find(function(p){return p&&p.name===item.name;})||{}).cat || '';
       const vskRate   = getVskRate(_itCat);
@@ -8593,7 +8611,6 @@ function getProdKey(p) { return (p.url || p.name).replace(/[^a-zA-Z0-9íáéóú
 // Apply all pricing overrides to the live catalog
 function applyPricingOverrides() {
   const ov = getEffectivePricing();
-  const globalDisc = parseInt(getTheme().discountPct) || 25;
   const _src = window.PRODUCTS_BASE || (typeof PRODUCTS_BASE !== 'undefined' ? PRODUCTS_BASE : PRODUCTS);
   // Always strip deleted products from the catalog, even for admins.
   // Admins still see them in the Vörustjórnun panel (allAdmProducts reads PRODUCTS_BASE directly).
@@ -8626,7 +8643,9 @@ function applyPricingOverrides() {
       } else if (o.ws && o.ws > 0) {
         ws = o.ws;
       } else {
-        ws = p.wholesale;
+        // No category % for this buyer and no explicit wholesale price: charge
+        // full retail rather than the old baked-in 25% catalog discount.
+        ws = baseRetailNum > 0 ? baseRetailNum : p.wholesale;
       }
       return {...p,
         name:      o.name || p.name,
@@ -8651,10 +8670,13 @@ function applyPricingOverrides() {
         _catOverridden: true,
       };
     }
-    // Global discount
+    // No discount configured for this buyer in this category → full retail.
+    // (Previously a global 25% default was applied automatically here.)
     const retail = parseInt((p.price||'').replace(/[^\d]/g,'')) || 0;
-    const ws = retail > 0 ? Math.round(retail * (1 - globalDisc/100)) : 0;
-    return {...p, wholesale: ws > 0 ? fmtISK(ws) : p.wholesale};
+    return {...p,
+      wholesale: retail > 0 ? fmtISK(retail) : p.wholesale,
+      _noDiscount: true,
+    };
   });
 }
 
@@ -8717,7 +8739,6 @@ function renderPricingPanel(userKey) {
 
 function renderCategoryPricingTab() {
   const ov = _pendingPricing || {};
-  const globalDisc = parseInt(getTheme().discountPct) || 25;
   // Merge CAT_COLORS keys (all defined categories, including ones with no products yet)
   // with any additional categories found on actual products, then sort.
   const _prodCats = (window.PRODUCTS_BASE||PRODUCTS_BASE||PRODUCTS).map(p=>p.cat);
@@ -8725,7 +8746,9 @@ function renderCategoryPricingTab() {
 
   return `
     <p style="font-size:11px;color:var(--ink3);margin-bottom:1rem">
-      Stilltu sérstakan afslátt á hvern flokk. Ef engin sérstaklegar stillingar eru, gildir <strong>${globalDisc}% almennt afsláttur</strong>.
+      Stilltu afslátt á hvern flokk fyrir þennan viðskiptamann. Flokkur sem er
+      ekki stilltur fær <strong>engan afslátt</strong> — viðskiptamaðurinn greiðir
+      fullt smásöluverð. Það er enginn almennur sjálfgefinn afsláttur.
     </p>
     <table class="cat-disc-table">
       <thead><tr>
@@ -8739,7 +8762,7 @@ function renderCategoryPricingTab() {
         ${cats.map(cat => {
           const count = (window.PRODUCTS_BASE||PRODUCTS_BASE||PRODUCTS).filter(p=>p.cat===cat).length;
           const hasOverride = ov.cats && ov.cats[cat] !== undefined;
-          const discVal = hasOverride ? ov.cats[cat] : globalDisc;
+          const discVal = hasOverride ? ov.cats[cat] : '';
           return `<tr>
             <td style="font-weight:500;color:var(--ink)">${esc(cat)}</td>
             <td style="color:var(--ink3)">${count}</td>
@@ -8754,9 +8777,9 @@ function renderCategoryPricingTab() {
               </div>
             </td>
             <td>
-              ${hasOverride && ov.cats[cat] !== globalDisc
+              ${hasOverride
                 ? `<span class="disc-badge custom">Sérsniðið: ${ov.cats[cat]}%</span>`
-                : `<span class="disc-badge global">Almennt: ${globalDisc}%</span>`}
+                : `<span class="disc-badge global">Ekki stillt — fullt verð</span>`}
             </td>
             <td>
               ${hasOverride ? `<button class="fulfill-btn do-pending" onclick="resetCatDisc('${esc(cat)}')">↺ Endurstilla</button>` : ''}
@@ -8790,8 +8813,8 @@ function renderProductPricingTab() {
         const key = getProdKey(p);
         const hasOverride = ov.prods && ov.prods[key];
         const retailNum = parseInt((p.price||'').replace(/[^\d]/g,'')) || 0;
-        const globalDisc = parseInt(getTheme().discountPct) || 25;
-        const catDisc = (ov.cats && ov.cats[p.cat] !== undefined) ? ov.cats[p.cat] : globalDisc;
+        // No global fallback discount: an unset category means full retail.
+        const catDisc = (ov.cats && ov.cats[p.cat] !== undefined) ? ov.cats[p.cat] : 0;
         const defaultWs = retailNum > 0 ? Math.round(retailNum * (1 - catDisc/100)) : 0;
         const ovWs = hasOverride ? (ov.prods[key].ws || defaultWs) : defaultWs;
         const ovRetail = hasOverride ? (ov.prods[key].retail || retailNum) : retailNum;
@@ -9180,11 +9203,12 @@ function updateHeaderAuth() {
     if (userChip)  { userChip.style.display = 'flex'; }
     if (userName)  userName.textContent = auth;
     if (cartBtn)   cartBtn.style.display   = 'inline-flex';
-    if (discEl)    if (discEl) discEl.style.display    = 'flex';
-    if (discPct) {
-      const disc = typeof getMyDiscount === 'function' ? getMyDiscount() : 25;
-      if (discPct) discPct.textContent = disc + '% afsláttur';
-    }
+    // Discount chip only when this account actually has a discount configured
+    // (per-user pricing). No configured discount → no chip, since there is no
+    // global default to fall back on.
+    const _myDisc = typeof getMyDiscount === 'function' ? getMyDiscount() : 0;
+    if (discEl) discEl.style.display = _myDisc > 0 ? 'flex' : 'none';
+    if (discPct) discPct.textContent = _myDisc > 0 ? _myDisc + '% afsláttur' : '';
   } else {
     if (loginBtn)  loginBtn.style.display  = 'inline-block';
     if (userChip)  userChip.style.display  = 'none';
@@ -9755,13 +9779,10 @@ function vmUpdateDiscPreview() { /* removed */ }
 
 function getMyDiscount() {
   const u = localStorage.getItem('ws_auth');
-  if (!u) return 25;
-  // Safe theme read — THEME_DEFAULTS may not be defined yet if called early
-  const safeDisc = () => {
-    try { return parseInt((typeof getTheme === 'function' ? getTheme() : {discountPct:25}).discountPct) || 25; }
-    catch(e) { return 25; }
-  };
-  if (ADMIN_ACCOUNTS && ADMIN_ACCOUNTS[u]) return safeDisc();
+  // 0 = no discount configured for this account. There is no global/automatic
+  // discount any more, so anyone without per-user pricing sees full retail.
+  if (!u) return 0;
+  if (ADMIN_ACCOUNTS && ADMIN_ACCOUNTS[u]) return 0;
   // Per-user discounts live in ws_pricing_users (category %). Derive the
   // buyer's representative discount from their effective pricing so the
   // header chip and fallback price calc reflect THEIR discount instead of
@@ -9782,7 +9803,7 @@ function getMyDiscount() {
       return best;
     }
   } catch(e) {}
-  return safeDisc();
+  return 0;
 }
 
 function getMyWsPriceStr(p) {
@@ -10000,19 +10021,28 @@ async function silentCatalogPull() {
       Object.assign(ACCOUNTS, state.accounts);
     }
 
-    // Rebuild catalog with server state
-    const deleted = state.deleted;
-    const custom  = Array.isArray(state.custom) ? state.custom : [];
-    const srcBase = window.PRODUCTS_BASE || PRODUCTS;
-
-    window.PRODUCTS = [
-      ...srcBase.filter(p => !deleted.includes(p.url) && !deleted.includes(p.name)),
-      ...custom
-    ].map(p => {
-      const retail = parseInt((p.price||'').replace(/[^\d]/g,'')) || 0;
-      const ws = p.noDisc ? (p.wholesale || p.price) : (retail ? fmtISK(retail * 0.75) : p.wholesale);
-      return {...p, wholesale: ws};
-    });
+    // Rebuild catalog with server state. Go through applyPricingOverrides() so
+    // the logged-in buyer's OWN pricing (ws_pricing_users) is what lands on the
+    // catalog: it applies the deletions just saved above, re-appends custom
+    // products and layers the per-customer category discounts. This used to
+    // rebuild prices inline at a flat global percentage, which overwrote the
+    // buyer's per-user prices until the next re-render.
+    if (typeof applyPricingOverrides === 'function') {
+      applyPricingOverrides();
+    } else {
+      const deleted = state.deleted;
+      const custom  = Array.isArray(state.custom) ? state.custom : [];
+      const srcBase = window.PRODUCTS_BASE || PRODUCTS;
+      window.PRODUCTS = [
+        ...srcBase.filter(p => !deleted.includes(p.url) && !deleted.includes(p.name)),
+        ...custom
+      ].map(p => {
+        // No automatic discount: full retail when no pricing can be applied.
+        const retail = parseInt((p.price||'').replace(/[^\d]/g,'')) || 0;
+        const ws = p.noDisc ? (p.wholesale || p.price) : (retail ? fmtISK(retail) : p.wholesale);
+        return {...p, wholesale: ws};
+      });
+    }
 
     buildSidebar();
     renderGrid();

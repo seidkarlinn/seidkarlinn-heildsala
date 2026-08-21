@@ -63,11 +63,13 @@ exports.handler = async (event) => {
       return { statusCode: 502, headers, body: JSON.stringify({ error: 'No access_token in Teya response: ' + tokenText }) };
     }
 
-    // 3. Build totals at wholesale price (75% of retail)
+    // 3. Build totals at the wholesale price the buyer was shown. If an item
+    //    carries no wholesale price, charge full retail — never apply an
+    //    automatic discount server-side (discounts are per customer only).
     const parseISK = (s) => parseInt((s || '').replace(/[^\d]/g, '')) || 0;
 
     const items = cart.map((item) => {
-      const unit = parseISK(item.wholesale) || Math.round(parseISK(item.price) * 0.75);
+      const unit = parseISK(item.wholesale) || parseISK(item.price);
       return {
         name:     item.name.substring(0, 80),
         quantity: item.qty,
