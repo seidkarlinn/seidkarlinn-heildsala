@@ -30,6 +30,13 @@
     CDN-Cache-Control = "public, max-age=0, must-revalidate"
     Netlify-CDN-Cache-Control = "public, max-age=0, must-revalidate"
 
+# img-fixes is declared first, so it is the OUTERMOST wrapper and rewrites
+# stale product-image URLs in the finished HTML — including the products the
+# functions below inject.
+[[edge_functions]]
+  path = "/"
+  function = "img-fixes"
+
 # category-order runs BEFORE inject-catalog so it is the OUTER wrapper and
 # post-processes inject-catalog's already-transformed HTML (covers the
 # edge-injected CordyFresh + 2026-05-28 products too).
