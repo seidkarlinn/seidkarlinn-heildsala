@@ -164,7 +164,7 @@
       "Frostþurrkaðir ávextir": 30,
       "Fæðubótarefni": 35,
       "Hreinlætisvörur": 30,
-      "Hunangsafurðir": 35,
+      "Hunangsafurðir": 40,
       "Hárvörur": 30,
       "Húðvörur": 30,
       "Kakó": 30,
@@ -673,8 +673,8 @@ async function syncWithShopify() {
       document.body.classList.toggle("wsDetailCollapsed", collapsed);
       var btn = document.getElementById("detailToggle");
       if (btn) {
-        btn.textContent = collapsed ? "\u25C0" : "\u25B6";        // ◀ show / ▶ hide
-        btn.title = collapsed ? "S\u00FDna v\u00F6ruuppl\u00FDsingar" : "Fela v\u00F6ruuppl\u00FDsingar";
+        btn.textContent = collapsed ? "◀" : "▶";        // ◀ show / ▶ hide
+        btn.title = collapsed ? "Sýna vöruupplýsingar" : "Fela vöruupplýsingar";
       }
       localStorage.setItem(KEY, collapsed ? "1" : "0");
     } catch (e) {}
@@ -689,8 +689,8 @@ async function syncWithShopify() {
     btn.id = "detailToggle";
     btn.className = "detail-toggle";
     btn.type = "button";
-    btn.textContent = "\u25B6";
-    btn.title = "Fela v\u00F6ruuppl\u00FDsingar";
+    btn.textContent = "▶";
+    btn.title = "Fela vöruupplýsingar";
     btn.addEventListener("click", function () {
       setCollapsed(!document.body.classList.contains("wsDetailCollapsed"));
     });
@@ -966,7 +966,7 @@ async function syncWithShopify() {
     "https://www.seidkarlinn.is/is-is/products/seidkarlinn-ksm-66-450mg-90-hylki",
     "https://www.seidkarlinn.is/is-is/products/seidkarlinn-maca-600mg-120hylki",
     "https://www.seidkarlinn.is/is-is/products/seidkarlinn-fjorir-sveppir-600mg-60-hylki"
-    // Reishi + Chaga intentionally NOT restored (kept hidden — draft on Shopify)
+    // Reishi + Chaga intentionally NOT restored (kept hidden — draft á Shopify)
   ];
   var RSET = {};
   RESTORE.forEach(function (u) { RSET[u] = 1; });
