@@ -44,7 +44,10 @@
  *   akasía / engjablóma / lindiblóma / heitt hunang / býflugnafrjó /
  *   býbrauð / drottningargel) that went live on seidkarlinn.is on
  *   2026-08-28. Same pattern as the 2026-05-28 batch; no index.html edit.
- *   Baked wholesale is 40% off retail to match the Hunangsafurðir standard.
+ *   Baked wholesale is 40% off retail. The line also carries the tag
+ *   "Hunang40", routed through a virtual "Nýtt hunang" category (default
+ *   40%) by HONEY40_PATCH, so every buyer gets 40% on it regardless of
+ *   their Hunangsafurðir percentage.
  */
 
 // 8 CordyFresh entries — Cordyceps/Lions Mane/Reishi/Chaga at 20% and 50% strengths.
@@ -82,20 +85,24 @@ const NEW_PRODUCTS_20260528 = `
 // Hunangsafurðir standard discount — it is only a fallback for cart paths
 // that read p.wholesale before applyPricingOverrides() derives the real
 // per-customer price from ws_pricing_users.
+// Every entry carries the tag "Hunang40", which the HONEY40_PATCH below
+// routes through a virtual "Nýtt hunang" discount category (default 40%),
+// so this line prices at 40% for every buyer regardless of their
+// Hunangsafurðir percentage — the older honey SKUs keep that percentage.
 // Idempotent guard below keys on the Drottningargel marker (last entry).
 const NEW_HONEY_20260904 = `
-  {"name":"Hrátt Akasíublóma Hunang 450g Seiðkarlinn","price":"2.990 ISK","cat":"Hunangsafurðir","tags":["hunang","akasía","hrátt","Serbía"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/acacia-honey-450-seidkarlinn","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/1726-front-v2.jpg?v=1788269952","wholesale":"1.794 ISK"},
-  {"name":"Hrátt Akasíublóma Hunang 900g Seiðkarlinn","price":"4.490 ISK","cat":"Hunangsafurðir","tags":["hunang","akasía","hrátt","Serbía"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/acacia-honey-900g-seidkarlinn","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/1725-front.jpg?v=1788215348","wholesale":"2.694 ISK"},
-  {"name":"Hrátt Akasíublóma Hunang með Kamb 450g Seiðkarlinn","price":"2.990 ISK","cat":"Hunangsafurðir","tags":["hunang","akasía","hunangskambur","hrátt","Serbía"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/acacia-honey-with-honey-comb-450g-seidkarlinn","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/1729-front-v2.jpg?v=1788269953","wholesale":"1.794 ISK"},
-  {"name":"Hrátt Engjablóma Hunang 450g Seiðkarlinn","price":"2.990 ISK","cat":"Hunangsafurðir","tags":["hunang","engjablóm","hrátt","Serbía"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/meadow-honey-450g-seidkarlinn","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/1728-front-v2.jpg?v=1788269953","wholesale":"1.794 ISK"},
-  {"name":"Hrátt Engjablóma Hunang 900g Seiðkarlinn","price":"4.490 ISK","cat":"Hunangsafurðir","tags":["hunang","engjablóm","hrátt","Serbía"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/meadow-honey-900g-seidkarlinn","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/1727-front.jpg?v=1788215348","wholesale":"2.694 ISK"},
-  {"name":"Hrátt Lindiblóma Hunang 450g Seiðkarlinn","price":"2.990 ISK","cat":"Hunangsafurðir","tags":["hunang","lindiblóm","hrátt","Serbía"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/linden-honey-450g-seidkarlinn","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/1731-front-v2.jpg?v=1788269953","wholesale":"1.794 ISK"},
-  {"name":"Hrátt Lindiblóma Hunang 900g Seiðkarlinn","price":"4.490 ISK","cat":"Hunangsafurðir","tags":["hunang","lindiblóm","hrátt","Serbía"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/linden-honey-900g-seidkarlinn","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/1730-front.jpg?v=1788215348","wholesale":"2.694 ISK"},
-  {"name":"Hrátt, Heitt Hunang 450g Seiðkarlinn","price":"3.490 ISK","cat":"Hunangsafurðir","tags":["hunang","hot honey","chili","hrátt","Serbía"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/hot-honey-450g-seidkarlinn","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/1724-front-v2.jpg?v=1788269952","wholesale":"2.094 ISK"},
-  {"name":"Hrátt, Heitt Hunang 900g Seiðkarlinn","price":"4.990 ISK","cat":"Hunangsafurðir","tags":["hunang","hot honey","chili","hrátt","Serbía"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/hot-honey-900g-seidkarlinn","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/1723-front.jpg?v=1788215347","wholesale":"2.994 ISK"},
-  {"name":"Hrátt Hunang með Býflugnafrjóum 450g Seiðkarlinn","price":"3.490 ISK","cat":"Hunangsafurðir","tags":["hunang","býflugnafrjó","engjablóm","hrátt","Serbía"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/honey-with-pollen-450g-seidkarlinn","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/1732-front-v2.jpg?v=1788269953","wholesale":"2.094 ISK"},
-  {"name":"Hrátt Hunang með Býbrauði 450g Seiðkarlinn","price":"3.990 ISK","cat":"Hunangsafurðir","tags":["hunang","býbrauð","perga","hrátt","Serbía"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/honey-with-bee-bread-450g-seidkarlinn","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/1733-front-v2.jpg?v=1788269954","wholesale":"2.394 ISK"},
-  {"name":"Hrátt Hunang með Drottningargeli 450g Seiðkarlinn","price":"4.990 ISK","cat":"Hunangsafurðir","tags":["hunang","drottningargel","royal jelly","akasía","hrátt","Serbía"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/honey-with-royal-jelly-450g-seidkarlinn","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/1734-front-v2.jpg?v=1788269954","wholesale":"2.994 ISK"},`;
+  {"name":"Hrátt Akasíublóma Hunang 450g Seiðkarlinn","price":"2.990 ISK","cat":"Hunangsafurðir","tags":["Hunang40","hunang","akasía","hrátt","Serbía"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/acacia-honey-450-seidkarlinn","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/1726-front-v2.jpg?v=1788269952","wholesale":"1.794 ISK"},
+  {"name":"Hrátt Akasíublóma Hunang 900g Seiðkarlinn","price":"4.490 ISK","cat":"Hunangsafurðir","tags":["Hunang40","hunang","akasía","hrátt","Serbía"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/acacia-honey-900g-seidkarlinn","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/1725-front.jpg?v=1788215348","wholesale":"2.694 ISK"},
+  {"name":"Hrátt Akasíublóma Hunang með Kamb 450g Seiðkarlinn","price":"2.990 ISK","cat":"Hunangsafurðir","tags":["Hunang40","hunang","akasía","hunangskambur","hrátt","Serbía"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/acacia-honey-with-honey-comb-450g-seidkarlinn","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/1729-front-v2.jpg?v=1788269953","wholesale":"1.794 ISK"},
+  {"name":"Hrátt Engjablóma Hunang 450g Seiðkarlinn","price":"2.990 ISK","cat":"Hunangsafurðir","tags":["Hunang40","hunang","engjablóm","hrátt","Serbía"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/meadow-honey-450g-seidkarlinn","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/1728-front-v2.jpg?v=1788269953","wholesale":"1.794 ISK"},
+  {"name":"Hrátt Engjablóma Hunang 900g Seiðkarlinn","price":"4.490 ISK","cat":"Hunangsafurðir","tags":["Hunang40","hunang","engjablóm","hrátt","Serbía"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/meadow-honey-900g-seidkarlinn","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/1727-front.jpg?v=1788215348","wholesale":"2.694 ISK"},
+  {"name":"Hrátt Lindiblóma Hunang 450g Seiðkarlinn","price":"2.990 ISK","cat":"Hunangsafurðir","tags":["Hunang40","hunang","lindiblóm","hrátt","Serbía"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/linden-honey-450g-seidkarlinn","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/1731-front-v2.jpg?v=1788269953","wholesale":"1.794 ISK"},
+  {"name":"Hrátt Lindiblóma Hunang 900g Seiðkarlinn","price":"4.490 ISK","cat":"Hunangsafurðir","tags":["Hunang40","hunang","lindiblóm","hrátt","Serbía"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/linden-honey-900g-seidkarlinn","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/1730-front.jpg?v=1788215348","wholesale":"2.694 ISK"},
+  {"name":"Hrátt, Heitt Hunang 450g Seiðkarlinn","price":"3.490 ISK","cat":"Hunangsafurðir","tags":["Hunang40","hunang","hot honey","chili","hrátt","Serbía"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/hot-honey-450g-seidkarlinn","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/1724-front-v2.jpg?v=1788269952","wholesale":"2.094 ISK"},
+  {"name":"Hrátt, Heitt Hunang 900g Seiðkarlinn","price":"4.990 ISK","cat":"Hunangsafurðir","tags":["Hunang40","hunang","hot honey","chili","hrátt","Serbía"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/hot-honey-900g-seidkarlinn","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/1723-front.jpg?v=1788215347","wholesale":"2.994 ISK"},
+  {"name":"Hrátt Hunang með Býflugnafrjóum 450g Seiðkarlinn","price":"3.490 ISK","cat":"Hunangsafurðir","tags":["Hunang40","hunang","býflugnafrjó","engjablóm","hrátt","Serbía"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/honey-with-pollen-450g-seidkarlinn","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/1732-front-v2.jpg?v=1788269953","wholesale":"2.094 ISK"},
+  {"name":"Hrátt Hunang með Býbrauði 450g Seiðkarlinn","price":"3.990 ISK","cat":"Hunangsafurðir","tags":["Hunang40","hunang","býbrauð","perga","hrátt","Serbía"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/honey-with-bee-bread-450g-seidkarlinn","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/1733-front-v2.jpg?v=1788269954","wholesale":"2.394 ISK"},
+  {"name":"Hrátt Hunang með Drottningargeli 450g Seiðkarlinn","price":"4.990 ISK","cat":"Hunangsafurðir","tags":["Hunang40","hunang","drottningargel","royal jelly","akasía","hrátt","Serbía"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/honey-with-royal-jelly-450g-seidkarlinn","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/1734-front-v2.jpg?v=1788269954","wholesale":"2.994 ISK"},`;
 
 // Stale entries that need to come back out of the deleted list, because the
 // fresh NEW_PRODUCTS_20260528 entries reuse their Shopify URLs. If we leave
@@ -308,6 +315,154 @@ const CORDYFRESH_PATCH = `
 </script>
 `;
 
+// Runtime patch — virtual "Nýtt hunang" discount category for the 2026-08-28
+// Serbian honey line (tag:"Hunang40"). Same mechanism as CORDYFRESH_PATCH:
+// the line prices at 40% off retail for every buyer, independent of their
+// Hunangsafurðir percentage (the older honey SKUs keep that), and the admin
+// can override the percentage per customer from the pricing panel.
+const HONEY40_PATCH = `
+<script id="__honey40_category_patch__">
+(function(){
+  var TAG = "Hunang40";           // tag selector
+  var CAT_LABEL = "Nýtt hunang";  // virtual category key (used in ws_pricing.cats[...])
+  var DEFAULT_PCT = 40;           // standard discount for the new honey line
+
+  function fmtISKLocal(n){
+    try { if (typeof window.fmtISK === "function") return window.fmtISK(n); } catch(e){}
+    return String(Math.round(n)).replace(/(\\d)(?=(\\d{3})+$)/g,"$1.") + " ISK";
+  }
+
+  function isHoney40(p){
+    return p && Array.isArray(p.tags) && p.tags.indexOf(TAG) !== -1;
+  }
+
+  function honeyDiscPct(){
+    try {
+      var ov = (typeof window.getEffectivePricing === "function")
+        ? window.getEffectivePricing() : null;
+      if (ov && ov.cats && ov.cats[CAT_LABEL] != null) {
+        var n = parseFloat(ov.cats[CAT_LABEL]);
+        if (isFinite(n)) return Math.max(0, Math.min(100, n));
+      }
+    } catch(e){}
+    return DEFAULT_PCT;
+  }
+
+  // ── Hook 1: applyPricingOverrides ─────────────────────────────
+  function patchApply(){
+    if (typeof window.applyPricingOverrides !== "function") return false;
+    if (window.applyPricingOverrides.__honey40Patched) return true;
+    var orig = window.applyPricingOverrides;
+    var wrapped = function(){
+      var r = orig.apply(this, arguments);
+      try {
+        var disc = honeyDiscPct();
+        if (Array.isArray(window.PRODUCTS)) {
+          window.PRODUCTS = window.PRODUCTS.map(function(p){
+            if (!isHoney40(p)) return p;
+            if (p._priceOverridden) return p; // admin product-level override wins
+            var retail = parseInt((p.price||"").replace(/[^\\d]/g,""),10) || 0;
+            if (retail <= 0) return p;
+            var ws = Math.round(retail * (1 - disc/100));
+            return Object.assign({}, p, {
+              wholesale: fmtISKLocal(ws),
+              _catOverridden: true,
+              _honey40Overridden: true
+            });
+          });
+        }
+      } catch(e){ console.warn("[honey40-patch:apply]", e); }
+      return r;
+    };
+    wrapped.__honey40Patched = true;
+    window.applyPricingOverrides = wrapped;
+    return true;
+  }
+
+  // ── Hook 2: renderCategoryPricingTab ──────────────────────────
+  function rowHtml(){
+    try {
+      var ov = (window._pendingPricing) || {};
+      var src = window.PRODUCTS_BASE || window.PRODUCTS || [];
+      var count = 0;
+      for (var i=0;i<src.length;i++) if (isHoney40(src[i])) count++;
+      if (count === 0) return "";
+      var hasOverride = !!(ov.cats && ov.cats[CAT_LABEL] !== undefined);
+      var discVal = hasOverride ? ov.cats[CAT_LABEL] : DEFAULT_PCT;
+      var custom = hasOverride && Number(ov.cats[CAT_LABEL]) !== DEFAULT_PCT;
+      var badge = custom
+        ? '<span class="disc-badge custom">Sérsniðið: ' + ov.cats[CAT_LABEL] + '%</span>'
+        : '<span class="disc-badge global">Sjálfgefið: ' + DEFAULT_PCT + '%</span>';
+      var resetBtn = hasOverride
+        ? '<button class="fulfill-btn do-pending" onclick="resetCatDisc(\\'' + CAT_LABEL + '\\')">↺ Endurstilla</button>'
+        : '';
+      return ''
+        + '<tr data-honey40-row="1">'
+        +   '<td style="font-weight:500;color:var(--ink)">'
+        +     'Nýtt hunang '
+        +     '<span style="font-size:10px;color:var(--ink3);font-weight:400">(merki: Hunang40)</span>'
+        +   '</td>'
+        +   '<td style="color:var(--ink3)">' + count + '</td>'
+        +   '<td>'
+        +     '<div style="display:flex;align-items:center;gap:6px">'
+        +       '<input type="number" class="disc-input" min="0" max="100" '
+        +              'value="' + discVal + '" '
+        +              'data-cat="' + CAT_LABEL + '" '
+        +              'oninput="updateCatDisc(\\'' + CAT_LABEL + '\\',this.value)" '
+        +              'onblur="this.value=Math.min(100,Math.max(0,parseInt(this.value)||0))">'
+        +       '<span style="font-size:11px;color:var(--ink3)">%</span>'
+        +     '</div>'
+        +   '</td>'
+        +   '<td>' + badge + '</td>'
+        +   '<td>' + resetBtn + '</td>'
+        + '</tr>';
+    } catch(e){
+      console.warn("[honey40-patch:row]", e);
+      return "";
+    }
+  }
+
+  function patchRender(){
+    if (typeof window.renderCategoryPricingTab !== "function") return false;
+    if (window.renderCategoryPricingTab.__honey40Patched) return true;
+    var orig = window.renderCategoryPricingTab;
+    var wrapped = function(){
+      var html = orig.apply(this, arguments) || "";
+      try {
+        var extra = rowHtml();
+        if (extra && html.indexOf("</tbody>") !== -1) {
+          html = html.replace("</tbody>", extra + "</tbody>");
+        }
+      } catch(e){ console.warn("[honey40-patch:render]", e); }
+      return html;
+    };
+    wrapped.__honey40Patched = true;
+    window.renderCategoryPricingTab = wrapped;
+    return true;
+  }
+
+  var tries = 0;
+  function tryPatch(){
+    var aOk = patchApply();
+    var rOk = patchRender();
+    if (aOk && rOk) {
+      try { if (typeof window.applyPricingOverrides === "function") window.applyPricingOverrides(); } catch(e){}
+      try { if (typeof window.rebuildLiveCatalog === "function") window.rebuildLiveCatalog(); } catch(e){}
+      console.log("[honey40-patch] installed (apply+render).");
+      return;
+    }
+    if (++tries < 60) setTimeout(tryPatch, 100);
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", tryPatch);
+  } else {
+    tryPatch();
+  }
+})();
+</script>
+`;
+
 // Favicon <link> tags — added 2026-05-13.
 // Binary favicon files are served by the sibling edge function favicons.js
 // (HTTP-routed at /favicon.ico, /favicon-32.png, /favicon-180.png). The
@@ -419,6 +574,18 @@ export default async function handler(request, context) {
       injected = injected.slice(0, closeIdx) + CORDYFRESH_PATCH + injected.slice(closeIdx);
     } else {
       injected += CORDYFRESH_PATCH;
+    }
+  }
+
+  // 3-bis. Inject the Hunang40 runtime patch the same way, right before the
+  //        final </body>. Independent of the CordyFresh patch (different tag,
+  //        different virtual category) — both wrappers chain safely.
+  if (!injected.includes('__honey40_category_patch__')) {
+    const closeIdx2 = injected.lastIndexOf('</body>');
+    if (closeIdx2 !== -1) {
+      injected = injected.slice(0, closeIdx2) + HONEY40_PATCH + injected.slice(closeIdx2);
+    } else {
+      injected += HONEY40_PATCH;
     }
   }
 
