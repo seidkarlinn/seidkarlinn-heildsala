@@ -39,6 +39,12 @@
  *   PRODUCTS entries' "url":"…" field, blanking them out and breaking
  *   the page. Dropped the bare strip; comma-delimited forms cover
  *   every position inside ADMIN_DELETED on their own.
+ *
+ * 2026-09-04: Injected the 12 new Serbian raw-honey SKUs (1723–1734,
+ *   akasía / engjablóma / lindiblóma / heitt hunang / býflugnafrjó /
+ *   býbrauð / drottningargel) that went live on seidkarlinn.is on
+ *   2026-08-28. Same pattern as the 2026-05-28 batch; no index.html edit.
+ *   Baked wholesale is 40% off retail to match the Hunangsafurðir standard.
  */
 
 // 8 CordyFresh entries — Cordyceps/Lions Mane/Reishi/Chaga at 20% and 50% strengths.
@@ -68,6 +74,28 @@ const NEW_PRODUCTS_20260528 = `
   {"name":"Seiðkarlinn Full Spectrum Maca 600mg 120 hylki","price":"4.990 ISK","cat":"Fæðubótarefni","tags":["maca","hormónabalans","orkugjafi","frjósemi","Peru"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/seidkarlinn-maca-600mg-120hylki","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/maca_f_d0db7430-06a2-4479-8b9a-b690cdf22f9d.jpg?v=1782336016","wholesale":"3.742 ISK"},
   {"name":"Seiðkarlinn Lignosus 450mg 60 hylki","price":"5.990 ISK","cat":"Sveppir","tags":["lignosus","tiger milk","sveppur","ónæmiskerfi"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/seidkarlinn-lignosus-450mg-60-hylki","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/lignosus_f_87bf3222-a401-45f9-b039-9596b99678fd.jpg?v=1782336004","wholesale":"4.492 ISK"},
   {"name":"Seiðkarlinn Shilajit 60 hylki","price":"6.990 ISK","cat":"Fæðubótarefni","tags":["shilajit","fulvic acid","steinefni","orkugjafi"],"desc":"500mg Shilajit hylki 83% Fulvic Acid sem er um það bil 2-3x sterkara en meðalshilajit í töflum á markaði.","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/seidkarlinn-shilajit-60-hylki","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/shilajit_f_195ea32e-97f8-4067-aa74-b30755335c18.jpg?v=1782336010","wholesale":"5.242 ISK"},`;
+
+// 12 new Serbian raw-honey SKUs (1723–1734) published on Shopify 2026-08-28.
+// Same edge-injection pattern as the 2026-05-28 batch, so the ~500KB
+// index.html stays untouched. Retail prices mirror seidkarlinn.is; the baked
+// wholesale is 40% off retail (Math.round(retail * 0.6)), matching the
+// Hunangsafurðir standard discount — it is only a fallback for cart paths
+// that read p.wholesale before applyPricingOverrides() derives the real
+// per-customer price from ws_pricing_users.
+// Idempotent guard below keys on the Drottningargel marker (last entry).
+const NEW_HONEY_20260904 = `
+  {"name":"Hrátt Akasíublóma Hunang 450g Seiðkarlinn","price":"2.990 ISK","cat":"Hunangsafurðir","tags":["hunang","akasía","hrátt","Serbía"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/acacia-honey-450-seidkarlinn","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/1726-front-v2.jpg?v=1788269952","wholesale":"1.794 ISK"},
+  {"name":"Hrátt Akasíublóma Hunang 900g Seiðkarlinn","price":"4.490 ISK","cat":"Hunangsafurðir","tags":["hunang","akasía","hrátt","Serbía"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/acacia-honey-900g-seidkarlinn","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/1725-front.jpg?v=1788215348","wholesale":"2.694 ISK"},
+  {"name":"Hrátt Akasíublóma Hunang með Kamb 450g Seiðkarlinn","price":"2.990 ISK","cat":"Hunangsafurðir","tags":["hunang","akasía","hunangskambur","hrátt","Serbía"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/acacia-honey-with-honey-comb-450g-seidkarlinn","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/1729-front-v2.jpg?v=1788269953","wholesale":"1.794 ISK"},
+  {"name":"Hrátt Engjablóma Hunang 450g Seiðkarlinn","price":"2.990 ISK","cat":"Hunangsafurðir","tags":["hunang","engjablóm","hrátt","Serbía"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/meadow-honey-450g-seidkarlinn","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/1728-front-v2.jpg?v=1788269953","wholesale":"1.794 ISK"},
+  {"name":"Hrátt Engjablóma Hunang 900g Seiðkarlinn","price":"4.490 ISK","cat":"Hunangsafurðir","tags":["hunang","engjablóm","hrátt","Serbía"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/meadow-honey-900g-seidkarlinn","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/1727-front.jpg?v=1788215348","wholesale":"2.694 ISK"},
+  {"name":"Hrátt Lindiblóma Hunang 450g Seiðkarlinn","price":"2.990 ISK","cat":"Hunangsafurðir","tags":["hunang","lindiblóm","hrátt","Serbía"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/linden-honey-450g-seidkarlinn","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/1731-front-v2.jpg?v=1788269953","wholesale":"1.794 ISK"},
+  {"name":"Hrátt Lindiblóma Hunang 900g Seiðkarlinn","price":"4.490 ISK","cat":"Hunangsafurðir","tags":["hunang","lindiblóm","hrátt","Serbía"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/linden-honey-900g-seidkarlinn","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/1730-front.jpg?v=1788215348","wholesale":"2.694 ISK"},
+  {"name":"Hrátt, Heitt Hunang 450g Seiðkarlinn","price":"3.490 ISK","cat":"Hunangsafurðir","tags":["hunang","hot honey","chili","hrátt","Serbía"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/hot-honey-450g-seidkarlinn","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/1724-front-v2.jpg?v=1788269952","wholesale":"2.094 ISK"},
+  {"name":"Hrátt, Heitt Hunang 900g Seiðkarlinn","price":"4.990 ISK","cat":"Hunangsafurðir","tags":["hunang","hot honey","chili","hrátt","Serbía"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/hot-honey-900g-seidkarlinn","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/1723-front.jpg?v=1788215347","wholesale":"2.994 ISK"},
+  {"name":"Hrátt Hunang með Býflugnafrjóum 450g Seiðkarlinn","price":"3.490 ISK","cat":"Hunangsafurðir","tags":["hunang","býflugnafrjó","engjablóm","hrátt","Serbía"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/honey-with-pollen-450g-seidkarlinn","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/1732-front-v2.jpg?v=1788269953","wholesale":"2.094 ISK"},
+  {"name":"Hrátt Hunang með Býbrauði 450g Seiðkarlinn","price":"3.990 ISK","cat":"Hunangsafurðir","tags":["hunang","býbrauð","perga","hrátt","Serbía"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/honey-with-bee-bread-450g-seidkarlinn","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/1733-front-v2.jpg?v=1788269954","wholesale":"2.394 ISK"},
+  {"name":"Hrátt Hunang með Drottningargeli 450g Seiðkarlinn","price":"4.990 ISK","cat":"Hunangsafurðir","tags":["hunang","drottningargel","royal jelly","akasía","hrátt","Serbía"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/honey-with-royal-jelly-450g-seidkarlinn","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/1734-front-v2.jpg?v=1788269954","wholesale":"2.994 ISK"},`;
 
 // Stale entries that need to come back out of the deleted list, because the
 // fresh NEW_PRODUCTS_20260528 entries reuse their Shopify URLs. If we leave
@@ -348,6 +376,15 @@ export default async function handler(request, context) {
     injected = injected.replace(
       'const PRODUCTS = [',
       `const PRODUCTS = [${NEW_PRODUCTS_20260528}`
+    );
+  }
+
+  // 2b-bis. Inject the 12 Serbian honey SKUs from 2026-08-28 at the start of
+  //         PRODUCTS. Idempotent: keyed on the Drottningargel marker.
+  if (!injected.includes('"Hrátt Hunang með Drottningargeli 450g Seiðkarlinn"')) {
+    injected = injected.replace(
+      'const PRODUCTS = [',
+      `const PRODUCTS = [${NEW_HONEY_20260904}`
     );
   }
 
