@@ -117,17 +117,30 @@ exports.handler = async (event) => {
         // not. notifyNewOrders keeps its own ledger so the second push that
         // logOrder() always fires does not produce a second email.
         let notified = null;
+        let notifyError = null;
         try {
           notified = await notifyNewOrders(store, newOrders);
         } catch (e) {
-          console.error("[ws-data] order notification failed:", e.message);
+          notifyError = String(e && e.message ? e.message : e).slice(0, 160);
+          console.error("[ws-data] order notification failed:", notifyError);
         }
 
-        return {
-          statusCode: 200,
-          headers,
-          body: JSON.stringify({ ok: true, key, saved: true, notified: notified ? notified.sent : 0 }),
-        };
+        const payload = { ok: true, key, saved: true, notified: notified ? notified.sent : 0 };
+        // Opt-in diagnostics: POST {"debug":true} to see WHY nothing was sent.
+        // Booleans and a short reason string only — never the transport URL or
+        // any credential.
+        if (body.debug) {
+          payload.diag = {
+            newOrderIds: newOrders.map((o) => o.id),
+            reason: notified ? notified.reason : "threw",
+            configured: notified ? notified.configured : null,
+            transport: notified ? notified.transport : null,
+            skipped: notified ? notified.skipped : null,
+            error: notifyError,
+          };
+        }
+
+        return { statusCode: 200, headers, body: JSON.stringify(payload) };
       }
 
       // All other keys, and ws_orders with force:true: plain overwrite.

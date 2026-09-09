@@ -163,15 +163,25 @@ async function sendViaWebhook(order) {
  *
  * @param {object} store   Netlify Blobs store handle (already resolved).
  * @param {Array}  orders  Orders considered new by the caller.
- * @returns {Promise<{sent:number, skipped:number, transport:string|null}>}
+ * @returns {Promise<{sent:number, skipped:number, transport:string|null, reason:string, configured:object}>}
  */
 async function notifyNewOrders(store, orders) {
-  const result = { sent: 0, skipped: 0, transport: null };
-  if (!orders || !orders.length) return result;
-
   const hasResend = !!process.env.RESEND_API_KEY;
   const hasWebhook = !!process.env.ORDER_WEBHOOK_URL;
+  // `reason` and `configured` exist so a caller can report WHY nothing was
+  // sent. Without them a missing env var and a failed HTTP call both look like
+  // sent:0, which cost two blind deploys to tell apart on 2026-09-09.
+  const result = {
+    sent: 0,
+    skipped: 0,
+    transport: null,
+    reason: null,
+    configured: { resend: hasResend, webhook: hasWebhook },
+  };
+  if (!orders || !orders.length) { result.reason = "no-new-orders"; return result; }
+
   if (!hasResend && !hasWebhook) {
+    result.reason = "no-transport-configured";
     console.log(
       "[notify-order] " + orders.length + " new order(s) but no transport configured " +
       "(set RESEND_API_KEY or ORDER_WEBHOOK_URL): " + orders.map((o) => o.id).join(", ")
@@ -191,7 +201,7 @@ async function notifyNewOrders(store, orders) {
 
   const todo = orders.filter((o) => o && o.id && ledger.indexOf(String(o.id)) === -1);
   result.skipped = orders.length - todo.length;
-  if (!todo.length) return result;
+  if (!todo.length) { result.reason = "already-notified"; return result; }
 
   // Claim the ids BEFORE sending, so a concurrent invocation that reads the
   // ledger a moment later does not send the same mail again. A send that then
@@ -209,9 +219,12 @@ async function notifyNewOrders(store, orders) {
       result.sent++;
       console.log("[notify-order] sent notification for order " + order.id);
     } catch (e) {
+      // Never echo the transport URL back to a caller — only the failure shape.
+      result.reason = "send-failed: " + String(e.message || e).slice(0, 160);
       console.error("[notify-order] FAILED for order " + order.id + ": " + e.message);
     }
   }
+  if (!result.reason) result.reason = "sent";
   return result;
 }
 
