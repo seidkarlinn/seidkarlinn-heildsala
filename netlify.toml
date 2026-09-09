@@ -64,6 +64,10 @@
 #     ORDER_WEBHOOK_URL  Zapier Catch Hook — receives every new wholesale order
 #                        (Teya card checkout AND reikningsviðskipti) and mails
 #                        benedikt@seidkarlinn.is. Set 2026-09-09.
+#                        NOTE: stored UNMARKED (not "secret"). Setting it with
+#                        is_secret reported success but wrote nothing, and the
+#                        silent result was notified:0 on a live test order.
+#                        Always read the variable list back after changing it.
 #     RESEND_API_KEY     Alternative transport; wins over the webhook if set.
 #     ORDER_EMAIL_TO     Recipient override, default benedikt@seidkarlinn.is.
 #   ws-stock / oos-data
