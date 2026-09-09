@@ -58,3 +58,17 @@
 
 # ws-data sync enabled
 # write-access verified: 2026-05-06 (after MCP Connector App install)
+
+# ── Runtime env vars these functions expect (values live in Netlify, never here)
+#   ws-data / netlify/lib/notify-order.js
+#     ORDER_WEBHOOK_URL  Zapier Catch Hook — receives every new wholesale order
+#                        (Teya card checkout AND reikningsviðskipti) and mails
+#                        benedikt@seidkarlinn.is. Set 2026-09-09.
+#     RESEND_API_KEY     Alternative transport; wins over the webhook if set.
+#     ORDER_EMAIL_TO     Recipient override, default benedikt@seidkarlinn.is.
+#   ws-stock / oos-data
+#     SHOPIFY_STORE_DOMAIN  98d785-4a.myshopify.com  — NOT YET SET
+#     SHOPIFY_ADMIN_TOKEN   shpat_… (read_products, read_inventory, read_orders)
+#                           NOT YET SET: ws-stock falls back to the public
+#                           storefront feed, which cannot see the 49 DRAFT
+#                           products in the wholesale catalogue.
