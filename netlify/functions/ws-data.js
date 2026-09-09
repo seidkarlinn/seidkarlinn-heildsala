@@ -3,6 +3,7 @@
 // resolveStore() now prefers explicit credentials (SITE_ID + NETLIFY_API_TOKEN)
 // and keeps auto-context only as a fallback.
 const { getStore } = require("@netlify/blobs");
+const { notifyNewOrders } = require("../lib/notify-order");
 
 const ALLOWED_KEYS = [
   "ws_orders","ws_invoice_seq","ws_buyer_accounts","ws_custom_products",
@@ -98,13 +99,35 @@ exports.handler = async (event) => {
           const incomingTs = new Date(o.date || 0).getTime();
           if (incomingTs >= existingTs) byId[o.id] = o; // >= so incoming wins on tie
         }
+
+        // Order ids the server had BEFORE this push — anything in the incoming
+        // payload that is not here is a brand-new order and worth an email.
+        const knownIds = new Set(stored.map((o) => o && o.id).filter(Boolean));
+        const newOrders = value.filter((o) => o && o.id && !knownIds.has(o.id));
+
         stored.forEach(addOrder);   // existing server data first
         value.forEach(addOrder);    // incoming second (wins on same or newer date)
         const merged = Object.values(byId).sort((a, b) =>
           new Date(b.date || 0) - new Date(a.date || 0)
         );
         await store.set("ws_orders", JSON.stringify(merged));
-        return { statusCode: 200, headers, body: JSON.stringify({ ok: true, key, saved: true }) };
+
+        // Notify AFTER the order is safely stored, and never let a mail
+        // failure turn into a failed write: the order matters, the email does
+        // not. notifyNewOrders keeps its own ledger so the second push that
+        // logOrder() always fires does not produce a second email.
+        let notified = null;
+        try {
+          notified = await notifyNewOrders(store, newOrders);
+        } catch (e) {
+          console.error("[ws-data] order notification failed:", e.message);
+        }
+
+        return {
+          statusCode: 200,
+          headers,
+          body: JSON.stringify({ ok: true, key, saved: true, notified: notified ? notified.sent : 0 }),
+        };
       }
 
       // All other keys, and ws_orders with force:true: plain overwrite.
