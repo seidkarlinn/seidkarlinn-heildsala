@@ -1,50 +1,60 @@
 /**
  * Netlify Edge Function — inject-stock-layer
  *
- * Adds <script src="/ws-stock-layer.js"> just before the document's closing
- * </body> so the live Shopify stock overlay loads after index.html's inline
- * scripts have defined applyPricingOverrides() and getEffectivePricing().
+ * Adds the wholesale portal's two client-side overlay scripts just before the
+ * document's closing </body>, so they load after index.html's inline scripts
+ * have defined applyPricingOverrides() and getEffectivePricing():
+ *
+ *   ws-stock-layer.js   live Shopify stock (and the per-buyer override fix)
+ *   ws-vorunumer.js     Vörunúmer / SKU on each product
+ *
+ * Order matters: ws-vorunumer.js reads the stock map that ws-stock-layer.js
+ * puts on window._wsLiveStock, and the handle-remap table it defines.
  *
  * WHY AN EDGE FUNCTION
  *   index.html is ~530 KB and cannot be pushed through the GitHub connector,
- *   so the <script> tag cannot be added to the file itself. Same pattern the
- *   CordyFresh product injection uses. If index.html ever gains a baked-in
- *   reference to ws-stock-layer.js, the guard below turns this into a no-op
- *   and the edge function can be retired.
+ *   so the <script> tags cannot be added to the file itself. Same pattern the
+ *   CordyFresh product injection uses. If index.html ever gains baked-in
+ *   references, the guards below turn this into a no-op and the edge function
+ *   can be retired.
  *
  * WHY lastIndexOf
  *   index.html contains an EARLIER literal </body> inside the template string
  *   that builds the delivery note (deliveryHTML). A plain replace() hits that
- *   one first, which parks the tag inside a JS string: harmless to the page
- *   (it is a template literal) but the script never loads, and printed
- *   delivery notes carry a stray tag. Always target the last </body>.
+ *   one first, which parks the tags inside a JS string: harmless to the page
+ *   (it is a template literal) but the scripts never load, and printed
+ *   delivery notes carry stray tags. Always target the last </body>.
  *
- * VERSION
- *   Bump WS_STOCK_LAYER_VERSION whenever ws-stock-layer.js changes, so the
- *   browser refetches it instead of revalidating a cached copy.
+ * VERSIONS
+ *   Bump a script's version whenever that file changes, so the browser
+ *   refetches it instead of revalidating a cached copy.
  */
 
-const WS_STOCK_LAYER_VERSION = '20260909a';
+const SCRIPTS = [
+  { src: '/ws-stock-layer.js', version: '20260909a' },
+  { src: '/ws-vorunumer.js', version: '20260909a' },
+];
 
 export default async function handler(request, context) {
   const response = await context.next();
   const contentType = response.headers.get('content-type') || '';
   if (!contentType.includes('text/html')) return response;
 
-  const html = await response.text();
+  let html = await response.text();
 
-  // Idempotent: never inject twice, and stand down if index.html loads it.
-  if (html.includes('ws-stock-layer.js')) {
-    return new Response(html, { status: response.status, headers: response.headers });
+  // Idempotent per script: never inject twice, and stand down for any script
+  // index.html has started loading on its own.
+  const tags = SCRIPTS
+    .filter((s) => !html.includes(s.src))
+    .map((s) => `<script src="${s.src}?v=${s.version}"></script>`)
+    .join('');
+
+  if (tags) {
+    const at = html.lastIndexOf('</body>');
+    html = at === -1 ? html + tags : html.slice(0, at) + tags + html.slice(at);
   }
 
-  const tag = `<script src="/ws-stock-layer.js?v=${WS_STOCK_LAYER_VERSION}"></script>`;
-  const at = html.lastIndexOf('</body>');
-  const injected = at === -1
-    ? html + tag
-    : html.slice(0, at) + tag + html.slice(at);
-
-  return new Response(injected, { status: response.status, headers: response.headers });
+  return new Response(html, { status: response.status, headers: response.headers });
 }
 
 export const config = { path: '/' };

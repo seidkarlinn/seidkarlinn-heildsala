@@ -30,7 +30,11 @@
 //   buyer must not be able to order units that do not physically exist.
 //
 // RESPONSE
-//   { ok, source, generatedAt, count, stock: { "<handle>": { a: 1|0, q: n } } }
+//   { ok, source, generatedAt, count,
+//     stock: { "<handle>": { a: 1|0, q: n, k: "<sku / vörunúmer>" } } }
+//   `k` is the SKU, which is the same number as "Vörunúmer" in the Söluvörur
+//   spreadsheet (verified against it on 2026-09-09). The portal shows it on the
+//   product detail panel; ws-vorunumer.js reads it from this map.
 //
 // CACHING
 //   In-memory per warm container (TTL below) + CDN cache, so a page-load storm
@@ -46,9 +50,8 @@ let _cache = null;   // { at: epochMs, payload: {...} }
 /* ── Source 1: Admin API (all product statuses) ─────────────────────────── */
 async function fromAdminApi(storeDomain, adminToken) {
   const endpoint = `https://${storeDomain}/admin/api/${SHOPIFY_API_VERSION}/graphql.json`;
-  // Product-level totalInventory + tracksInventory only: no nested variant
-  // connection, which keeps the query cost low enough to pull 250 products per
-  // request (the whole catalogue is ~4 requests).
+  // variants(first: 1) only — one variant per product across this catalogue —
+  // which keeps the query cost at 250 x 2 = 500, still inside the 1000 limit.
   const query = `
     query Stock($cursor: String) {
       products(first: 250, after: $cursor) {
@@ -58,6 +61,7 @@ async function fromAdminApi(storeDomain, adminToken) {
             status
             totalInventory
             tracksInventory
+            variants(first: 1) { edges { node { sku } } }
           }
         }
         pageInfo { hasNextPage endCursor }
@@ -90,7 +94,8 @@ async function fromAdminApi(storeDomain, adminToken) {
       const tracked = n.tracksInventory !== false;
       const qty = typeof n.totalInventory === 'number' ? n.totalInventory : null;
       const available = tracked ? (qty !== null && qty > 0) : true;
-      stock[n.handle] = { a: available ? 1 : 0, q: qty, s: n.status };
+      const sku = n.variants?.edges?.[0]?.node?.sku || null;
+      stock[n.handle] = { a: available ? 1 : 0, q: qty, s: n.status, k: sku };
     });
 
     hasNext = json.data.products.pageInfo.hasNextPage;
@@ -114,7 +119,13 @@ async function fromPublicFeed() {
     if (!products.length) break;
     products.forEach((p) => {
       const available = (p.variants || []).some((v) => v.available);
-      stock[p.handle] = { a: available ? 1 : 0, q: null, s: 'ACTIVE' };
+      const withSku = (p.variants || []).find((v) => v.sku);
+      stock[p.handle] = {
+        a: available ? 1 : 0,
+        q: null,
+        s: 'ACTIVE',
+        k: withSku ? String(withSku.sku) : null,
+      };
     });
     if (products.length < 250) break;
   }
