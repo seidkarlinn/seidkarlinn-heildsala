@@ -48,5 +48,13 @@
   path = "/"
   function = "inject-catalog"
 
+# inject-stock-layer is declared LAST, so it is the INNERMOST wrapper: it adds
+# the <script src="/ws-stock-layer.js"> tag before </body> and the functions
+# above then transform HTML that already contains it. Order does not matter for
+# correctness here (the tag is not what they rewrite), only for predictability.
+[[edge_functions]]
+  path = "/"
+  function = "inject-stock-layer"
+
 # ws-data sync enabled
 # write-access verified: 2026-05-06 (after MCP Connector App install)
