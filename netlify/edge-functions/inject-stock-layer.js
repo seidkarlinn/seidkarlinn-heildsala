@@ -1,15 +1,18 @@
 /**
  * Netlify Edge Function — inject-stock-layer
  *
- * Adds the wholesale portal's two client-side overlay scripts just before the
+ * Adds the wholesale portal's client-side overlay scripts just before the
  * document's closing </body>, so they load after index.html's inline scripts
- * have defined applyPricingOverrides() and getEffectivePricing():
+ * have defined applyPricingOverrides(), getEffectivePricing() and
+ * exportReglaCSV():
  *
  *   ws-stock-layer.js   live Shopify stock (and the per-buyer override fix)
  *   ws-vorunumer.js     Vörunúmer / SKU on each product
+ *   ws-regla-export.js  "Sækja fyrir Reglu.is" → Sölusaga line-item CSV
  *
  * Order matters: ws-vorunumer.js reads the stock map that ws-stock-layer.js
- * puts on window._wsLiveStock, and the handle-remap table it defines.
+ * puts on window._wsLiveStock, and the handle-remap table it defines;
+ * ws-regla-export.js reads the sku that ws-vorunumer.js sets.
  *
  * WHY AN EDGE FUNCTION
  *   index.html is ~530 KB and cannot be pushed through the GitHub connector,
@@ -33,6 +36,7 @@
 const SCRIPTS = [
   { src: '/ws-stock-layer.js', version: '20260909a' },
   { src: '/ws-vorunumer.js', version: '20260909a' },
+  { src: '/ws-regla-export.js', version: '20260909a' },
 ];
 
 export default async function handler(request, context) {
