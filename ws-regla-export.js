@@ -21,6 +21,17 @@
      so that Ein.verð × Magn − Afsláttar upphæð equals what the buyer actually
      pays, and the customer's discount stays visible in Regla.
 
+   KENNITALA
+     Order records almost never carry one. The Teya card checkout does not ask
+     for a kt at all, and invoiceCheckout() writes buyerKt straight to
+     localStorage without pushing it to the server (deliberately — a third
+     concurrent push raced the other two), so it never leaves the browser that
+     placed the order. Checked against the live data: 0 of the stored orders
+     have buyerKt. So the kt is resolved from Viðskiptamenn (ws_vidskm) at
+     export time, matched on username first, then name, then e-mail. All 10
+     customers there have a kt, and every real order matches on username — and
+     because the lookup happens at export time it fixes past orders too.
+
    WHY A LOOKUP IS NEEDED
      Order lines only ever stored the price charged (the wholesale price) — see
      logOrder() in index.html. The retail price is not on the order, so it comes
@@ -39,6 +50,37 @@
     " Pöntunarnúmer", " Kennitala", "Dagsetning", "Mynt",
     " Vörunúmer", " Magn", "Ein.verð", "Afsláttar upphæð"
   ];
+
+  // Regla gets a bare 10-digit kennitala: the customer list holds both
+  // "5501012345" and "550101-2345" spellings.
+  function ktDigits(v) {
+    var d = String(v == null ? "" : v).replace(/\D/g, "");
+    return d.length === 10 ? d : (d || "");
+  }
+
+  function vidskmList() {
+    try {
+      if (typeof getVidskm === "function") return getVidskm() || [];
+    } catch (e) {}
+    try { return JSON.parse(localStorage.getItem("ws_vidskm") || "[]") || []; } catch (e) {}
+    return [];
+  }
+
+  // kt on the order wins (an invoice order placed in this browser has it);
+  // otherwise look the customer up. Username is the reliable key — name and
+  // e-mail are typed by hand at checkout and drift.
+  function kennitalaFor(order) {
+    var own = ktDigits(order.buyerKt);
+    if (own) return own;
+    var list = vidskmList();
+    var norm = function (x) { return String(x == null ? "" : x).trim().toLowerCase(); };
+    var u = norm(order.buyerUser), n = norm(order.buyerName), e = norm(order.buyerEmail);
+    var hit = null;
+    if (u) hit = list.find(function (v) { return v && norm(v.user) === u; });
+    if (!hit && n) hit = list.find(function (v) { return v && norm(v.nafn) === n; });
+    if (!hit && e) hit = list.find(function (v) { return v && norm(v.netfang) === e; });
+    return hit ? ktDigits(hit.kt) : "";
+  }
 
   function iskNum(v) {
     if (typeof v === "number") return Math.round(v);
@@ -103,10 +145,12 @@
     }
 
     var rows = [HEADERS];
-    var noSku = 0, noMatch = 0, lines = 0;
+    var noSku = 0, noMatch = 0, noKt = 0, lines = 0;
 
     filtered.forEach(function (o) {
       var d = new Date(o.date);
+      var kt = kennitalaFor(o);
+      if (!kt) noKt++;
       var dateFmt = d.toLocaleDateString("is-IS", { day: "2-digit", month: "2-digit", year: "numeric" })
                      .replace(/\./g, "/");
 
@@ -134,7 +178,7 @@
 
         rows.push([
           o.id || "",              // Pöntunarnúmer
-          o.buyerKt || "",         // Kennitala
+          kt,                      // Kennitala (úr Viðskiptamenn ef ekki á pöntun)
           dateFmt,                 // Dagsetning
           "ISK",                   // Mynt
           sku,                     // Vörunúmer
@@ -168,9 +212,12 @@
     var msg = "✅ Sölusaga tilbúin — " + lines + " línur úr " + filtered.length + " pöntunum";
     if (noSku) msg += " · " + noSku + " án vörunúmers";
     if (noMatch) msg += " · " + noMatch + " vörur fundust ekki í vörulista";
-    showToast(msg, noSku || noMatch ? 9000 : 4000);
-    if (noSku || noMatch) {
-      console.warn("[ws-regla] línur án vörunúmers: " + noSku + ", vörur sem fundust ekki: " + noMatch);
+    if (noKt) msg += " · " + noKt + " pöntun(ir) án kennitölu";
+    showToast(msg, noSku || noMatch || noKt ? 9000 : 4000);
+    if (noSku || noMatch || noKt) {
+      console.warn("[ws-regla] línur án vörunúmers: " + noSku +
+                   ", vörur sem fundust ekki: " + noMatch +
+                   ", pantanir án kennitölu: " + noKt);
     }
   }
 
