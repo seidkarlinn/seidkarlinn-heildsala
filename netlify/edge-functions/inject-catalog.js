@@ -48,6 +48,14 @@
  *   "Hunang40", routed through a virtual "Nýtt hunang" category (default
  *   40%) by HONEY40_PATCH, so every buyer gets 40% on it regardless of
  *   their Hunangsafurðir percentage.
+ *
+ * 2026-09-17: Fixed HONEY40_PATCH skipping any product that had ANY
+ *   product-level entry in ws_pricing.prods. Nine of the twelve honey
+ *   SKUs carry img-only entries there (from the image fixes), which
+ *   index.html flags as _priceOverridden — so they fell back to the
+ *   buyer's Hunangsafurðir percentage and rendered at 35% instead of
+ *   40%. The patch now bails only on a real fixed price (p.noDisc or
+ *   o.ws > 0).
  */
 
 // 8 CordyFresh entries — Cordyceps/Lions Mane/Reishi/Chaga at 20% and 50% strengths.
@@ -348,6 +356,22 @@ const HONEY40_PATCH = `
     return DEFAULT_PCT;
   }
 
+  // True only when the admin has set an explicit wholesale price for this
+  // product in ws_pricing(.users).prods. An override that only carries img /
+  // name / inStock / cat data is NOT a price intent — but index.html flags
+  // those products with _priceOverridden too, which used to make this patch
+  // skip them so they fell back to the buyer's Hunangsafurðir percentage
+  // (35% instead of 40%). Fixed 2026-09-17.
+  function hasFixedWsOverride(p){
+    try {
+      if (typeof window.getProdKey !== "function") return !!p._priceOverridden;
+      var ov = (typeof window.getEffectivePricing === "function")
+        ? window.getEffectivePricing() : null;
+      var o = (ov && ov.prods) ? ov.prods[window.getProdKey(p)] : null;
+      return !!(o && o.ws && o.ws > 0);
+    } catch(e){ return !!p._priceOverridden; }
+  }
+
   // ── Hook 1: applyPricingOverrides ─────────────────────────────
   function patchApply(){
     if (typeof window.applyPricingOverrides !== "function") return false;
@@ -360,7 +384,8 @@ const HONEY40_PATCH = `
         if (Array.isArray(window.PRODUCTS)) {
           window.PRODUCTS = window.PRODUCTS.map(function(p){
             if (!isHoney40(p)) return p;
-            if (p._priceOverridden) return p; // admin product-level override wins
+            if (p.noDisc) return p;               // fixed-price SKUs keep their price
+            if (hasFixedWsOverride(p)) return p;  // explicit admin wholesale price wins
             var retail = parseInt((p.price||"").replace(/[^\\d]/g,""),10) || 0;
             if (retail <= 0) return p;
             var ws = Math.round(retail * (1 - disc/100));
