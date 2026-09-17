@@ -61,6 +61,12 @@
  *   seidkarlinn.is from 11.990 to 9.990 ISK — retail and the baked
  *   fallback wholesale (30% off = 6.993 ISK) updated below. The 20%
  *   tinctures stay at 5.990 ISK.
+ *
+ * 2026-09-17 (3): Same _priceOverridden fix applied to CORDYFRESH_PATCH.
+ *   Cordyceps 20% is the only Cordyfresh SKU with an entry in
+ *   ws_pricing.prods (img only), so it was falling back to the buyer's
+ *   Sveppir percentage (35%) instead of the flat Cordyfresh 30%. The
+ *   whole line now prices at 30% for every buyer.
  */
 
 // 8 CordyFresh entries — Cordyceps/Lions Mane/Reishi/Chaga at 20% and 50% strengths.
@@ -201,11 +207,28 @@ const CORDYFRESH_PATCH = `
     return DEFAULT_PCT;
   }
 
+  // True only when the admin has set an explicit wholesale price for this
+  // product in ws_pricing(.users).prods. An override that only carries img /
+  // name / inStock / cat data is NOT a price intent — but index.html flags
+  // those products with _priceOverridden too, which used to make this patch
+  // skip them so they fell back to the buyer's Sveppir percentage (35%)
+  // instead of the flat Cordyfresh 30%. Fixed 2026-09-17 (mirrors the
+  // identical fix in HONEY40_PATCH).
+  function hasFixedWsOverride(p){
+    try {
+      if (typeof window.getProdKey !== "function") return !!p._priceOverridden;
+      var ov = (typeof window.getEffectivePricing === "function")
+        ? window.getEffectivePricing() : null;
+      var o = (ov && ov.prods) ? ov.prods[window.getProdKey(p)] : null;
+      return !!(o && o.ws && o.ws > 0);
+    } catch(e){ return !!p._priceOverridden; }
+  }
+
   // ── Hook 1: applyPricingOverrides ─────────────────────────────
   // After the original runs, post-process window.PRODUCTS so every
   // tag:"Cordyfresh" product's wholesale reflects the Cordyfresh
   // category discount (or the 30% default), unless that product has
-  // an explicit product-level override (_priceOverridden true).
+  // a genuine fixed price (noDisc, or an explicit wholesale override).
   function patchApply(){
     if (typeof window.applyPricingOverrides !== "function") return false;
     if (window.applyPricingOverrides.__cordyPatched) return true;
@@ -217,7 +240,8 @@ const CORDYFRESH_PATCH = `
         if (Array.isArray(window.PRODUCTS)) {
           window.PRODUCTS = window.PRODUCTS.map(function(p){
             if (!isCordy(p)) return p;
-            if (p._priceOverridden) return p; // admin product-level override wins
+            if (p.noDisc) return p;               // fixed-price SKUs keep their price
+            if (hasFixedWsOverride(p)) return p;  // explicit admin wholesale price wins
             var retail = parseInt((p.price||"").replace(/[^\\d]/g,""),10) || 0;
             if (retail <= 0) return p;
             var ws = Math.round(retail * (1 - disc/100));
