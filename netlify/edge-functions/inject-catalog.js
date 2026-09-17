@@ -56,6 +56,11 @@
  *   buyer's Hunangsafurðir percentage and rendered at 35% instead of
  *   40%. The patch now bails only on a real fixed price (p.noDisc or
  *   o.ws > 0).
+ *
+ * 2026-09-17 (2): Cordyfresh 50% tinctures (SKU 1628–1631) repriced on
+ *   seidkarlinn.is from 11.990 to 9.990 ISK — retail and the baked
+ *   fallback wholesale (30% off = 6.993 ISK) updated below. The 20%
+ *   tinctures stay at 5.990 ISK.
  */
 
 // 8 CordyFresh entries — Cordyceps/Lions Mane/Reishi/Chaga at 20% and 50% strengths.
@@ -68,10 +73,10 @@ const CORDYFRESH = `
   {"name":"Lions Mane 20% Cordyfresh 30ml","price":"5.990 ISK","cat":"Sveppir","tags":["lions mane","dropar","tvíextrakt","NGF","Cordyfresh"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/lions-mane-20-cordyfresh-30ml","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/Lions-Mane-20.jpg?v=1777761653","wholesale":"4.193 ISK"},
   {"name":"Reishi 20% Cordyfresh 30ml","price":"5.990 ISK","cat":"Sveppir","tags":["reishi","dropar","tvíextrakt","Cordyfresh"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/reishi-20-cordyfresh-30ml","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/Reishi-20.jpg?v=1777761640","wholesale":"4.193 ISK"},
   {"name":"Chaga 20% Cordyfresh 30ml","price":"5.990 ISK","cat":"Sveppir","tags":["chaga","dropar","tvíextrakt","Cordyfresh"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/chaga-20-cordyfresh-30ml","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/Chaga-20.jpg?v=1777761629","wholesale":"4.193 ISK"},
-  {"name":"Cordyceps 50% Cordyfresh 30ml","price":"11.990 ISK","cat":"Sveppir","tags":["cordyceps","dropar","tvíextrakt","Cordyfresh"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/cordyceps-50-cordyfresh-30ml","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/Cordyceps-50.jpg?v=1777761674","wholesale":"8.393 ISK"},
-  {"name":"Lions Mane 50% Cordyfresh 30ml","price":"11.990 ISK","cat":"Sveppir","tags":["lions mane","dropar","tvíextrakt","NGF","Cordyfresh"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/lions-mane-50-cordyfresh-30ml","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/Lions-Mane-50.jpg?v=1777761662","wholesale":"8.393 ISK"},
-  {"name":"Reishi 50% Cordyfresh 30ml","price":"11.990 ISK","cat":"Sveppir","tags":["reishi","dropar","tvíextrakt","Cordyfresh"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/reishi-50-cordyfresh-30ml","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/Reishi-50.jpg?v=1777761647","wholesale":"8.393 ISK"},
-  {"name":"Chaga 50% Cordyfresh 30ml","price":"11.990 ISK","cat":"Sveppir","tags":["chaga","dropar","tvíextrakt","Cordyfresh"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/chaga-50-cordyfresh-30ml","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/Chaga-50.jpg?v=1777761634","wholesale":"8.393 ISK"},`;
+  {"name":"Cordyceps 50% Cordyfresh 30ml","price":"9.990 ISK","cat":"Sveppir","tags":["cordyceps","dropar","tvíextrakt","Cordyfresh"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/cordyceps-50-cordyfresh-30ml","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/Cordyceps-50.jpg?v=1777761674","wholesale":"6.993 ISK"},
+  {"name":"Lions Mane 50% Cordyfresh 30ml","price":"9.990 ISK","cat":"Sveppir","tags":["lions mane","dropar","tvíextrakt","NGF","Cordyfresh"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/lions-mane-50-cordyfresh-30ml","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/Lions-Mane-50.jpg?v=1777761662","wholesale":"6.993 ISK"},
+  {"name":"Reishi 50% Cordyfresh 30ml","price":"9.990 ISK","cat":"Sveppir","tags":["reishi","dropar","tvíextrakt","Cordyfresh"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/reishi-50-cordyfresh-30ml","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/Reishi-50.jpg?v=1777761647","wholesale":"6.993 ISK"},
+  {"name":"Chaga 50% Cordyfresh 30ml","price":"9.990 ISK","cat":"Sveppir","tags":["chaga","dropar","tvíextrakt","Cordyfresh"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/chaga-50-cordyfresh-30ml","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/Chaga-50.jpg?v=1777761634","wholesale":"6.993 ISK"},`;
 
 // 5 products added 2026-05-28 — fresh photos uploaded to Shopify today.
 // Wholesale prices use the standard 25% off retail (Math.floor(retail * 0.75)).
