@@ -48,11 +48,15 @@ const FIELD_ORDER = {
   Product: ['ProductNumber', 'Name', 'UnitPrice', 'VatDefinition', 'StockQuantity', 'IsInStockControl'],
   Currency: ['Code', 'Symbol', 'BuyingRate', 'SellingRate'],
   PostalCode: ['Value', 'Name'],
+  PaymentMethod: ['ID', 'Name', 'NameEnglish', 'IssuerID'],
+  Language: ['ID', 'Name', 'NativeName', 'Value'],
+  VatDefinition: ['Key', 'Description', 'Percentage'],
 };
 // Child element name for array-typed fields.
 const ARRAY_ITEM = { InvoiceEntries: 'InvoiceEntry' };
 // Which complex type a nested field is.
-const FIELD_TYPE = { Customer: 'Customer', Product: 'Product', Currency: 'Currency', PostalCode: 'PostalCode', InvoiceEntry: 'InvoiceEntry' };
+const FIELD_TYPE = { Customer: 'Customer', Product: 'Product', Currency: 'Currency', PostalCode: 'PostalCode', InvoiceEntry: 'InvoiceEntry',
+  PaymentMethod: 'PaymentMethod', Language: 'Language', VatDefinition: 'VatDefinition', ExclusionVatDefinition: 'VatDefinition' };
 
 function esc(s) {
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -274,6 +278,55 @@ async function stock() {
 /* ── customers ────────────────────────────────────────────────────────────── */
 const ktDigits = (v) => String(v == null ? '' : v).replace(/\D/g, '');
 
+// Parsed SOAP objects carry '' for absent values; an empty <ID></ID> would
+// break an int field, so strip empties before sending an object back.
+function prune(o) {
+  if (Array.isArray(o)) return o.map(prune);
+  if (!o || typeof o !== 'object') return o;
+  const out = {};
+  for (const k of Object.keys(o)) {
+    const v = prune(o[k]);
+    if (v === '' || v === null || v === undefined) continue;
+    if (typeof v === 'object' && !Array.isArray(v) && !Object.keys(v).length) continue;
+    out[k] = v;
+  }
+  return out;
+}
+
+async function getCustomer(kt) {
+  let res;
+  try { res = await call('GetCustomer', () => toXml({ customerNumber: kt })); }
+  catch (e) { if (/unable to process/i.test(e.message)) return null; throw e; }
+  const c = res.r.GetCustomerResult;
+  return res.ok && c && typeof c === 'object' && c.CustomerNumber ? prune(c) : null;
+}
+
+// Regla rejects an invoice whose customer has no payment method
+// (INFO_PAYMENT_METHOD_NOT_FOUND). REGLA_PAYMENT_METHOD_ID wins; otherwise
+// the company's default payment method in Regla.
+let _defaultPm = null;
+async function defaultPaymentMethod() {
+  if (process.env.REGLA_PAYMENT_METHOD_ID) return { ID: parseInt(process.env.REGLA_PAYMENT_METHOD_ID, 10) };
+  if (_defaultPm) return _defaultPm;
+  const { r, ok } = await call('GetDefaultPaymentMethod', () => '');
+  const pm = r.GetDefaultPaymentMethodResult;
+  if (ok && pm && typeof pm === 'object' && parseInt(pm.ID, 10) > 0) _defaultPm = prune(pm);
+  return _defaultPm;
+}
+const hasPm = (c) => c && c.PaymentMethod && parseInt(c.PaymentMethod.ID, 10) > 0;
+
+// Full Regla customer record for an invoice, with a name and a payment
+// method filled in if Regla's record lacks them. `patched` tells the caller
+// to let Regla store those fixes (updateCustomer=true).
+async function customerForInvoice(kt, fallbackName) {
+  const c = await getCustomer(kt);
+  if (!c) return { customer: { CustomerNumber: kt, Name: fallbackName || kt }, patched: true };
+  let patched = false;
+  if (!c.Name) { c.Name = fallbackName || kt; patched = true; }
+  if (!hasPm(c)) { const pm = await defaultPaymentMethod(); if (pm) { c.PaymentMethod = pm; patched = true; } }
+  return { customer: c, patched };
+}
+
 async function customerExists(kt) {
   let res;
   try {
@@ -304,6 +357,7 @@ async function ensureCustomer(c) {
     Phone1: c.simi || undefined,
     Email: c.netfang || c.email || undefined,
     InvoiceEmail: c.netfang || c.email || undefined,
+    PaymentMethod: (await defaultPaymentMethod()) || undefined,
     DiscountPercentage: 0,
     Currency: { Code: 'ISK' },
   };
@@ -394,17 +448,19 @@ async function buildInvoice(order) {
 }
 
 // Saved (unissued) invoice = draft to review and issue in Regla.
-// updateCustomer/updateProducts=false: the partial Customer/Product we send
-// are references only and must not overwrite Regla's records.
-async function saveDraftInvoice(invoice) {
+// The Customer sent is Regla's own full record (customerForInvoice), so
+// updateCustomer=true only ever writes back that record plus the missing
+// name/payment method. updateProducts stays false: Product is a reference.
+async function saveDraftInvoice(invoice, updateCustomer) {
   const { ok, messages } = await call('SaveInvoiceWithUpdateAndValidationOptions',
     () => '<invoice>' + toXml(invoice, 'Invoice') + '</invoice>' +
-      toXml({ updateCustomer: false, updateProducts: false, validateInvoice: true }),
+      toXml({ updateCustomer: !!updateCustomer, updateProducts: false, validateInvoice: true }),
     'SaveInvoiceWithUpdateAndValidationOptionsResult');
   return { ok, messages };
 }
 
 module.exports = {
   configured, login, soap, call, toXml, parseXml, products, stock,
-  ensureCustomer, buildInvoice, saveDraftInvoice, cleanMessages, ktDigits,
+  ensureCustomer, getCustomer, customerForInvoice, defaultPaymentMethod,
+  buildInvoice, saveDraftInvoice, cleanMessages, ktDigits,
 };

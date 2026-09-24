@@ -82,6 +82,14 @@ exports.handler = async (event) => {
       return reply(200, { ok: true, loggedIn: true, products: Object.keys(cat.bySku).length });
     }
 
+    if (action === 'customer') {
+      // Diagnostics: what Regla holds for one kennitala (no secrets in it).
+      const kt = regla.ktDigits(body.kt);
+      const c = await regla.getCustomer(kt);
+      const pm = await regla.defaultPaymentMethod().catch((e) => ({ error: e.message }));
+      return reply(200, { ok: true, customer: c, defaultPaymentMethod: pm });
+    }
+
     if (action === 'status') {
       const log = await readLog(resolveStore());
       return reply(200, { ok: true, log });
@@ -113,7 +121,9 @@ exports.handler = async (event) => {
           const cust = await regla.ensureCustomer({ ...(o.customer || {}), kt: o.kt, nafn: (o.customer && o.customer.nafn) || o.buyerName, netfang: (o.customer && o.customer.netfang) || o.buyerEmail });
           if (cust.status === 'error') { results.push({ id: o.id, status: 'error', messages: ['Viðskiptamaður: ' + (cust.messages || []).join(' | ')] }); continue; }
 
-          const saved = await regla.saveDraftInvoice(invoice);
+          const full = await regla.customerForInvoice(regla.ktDigits(o.kt), (o.customer && o.customer.nafn) || o.buyerName);
+          invoice.Customer = full.customer;
+          const saved = await regla.saveDraftInvoice(invoice, full.patched);
           const entry = { ok: saved.ok, at: new Date().toISOString(), amount: invoice.Amount, messages: saved.messages.slice(0, 6) };
           if (saved.ok) log[o.id] = entry;
           results.push({ id: o.id, status: saved.ok ? 'sent' : 'error', customer: cust.status, messages: saved.messages, warnings });
