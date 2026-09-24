@@ -133,7 +133,7 @@ exports.handler = async (event) => {
 
       for (const o of orders) {
         if (!o || !o.id) continue;
-        if (!body.force && log[o.id] && log[o.id].ok) { results.push({ id: o.id, status: 'already' }); continue; }
+        if (!body.force && log[o.id] && log[o.id].ok && log[o.id].number) { results.push({ id: o.id, status: 'already' }); continue; }
         try {
           const { invoice, errors, warnings } = await regla.buildInvoice(o);
           if (errors.length) { results.push({ id: o.id, status: 'invalid', messages: errors }); continue; }
@@ -144,9 +144,10 @@ exports.handler = async (event) => {
           const full = await regla.customerForInvoice(regla.ktDigits(o.kt), (o.customer && o.customer.nafn) || o.buyerName);
           invoice.Customer = full.customer;
           const saved = await regla.saveDraftInvoice(invoice, full.patched);
-          const entry = { ok: saved.ok, at: new Date().toISOString(), amount: invoice.Amount, messages: saved.messages.slice(0, 6) };
-          if (saved.ok) log[o.id] = entry;
-          results.push({ id: o.id, status: saved.ok ? 'sent' : 'error', customer: cust.status, messages: saved.messages, warnings });
+          const entry = { ok: saved.ok, number: saved.number, at: new Date().toISOString(), amount: invoice.Amount, messages: saved.messages.slice(0, 12) };
+          if (saved.ok) log[o.id] = entry; else delete log[o.id];
+          const msgs = saved.ok ? ['Geymdur reikningur nr. ' + saved.number + ' í Reglu'].concat(saved.messages) : saved.messages;
+          results.push({ id: o.id, status: saved.ok ? 'sent' : 'error', number: saved.number, customer: cust.status, messages: msgs, warnings });
         } catch (e) {
           results.push({ id: o.id, status: 'error', messages: [e.message] });
         }

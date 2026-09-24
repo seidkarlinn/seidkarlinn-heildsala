@@ -481,16 +481,51 @@ async function buildInvoice(order) {
 // The Customer sent is Regla's own full record (customerForInvoice), so
 // updateCustomer=true only ever writes back that record plus the missing
 // name/payment method. updateProducts stays false: Product is a reference.
+//
+// VERIFIED SAVE (2026-09-24)
+//   SaveInvoiceWithUpdateAndValidationOptions(validateInvoice=true) answered
+//   Success with only INFO_*_VALID messages but no geymdur reikningur was
+//   created — it appears to validate only. So after each attempt we look the
+//   draft up (SearchSavedInvoices by kennitala, matched on UniqueReference)
+//   and fall back to plain SaveInvoice. Success = the draft is found.
+// Matched on UniqueReference, or on Concerning in case Regla replaces the
+// reference with its own GUID (its other saved invoices all carry GUIDs).
+async function findSavedInvoice(kt, ref, concerning) {
+  const { r } = await call('SearchSavedInvoices', () => toXml({ search: kt, indexFrom: 0, maxRecordCount: 50 }));
+  const list = asArray(r.SearchSavedInvoicesResult && r.SearchSavedInvoicesResult.Invoice);
+  const hit = list.find((i) => i && (String(i.UniqueReference || '') === String(ref) ||
+    (concerning && String(i.Concerning || '') === String(concerning))));
+  return hit ? { number: hit.InvoiceNumber, amount: hit.Amount, date: hit.Date } : null;
+}
+
 async function saveDraftInvoice(invoice, updateCustomer) {
-  const { ok, messages } = await call('SaveInvoiceWithUpdateAndValidationOptions',
+  const kt = invoice.Customer && invoice.Customer.CustomerNumber;
+  const ref = invoice.UniqueReference;
+  const log = [];
+
+  const existing = await findSavedInvoice(kt, ref, invoice.Concerning);
+  if (existing) return { ok: true, number: existing.number, messages: ['Drög voru þegar til í Reglu'], already: true };
+
+  const a = await call('SaveInvoiceWithUpdateAndValidationOptions',
     () => '<invoice>' + toXml(invoice, 'Invoice') + '</invoice>' +
       toXml({ updateCustomer: !!updateCustomer, updateProducts: false, validateInvoice: true }),
     'SaveInvoiceWithUpdateAndValidationOptionsResult');
-  return { ok, messages };
+  log.push(...a.messages);
+  if (!a.ok) return { ok: false, messages: log };
+
+  let found = await findSavedInvoice(kt, ref, invoice.Concerning);
+  if (!found) {
+    const b = await call('SaveInvoice', () => '<invoice>' + toXml(invoice, 'Invoice') + '</invoice>', 'SaveInvoiceResult');
+    log.push(...b.messages.map((m) => 'SaveInvoice: ' + m));
+    if (!b.ok) return { ok: false, messages: log };
+    found = await findSavedInvoice(kt, ref, invoice.Concerning);
+  }
+  if (!found) return { ok: false, messages: log.concat(['Regla svaraði OK en drögin fundust ekki undir geymdum reikningum']) };
+  return { ok: true, number: found.number, messages: log };
 }
 
 module.exports = {
   configured, login, soap, call, toXml, parseXml, products, stock,
   productRecord, ensureCustomer, getCustomer, customerForInvoice, defaultPaymentMethod,
-  buildInvoice, saveDraftInvoice, cleanMessages, ktDigits,
+  buildInvoice, saveDraftInvoice, findSavedInvoice, cleanMessages, ktDigits,
 };
