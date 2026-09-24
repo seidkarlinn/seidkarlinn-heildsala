@@ -163,9 +163,11 @@ function configured() {
 
 function pickToken(msgs) {
   const parts = msgs.map((m) => { const i = m.indexOf(';'); return i < 0 ? ['', m] : [m.slice(0, i), m.slice(i + 1)]; });
+  // Regla 2026 returns the token as a bare message with no "CODE;" prefix,
+  // e.g. "d5a8m1…$Ga6O…/qIlUa0…==" (base64-ish: letters, digits, + / = $).
   let hit = parts.find(([c]) => /TOKEN/i.test(c));
-  if (!hit) hit = parts.find(([c, v]) => !/^INFO_RUNNING_TIME/.test(c) && /^[\w-]{16,}$/.test(v.trim()));
-  if (!hit) hit = parts.find(([c, v]) => !c && /^[\w-]{16,}$/.test(v.trim()));
+  if (!hit) hit = parts.find(([c, v]) => !c && /^\S{16,}$/.test(v.trim()));
+  if (!hit) hit = parts.find(([c, v]) => !/^INFO_/.test(c) && /^\S{16,}$/.test(v.trim()));
   return hit ? hit[1].trim() : null;
 }
 
@@ -179,7 +181,7 @@ async function login(force) {
   const token = pickToken(msgs);
   if (!token) {
     // Codes only — never echo values, one of them is the token.
-    throw new Error('Innskráning tókst en tóki fannst ekki í svari. Kóðar: ' + msgs.map((m) => m.split(';')[0]).join(', '));
+    throw new Error('Innskráning tókst en tóki fannst ekki í svari. Kóðar: ' + msgs.map((m) => (m.indexOf(';') < 0 ? '(án kóða, ' + m.length + ' stafir)' : m.split(';')[0])).join(', '));
   }
   _token = token; _tokenAt = Date.now();
   return token;
