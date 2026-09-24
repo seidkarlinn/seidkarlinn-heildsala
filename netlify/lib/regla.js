@@ -45,7 +45,12 @@ const FIELD_ORDER = {
     'ShowPriceOnDeliveryNote', 'Language', 'IsElectronicInvoiceWorkNumberRequired',
     'IsElectronicInvoiceOrderNumberRequired', 'IsElectronicInvoiceRequestorRequired',
     'IsElectronicInvoiceAtLeastOneRequired', 'ID'],
-  Product: ['ProductNumber', 'Name', 'UnitPrice', 'VatDefinition', 'StockQuantity', 'IsInStockControl'],
+  // ExtraProductGroups / Images are left out on purpose (arrays we never send).
+  Product: ['ProductNumber', 'Name', 'UnitPrice', 'VatDefinition', 'StockQuantity', 'IsInStockControl',
+    'AllowDiscount', 'MaxDiscountPercentage', 'Currency', 'AllowPriceOverwrite', 'ProductGroupNumber',
+    'DescriptionShort', 'DescriptionLong', 'ID', 'Comment', 'UnitCode', 'ComparisonUnitCode',
+    'QuantityPerComparisonUnit', 'UseScale', 'SortingNumber', 'SupplierNumber', 'SupplierItemNumber',
+    'ParentProductNumber', 'IsParentProduct'],
   Currency: ['Code', 'Symbol', 'BuyingRate', 'SellingRate'],
   PostalCode: ['Value', 'Name'],
   PaymentMethod: ['ID', 'Name', 'NameEnglish', 'IssuerID'],
@@ -242,6 +247,9 @@ async function products(force) {
         vat: vd && vd.Percentage !== undefined && vd.Percentage !== '' ? parseFloat(vd.Percentage) : null,
         stockControl: String(p.IsInStockControl) === 'true',
         stockQty: parseFloat(p.StockQuantity),
+        // Regla validates the Product on each invoice line (name, VSK
+        // definition…), so invoices carry the full record, not just the number.
+        raw: prune(p),
       };
       bySku[rec.sku] = rec;
       if (rec.id) byId[rec.id] = rec.sku;
@@ -250,6 +258,27 @@ async function products(force) {
   }
   _products = { at: Date.now(), bySku, byId };
   return _products;
+}
+
+// Full product record for an invoice line. SearchProducts may return a
+// thinner record than GetProduct, so fall back to GetProduct when the name or
+// VSK definition is missing.
+async function productRecord(sku) {
+  const cat = await products();
+  const rec = cat.bySku[sku];
+  if (rec && rec.raw && rec.raw.Name && rec.raw.VatDefinition) return rec.raw;
+  const { r, ok } = await call('GetProduct', () => toXml({ productNumber: sku }));
+  const p = r.GetProductResult;
+  if (ok && p && typeof p === 'object' && p.ProductNumber) {
+    const full = prune(p);
+    if (rec) {
+      rec.raw = full;
+      const vd = full.VatDefinition;
+      if (vd && vd.Percentage !== undefined) rec.vat = parseFloat(vd.Percentage);
+    }
+    return full;
+  }
+  return rec ? rec.raw : null;
 }
 
 // { sku: { q, ctl } } — q summed over stock rooms (or REGLA_STOCKROOM_ID only).
@@ -391,6 +420,7 @@ async function buildInvoice(order) {
     const sku = String(l.sku || '').trim();
     const prod = sku && cat.bySku[sku];
     if (!prod) { errors.push(`Vörunúmer ${sku || '(vantar)'} finnst ekki í Reglu — ${l.name}`); continue; }
+    const fullProd = await productRecord(sku);
     const qty = Number(l.qty) || 1;
     const paid = Number(l.paid) || 0;
     const retail = Number(l.retail) || 0;
@@ -408,7 +438,7 @@ async function buildInvoice(order) {
     discTotal += r2(unit * qty * disc / 100);
 
     entries.push({
-      Product: { ProductNumber: sku },
+      Product: fullProd || { ProductNumber: sku },
       Quantity: qty,
       Text: prod.name || l.name || undefined,
       Amount: amount,
@@ -461,6 +491,6 @@ async function saveDraftInvoice(invoice, updateCustomer) {
 
 module.exports = {
   configured, login, soap, call, toXml, parseXml, products, stock,
-  ensureCustomer, getCustomer, customerForInvoice, defaultPaymentMethod,
+  productRecord, ensureCustomer, getCustomer, customerForInvoice, defaultPaymentMethod,
   buildInvoice, saveDraftInvoice, cleanMessages, ktDigits,
 };

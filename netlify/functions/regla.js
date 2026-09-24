@@ -90,6 +90,14 @@ exports.handler = async (event) => {
       return reply(200, { ok: true, customer: c, defaultPaymentMethod: pm });
     }
 
+    if (action === 'product') {
+      const sku = String(body.sku || '').trim();
+      const cat = await regla.products();
+      const fromSearch = cat.bySku[sku] ? cat.bySku[sku].raw : null;
+      const full = await regla.productRecord(sku);
+      return reply(200, { ok: true, fromSearch, full });
+    }
+
     if (action === 'status') {
       const log = await readLog(resolveStore());
       return reply(200, { ok: true, log });
