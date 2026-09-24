@@ -1,0 +1,2 @@
+Touched to trigger a Netlify redeploy after REGLA_USERNAME / REGLA_PASSWORD were set (2026-09-24).
+Env var changes only reach functions after a new deploy.
