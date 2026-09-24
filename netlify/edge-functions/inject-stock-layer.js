@@ -9,6 +9,7 @@
  *   ws-stock-layer.js   live Shopify stock (and the per-buyer override fix)
  *   ws-vorunumer.js     Vörunúmer / SKU on each product
  *   ws-regla-export.js  "Sækja fyrir Reglu.is" → Sölusaga line-item CSV
+ *   ws-regla-api.js     "Senda í Reglu" (drög að reikningum) + viðskiptamenn → Regla
  *
  * Order matters: ws-vorunumer.js reads the stock map that ws-stock-layer.js
  * puts on window._wsLiveStock, and the handle-remap table it defines;
@@ -37,6 +38,7 @@ const SCRIPTS = [
   { src: '/ws-stock-layer.js', version: '20260909a' },
   { src: '/ws-vorunumer.js', version: '20260909a' },
   { src: '/ws-regla-export.js', version: '20260909b' },
+  { src: '/ws-regla-api.js', version: '20260924a' },
 ];
 
 export default async function handler(request, context) {

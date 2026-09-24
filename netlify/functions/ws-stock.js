@@ -40,6 +40,8 @@
 //   In-memory per warm container (TTL below) + CDN cache, so a page-load storm
 //   costs one upstream fetch. Stock does not need to be second-accurate.
 
+const regla = require('../lib/regla');
+
 const SHOPIFY_API_VERSION = '2024-10';
 const CACHE_TTL_MS = 5 * 60 * 1000;   // in-process
 const CDN_MAX_AGE = 300;              // seconds, Netlify edge
@@ -150,9 +152,34 @@ async function buildPayload() {
 
   if (!result) result = await fromPublicFeed();
 
+  // ── Regla overlay (2026-09-24) ─────────────────────────────────────────
+  // When the Regla web service is configured, Regla is the stock authority
+  // for every product whose Vörunúmer (k) exists there with stock control on.
+  // Products missing from Regla keep the Shopify figure. Set REGLA_STOCK=off
+  // to disable without removing the credentials.
+  let reglaError, reglaApplied = 0;
+  if (regla.configured() && String(process.env.REGLA_STOCK || 'on').toLowerCase() !== 'off') {
+    try {
+      const rs = await regla.stock();
+      for (const handle of Object.keys(result.stock)) {
+        const e = result.stock[handle];
+        const hit = e && e.k ? rs[String(e.k).trim()] : null;
+        if (!hit || !hit.ctl || hit.q === null) continue;
+        e.q = hit.q;
+        e.a = hit.q > 0 ? 1 : 0;
+        e.r = 1;   // stock figure came from Regla
+        reglaApplied++;
+      }
+    } catch (err) {
+      reglaError = err.message;
+    }
+  }
+
   return {
     ok: true,
-    source: result.source,
+    source: result.source + (reglaApplied ? '+regla' : ''),
+    reglaApplied: reglaApplied || undefined,
+    reglaError,
     // Present when we wanted the Admin API but had to fall back: the portal
     // then only covers published products, so this is worth surfacing.
     adminError: result.source === 'admin' ? undefined : adminError,

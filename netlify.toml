@@ -76,3 +76,12 @@
 #                           NOT YET SET: ws-stock falls back to the public
 #                           storefront feed, which cannot see the 49 DRAFT
 #                           products in the wholesale catalogue.
+#   regla / ws-stock  (Regla web service, regla.is — added 2026-09-24)
+#     REGLA_USERNAME / REGLA_PASSWORD  web-service user in Regla — NOT YET SET.
+#                        Without them the Regla buttons report "ekki stillt"
+#                        and ws-stock keeps using Shopify only.
+#     REGLA_STOCKROOM_ID optional: count stock in this stock room only.
+#     REGLA_STOCK        "off" disables the Regla stock overlay in ws-stock.
+#     REGLA_PRICE_BASIS  auto (default) | gross | net — Regla unit prices with
+#                        or without VSK; auto compares with the retail price.
+#     REGLA_DEFAULT_VAT  fallback VSK % if a Regla product has none (11).
