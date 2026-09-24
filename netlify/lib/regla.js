@@ -445,7 +445,9 @@ async function buildInvoice(order) {
       UnitPrice: unit,
       VatPercentage: vat,
       VatAmount: vatAmt,
-      Discount: disc,
+      // Regla wants the percentage as a FRACTION (0.4 = 40%): sending 40
+      // produced "afsláttur 4.000,00" and a 100% capped line (2026-09-24).
+      Discount: Math.round(disc * 1e4) / 1e6,
       IsDiscountPercentage: true,
       Date: date,
       Type: 'Normal',
@@ -484,10 +486,9 @@ async function buildInvoice(order) {
 //
 // VERIFIED SAVE (2026-09-24)
 //   SaveInvoiceWithUpdateAndValidationOptions(validateInvoice=true) answered
-//   Success with only INFO_*_VALID messages but no geymdur reikningur was
-//   created — it appears to validate only. So after each attempt we look the
-//   draft up (SearchSavedInvoices by kennitala, matched on UniqueReference)
-//   and fall back to plain SaveInvoice. Success = the draft is found.
+//   Success (INFO_INVOICE_INSERTED) but with a 4000% discount no draft was
+//   visible in geymdir reikningar (INFO_INVOICE_NUMBER;0). Success now needs a
+//   real number: from INFO_INVOICE_NUMBER or from SearchSavedInvoices.
 // Matched on UniqueReference, or on Concerning in case Regla replaces the
 // reference with its own GUID (its other saved invoices all carry GUIDs).
 async function findSavedInvoice(kt, ref, concerning) {
@@ -498,10 +499,17 @@ async function findSavedInvoice(kt, ref, concerning) {
   return hit ? { number: hit.InvoiceNumber, amount: hit.Amount, date: hit.Date } : null;
 }
 
+// Regla reports the new number as "INFO_INVOICE_NUMBER;<n>".
+function invoiceNumberFrom(msgs) {
+  const m = msgs.map((x) => /^INFO_INVOICE_NUMBER;\s*(\S+)/.exec(x)).find(Boolean);
+  return m && m[1] !== '0' ? m[1] : null;
+}
+
+// ONE save call only: the validate-options call also inserts
+// (INFO_INVOICE_INSERTED), so a second call would create a duplicate.
 async function saveDraftInvoice(invoice, updateCustomer) {
   const kt = invoice.Customer && invoice.Customer.CustomerNumber;
   const ref = invoice.UniqueReference;
-  const log = [];
 
   const existing = await findSavedInvoice(kt, ref, invoice.Concerning);
   if (existing) return { ok: true, number: existing.number, messages: ['Drög voru þegar til í Reglu'], already: true };
@@ -510,18 +518,13 @@ async function saveDraftInvoice(invoice, updateCustomer) {
     () => '<invoice>' + toXml(invoice, 'Invoice') + '</invoice>' +
       toXml({ updateCustomer: !!updateCustomer, updateProducts: false, validateInvoice: true }),
     'SaveInvoiceWithUpdateAndValidationOptionsResult');
-  log.push(...a.messages);
-  if (!a.ok) return { ok: false, messages: log };
+  if (!a.ok) return { ok: false, messages: a.messages };
 
-  let found = await findSavedInvoice(kt, ref, invoice.Concerning);
-  if (!found) {
-    const b = await call('SaveInvoice', () => '<invoice>' + toXml(invoice, 'Invoice') + '</invoice>', 'SaveInvoiceResult');
-    log.push(...b.messages.map((m) => 'SaveInvoice: ' + m));
-    if (!b.ok) return { ok: false, messages: log };
-    found = await findSavedInvoice(kt, ref, invoice.Concerning);
-  }
-  if (!found) return { ok: false, messages: log.concat(['Regla svaraði OK en drögin fundust ekki undir geymdum reikningum']) };
-  return { ok: true, number: found.number, messages: log };
+  const numberMsg = invoiceNumberFrom(a.messages);
+  const found = await findSavedInvoice(kt, ref, invoice.Concerning);
+  const number = (found && found.number) || numberMsg;
+  if (!number) return { ok: false, messages: a.messages.concat(['Regla skilaði reikningsnúmeri 0 — drögin fundust ekki undir geymdum reikningum']) };
+  return { ok: true, number, messages: a.messages.filter((m) => !/_VALID;|_FOUND;|_TRUE;/.test(m)) };
 }
 
 module.exports = {

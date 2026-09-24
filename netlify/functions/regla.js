@@ -110,6 +110,18 @@ exports.handler = async (event) => {
       return reply(200, { ok, messages, count: list.length, invoices: list });
     }
 
+    if (action === 'invoices') {
+      // Diagnostics: issued invoices matching free text (read-only).
+      const { r, ok, messages } = await regla.call('SearchInvoices',
+        () => regla.toXml({ search: String(body.search || ''), indexFrom: 0, maxRecordCount: 20 }));
+      const raw = r.SearchInvoicesResult && r.SearchInvoicesResult.Invoice;
+      const list = (Array.isArray(raw) ? raw : raw ? [raw] : []).map((i) => ({
+        number: i.InvoiceNumber, date: i.Date, concerning: i.Concerning, ref: i.UniqueReference,
+        customer: i.Customer && i.Customer.Name, amount: i.Amount, type: i.Type,
+      }));
+      return reply(200, { ok, messages, count: list.length, invoices: list });
+    }
+
     if (action === 'status') {
       const log = await readLog(resolveStore());
       return reply(200, { ok: true, log });
