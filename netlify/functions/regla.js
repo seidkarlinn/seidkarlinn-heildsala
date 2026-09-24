@@ -122,6 +122,45 @@ exports.handler = async (event) => {
       return reply(200, { ok, messages, count: list.length, invoices: list });
     }
 
+    if (action === 'deleteOrder') {
+      // Remove one order everywhere: its Regla draft (only if that draft is
+      // ours — Concerning "Heildsölupöntun <id>"), the order in ws_orders and
+      // its ws_regla_log entry. ws_orders_lm is stamped like an admin force
+      // write so admin browsers drop their stale local copy.
+      const id = String(body.id || '').trim();
+      if (!id) return reply(400, { ok: false, error: 'id vantar' });
+      const store = resolveStore();
+      const log = await readLog(store);
+      const out = { id, regla: null, orders: null };
+
+      const number = log[id] && log[id].number;
+      if (number) {
+        const { r } = await regla.call('GetSavedInvoice', () => regla.toXml({ invoiceNumber: String(number) }));
+        const inv = r.GetSavedInvoiceResult;
+        const concerning = inv && typeof inv === 'object' ? String(inv.Concerning || '') : '';
+        if (concerning === 'Heildsölupöntun ' + id) {
+          const d = await regla.call('DeleteSavedInvoice', () => regla.toXml({ invoiceNumber: String(number) }), 'DeleteSavedInvoiceResult');
+          out.regla = { number, deleted: d.ok, messages: d.messages };
+        } else {
+          out.regla = { number, deleted: false, messages: ['Drög nr. ' + number + ' tilheyra ekki ' + id + ' (' + (concerning || 'fannst ekki') + ') — ekki eytt'] };
+        }
+      }
+
+      const raw = await store.get('ws_orders');
+      let orders = [];
+      try { orders = JSON.parse(raw || '[]'); } catch { orders = []; }
+      const before = orders.length;
+      orders = orders.filter((o) => o && o.id !== id);
+      if (orders.length !== before) {
+        await store.set('ws_orders', JSON.stringify(orders));
+        await store.set('ws_orders_lm', new Date().toISOString());
+      }
+      out.orders = { removed: before - orders.length, remaining: orders.length };
+
+      if (log[id]) { delete log[id]; await store.set(LOG_KEY, JSON.stringify(log)); }
+      return reply(200, { ok: true, ...out });
+    }
+
     if (action === 'status') {
       const log = await readLog(resolveStore());
       return reply(200, { ok: true, log });
