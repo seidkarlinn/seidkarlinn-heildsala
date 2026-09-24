@@ -38,7 +38,7 @@ const SCRIPTS = [
   { src: '/ws-stock-layer.js', version: '20260909a' },
   { src: '/ws-vorunumer.js', version: '20260909a' },
   { src: '/ws-regla-export.js', version: '20260909b' },
-  { src: '/ws-regla-api.js', version: '20260924a' },
+  { src: '/ws-regla-api.js', version: '20260924b' },
 ];
 
 export default async function handler(request, context) {

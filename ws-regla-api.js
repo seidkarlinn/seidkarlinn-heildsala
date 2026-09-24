@@ -168,7 +168,7 @@
     loadLog().then(function (log) {
       log = log || {};
       var todo = all.filter(function (o) {
-        return o && o.id && o.status !== 'cancelled' && h.inPeriod(new Date(o.date), period, now) && !(log[o.id] && log[o.id].ok);
+        return o && o.id && o.status !== 'cancelled' && h.inPeriod(new Date(o.date), period, now) && !(log[o.id] && log[o.id].ok && log[o.id].number);
       });
       if (!todo.length) { toast('Ekkert nýtt að senda í Reglu fyrir valið tímabil', 4000); return; }
       if (!window.confirm('Senda ' + todo.length + ' pöntun(ir) í Reglu sem drög að reikningum?')) return;
@@ -219,10 +219,10 @@
       if (c.querySelector('.ws-regla-tag')) return;
       var id = c.textContent.trim();
       var e = _log[id];
-      if (!e || !e.ok) return;
+      if (!e || !e.ok || !e.number) return;
       var tag = document.createElement('span');
       tag.className = 'ws-regla-tag';
-      tag.title = 'Sent í Reglu sem drög ' + new Date(e.at).toLocaleString('is-IS');
+      tag.title = 'Geymdur reikningur nr. ' + e.number + ' í Reglu · ' + new Date(e.at).toLocaleString('is-IS');
       tag.textContent = 'Regla ✓';
       tag.style.cssText = 'display:inline-block;margin-left:6px;padding:1px 6px;border-radius:999px;font-size:9px;font-weight:600;background:#E8F0E9;color:var(--green,#2f5d3a);vertical-align:middle';
       c.appendChild(tag);
