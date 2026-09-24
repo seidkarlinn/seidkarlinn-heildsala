@@ -10,6 +10,7 @@
  *   ws-vorunumer.js     Vörunúmer / SKU on each product
  *   ws-regla-export.js  "Sækja fyrir Reglu.is" → Sölusaga line-item CSV
  *   ws-regla-api.js     "Senda í Reglu" (drög að reikningum) + viðskiptamenn → Regla
+ *   ws-delivery-vat.js  Afhendingarlisti: "VSK kr." per unit instead of per line
  *
  * Order matters: ws-vorunumer.js reads the stock map that ws-stock-layer.js
  * puts on window._wsLiveStock, and the handle-remap table it defines;
@@ -39,6 +40,7 @@ const SCRIPTS = [
   { src: '/ws-vorunumer.js', version: '20260909a' },
   { src: '/ws-regla-export.js', version: '20260909b' },
   { src: '/ws-regla-api.js', version: '20260924b' },
+  { src: '/ws-delivery-vat.js', version: '20260924a' },
 ];
 
 export default async function handler(request, context) {
