@@ -20,6 +20,8 @@
  * Also fills the empty retail "price" of two baked SKUs (Mountaindrop Altai
  * shilajit 65gr, propolis tincture 30ml) from Shopify, so a discount can be
  * computed for them at all.
+ *
+ * Removes the lyngblóma hunang SKUs (1kg, 500g) from the catalogue.
  */
 
 // Runtime patch — flat per-line discounts (2026-10-04). Same mechanism as
@@ -203,6 +205,27 @@ function applyPriceFixes(html) {
   return html;
 }
 
+// 2026-10-04 (2): Lyngblóma hunang is taken out of the wholesale catalogue.
+// Strip both baked entries from the served PRODUCTS array (matched on URL).
+const REMOVED_URLS = [
+  'https://www.seidkarlinn.is/is-is/products/seidkarlinn-lyngbloma-hunang-1kg',
+  'https://www.seidkarlinn.is/is-is/products/seidkarlinn-lyngbloma-hunang-500g',
+];
+function removeProducts(html) {
+  for (const u of REMOVED_URLS) {
+    const i = html.indexOf(`"url": "${u}"`);
+    if (i === -1) continue;
+    const start = html.lastIndexOf('{', i);
+    let end = html.indexOf('}', i);
+    if (start === -1 || end === -1) continue;
+    end += 1;
+    const m = /^\s*,/.exec(html.slice(end));
+    if (m) end += m[0].length;
+    html = html.slice(0, start) + html.slice(end);
+  }
+  return html;
+}
+
 export default async function handler(request, context) {
   const response = await context.next();
   const contentType = response.headers.get('content-type') || '';
@@ -210,6 +233,7 @@ export default async function handler(request, context) {
 
   let html = await response.text();
   html = applyPriceFixes(html);
+  html = removeProducts(html);
 
   // Insert before the document's FINAL </body> (index.html has an earlier
   // </body> inside a JS template literal). Idempotent.
