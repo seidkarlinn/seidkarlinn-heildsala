@@ -14,6 +14,11 @@
  *     "Kakó"), so it rendered at 0% / full retail.
  *   • "Hunang 35%" 35% — the 21 older Seiðkarlinn honey/bee SKUs in
  *     HONEY35_SLUGS (matched on Shopify URL handle).
+ *   • "Nutriest 30%" 30% — Nutriest bone broth (thin cost margin).
+ *   • "Nutriest 35%" 35% — Nutriest whey, hydrolyzed + marine collagen,
+ *     deep ocean minerals, ox bile (NUTRIEST35_SLUGS).
+ *   • "Nutriest 40%" 40% — every other Nutriest product (2026-10-04, per
+ *     margin analysis: landed cost vs. seidkarlinn.is retail).
  *   • "Hunang 40%" 40% — every other Hunangsafurðir product. noDisc buckets
  *     keep their fixed price; the Hunang40 line keeps its own patch (40%).
  *
@@ -51,16 +56,36 @@ const HONEY35_SLUGS = [
   'vitamin-d3-dropar-30ml',                // propolis tincture 30ml
 ];
 
+// 2026-10-04: Nutriest wholesale tiers (matched on Shopify URL handle).
+const NUTRIEST30_SLUGS = [
+  'nutriest-beef-bone-broth-250g',
+];
+const NUTRIEST35_SLUGS = [
+  'nutriest-whey-protein-1kg',
+  'nutriest-hydrolyzed-collagen-peptides-300g',
+  'nutriest-marine-collagen-300g',
+  'nutriest-deep-ocean-minerals-100ml',
+  'nutriest-ox-bile-60-hylki',
+];
+
 const FLAT_RULES_PATCH = `
 <script id="__flat_rules_patch__">
 (function(){
   var HONEY35 = ${JSON.stringify(HONEY35_SLUGS)};
+  var NUT30 = ${JSON.stringify(NUTRIEST30_SLUGS)};
+  var NUT35 = ${JSON.stringify(NUTRIEST35_SLUGS)};
   function slug(p){ return String((p && p.url) || "").split("?")[0].replace(/\\/+$/,"").split("/").pop(); }
   function hasTag(p,t){ return p && Array.isArray(p.tags) && p.tags.indexOf(t) !== -1; }
   // First matching rule wins.
   var RULES = [
     { key: "VAICACAO",   label: "VAICACAO seremóníu kakó", def: 30,
       match: function(p){ return /vaicacao/i.test(p.name||"") || /\\/vaicacao-/i.test(p.url||""); } },
+    { key: "Nutriest 30%", label: "Nutriest beinaseyði", def: 30,
+      match: function(p){ return NUT30.indexOf(slug(p)) !== -1; } },
+    { key: "Nutriest 35%", label: "Nutriest prótín, kollagen, steinefni, gall", def: 35,
+      match: function(p){ return NUT35.indexOf(slug(p)) !== -1; } },
+    { key: "Nutriest 40%", label: "Nutriest – aðrar vörur", def: 40,
+      match: function(p){ return /^nutriest-/i.test(slug(p)) || /^nutriest\\b/i.test(p.name||""); } },
     { key: "Hunang 35%", label: "Eldra Seiðkarlinn hunang", def: 35,
       match: function(p){ return HONEY35.indexOf(slug(p)) !== -1; } },
     { key: "Hunang 40%", label: "Annað hunang (Hunangsafurðir)", def: 40,
