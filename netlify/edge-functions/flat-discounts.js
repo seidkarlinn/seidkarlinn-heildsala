@@ -21,7 +21,8 @@
  * shilajit 65gr, propolis tincture 30ml) from Shopify, so a discount can be
  * computed for them at all.
  *
- * Removes the lyngblóma hunang SKUs (1kg, 500g) from the catalogue.
+ * Removes the lyngblóma hunang SKUs (1kg, 500g) and the six Mulieres
+ * candles from the catalogue.
  */
 
 // Runtime patch — flat per-line discounts (2026-10-04). Same mechanism as
@@ -210,6 +211,13 @@ function applyPriceFixes(html) {
 const REMOVED_URLS = [
   'https://www.seidkarlinn.is/is-is/products/seidkarlinn-lyngbloma-hunang-1kg',
   'https://www.seidkarlinn.is/is-is/products/seidkarlinn-lyngbloma-hunang-500g',
+  // 2026-10-04 (3): Mulieres candles out of the wholesale catalogue.
+  'https://www.seidkarlinn.is/is-is/products/natural-candle-forest-180ml',
+  'https://www.seidkarlinn.is/is-is/products/natural-candle-gingerbread-180ml',
+  'https://www.seidkarlinn.is/is-is/products/natural-candle-pure-180ml',
+  'https://www.seidkarlinn.is/is-is/products/natural-candle-pure-120ml',
+  'https://www.seidkarlinn.is/is-is/products/natural-candle-gingerbread-120ml',
+  'https://www.seidkarlinn.is/is-is/products/natural-candle-forest-120ml',
 ];
 function removeProducts(html) {
   for (const u of REMOVED_URLS) {
