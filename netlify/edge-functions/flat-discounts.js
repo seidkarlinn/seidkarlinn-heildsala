@@ -19,6 +19,10 @@
  *     deep ocean minerals, ox bile (NUTRIEST35_SLUGS).
  *   • "Nutriest 40%" 40% — every other Nutriest product (2026-10-04, per
  *     margin analysis: landed cost vs. seidkarlinn.is retail).
+ *   • "Mountaindrop 30%" 30% — PRIME 600g, Himalayan shilajit 45g + 100g.
+ *   • "Mountaindrop 40%" 40% — Altai shilajit 25g, 40g, 65g.
+ *   • "Mountaindrop 25%" 25% — Genius 450g, Flourish 600g (2026-10-05, per
+ *     Mountaindrop margin analysis: cost incl. innskattur + shipping).
  *   • "Hunang 40%" 40% — every other Hunangsafurðir product. noDisc buckets
  *     keep their fixed price; the Hunang40 line keeps its own patch (40%).
  *
@@ -68,12 +72,31 @@ const NUTRIEST35_SLUGS = [
   'nutriest-ox-bile-60-hylki',
 ];
 
+// 2026-10-05: Mountaindrop wholesale tiers (matched on Shopify URL handle).
+const MD30_SLUGS = [
+  'mountaindrop-prime-test-booster-600g',
+  'mountaindrop-himalayan-shilajit-45gr',
+  'mountaindrop-himalayan-shilajit-100gr',
+];
+const MD40_SLUGS = [
+  'mountaindrop-shilajit-25gr',
+  'mountaindrop-shilajit-40gr',
+  'mountaindrop-shilajit-65gr',
+];
+const MD25_SLUGS = [
+  'mountaindrop-genius-brain-booster-450g',
+  'mountaindrop-flourish-600g',
+];
+
 const FLAT_RULES_PATCH = `
 <script id="__flat_rules_patch__">
 (function(){
   var HONEY35 = ${JSON.stringify(HONEY35_SLUGS)};
   var NUT30 = ${JSON.stringify(NUTRIEST30_SLUGS)};
   var NUT35 = ${JSON.stringify(NUTRIEST35_SLUGS)};
+  var MD30 = ${JSON.stringify(MD30_SLUGS)};
+  var MD40 = ${JSON.stringify(MD40_SLUGS)};
+  var MD25 = ${JSON.stringify(MD25_SLUGS)};
   function slug(p){ return String((p && p.url) || "").split("?")[0].replace(/\\/+$/,"").split("/").pop(); }
   function hasTag(p,t){ return p && Array.isArray(p.tags) && p.tags.indexOf(t) !== -1; }
   // First matching rule wins.
@@ -86,6 +109,12 @@ const FLAT_RULES_PATCH = `
       match: function(p){ return NUT35.indexOf(slug(p)) !== -1; } },
     { key: "Nutriest 40%", label: "Nutriest – aðrar vörur", def: 40,
       match: function(p){ return /^nutriest-/i.test(slug(p)) || /^nutriest\\b/i.test(p.name||""); } },
+    { key: "Mountaindrop 30%", label: "Mountaindrop PRIME, Himalayan shilajit 45g/100g", def: 30,
+      match: function(p){ return MD30.indexOf(slug(p)) !== -1; } },
+    { key: "Mountaindrop 40%", label: "Mountaindrop Altai shilajit 25g/40g/65g", def: 40,
+      match: function(p){ return MD40.indexOf(slug(p)) !== -1; } },
+    { key: "Mountaindrop 25%", label: "Mountaindrop Genius, Flourish", def: 25,
+      match: function(p){ return MD25.indexOf(slug(p)) !== -1; } },
     { key: "Hunang 35%", label: "Eldra Seiðkarlinn hunang", def: 35,
       match: function(p){ return HONEY35.indexOf(slug(p)) !== -1; } },
     { key: "Hunang 40%", label: "Annað hunang (Hunangsafurðir)", def: 40,
