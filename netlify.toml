@@ -48,6 +48,13 @@
   path = "/"
   function = "inject-catalog"
 
+# inject-global-healing (2026-10-05) adds the 26 active Global Healing SKUs
+# and the virtual "Global Healing" 35% category. Declared after
+# category-order, so its products are ordered like everything else.
+[[edge_functions]]
+  path = "/"
+  function = "inject-global-healing"
+
 # inject-stock-layer is declared LAST, so it is the INNERMOST wrapper: it adds
 # the <script src="/ws-stock-layer.js"> tag before </body> and the functions
 # above then transform HTML that already contains it. Order does not matter for
