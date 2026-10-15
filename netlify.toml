@@ -63,6 +63,13 @@
   path = "/"
   function = "inject-stock-layer"
 
+# remove-brands (2026-10-15) strips every Cosanea product from PRODUCTS.
+# Declared after inject-stock-layer, so it is the innermost wrapper and
+# edits the origin index.html before every other edge function.
+[[edge_functions]]
+  path = "/"
+  function = "remove-brands"
+
 # ws-data sync enabled
 # write-access verified: 2026-05-06 (after MCP Connector App install)
 
