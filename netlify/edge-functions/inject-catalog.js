@@ -67,6 +67,15 @@
  *   ws_pricing.prods (img only), so it was falling back to the buyer's
  *   Sveppir percentage (35%) instead of the flat Cordyfresh 30%. The
  *   whole line now prices at 30% for every buyer.
+ *
+ * 2026-10-20: Injected the 7 La Masrojana SKUs (1707–1713: Arbequina
+ *   extra virgin olive oil 250/500/750ml, Arbequina / black Empeltre /
+ *   Aragón olives 215–220g, Arbequina olive pâté 100g). Oils go in
+ *   "Ólífuolíur", olives and pâté in "Matvörur". Every entry carries the
+ *   tag "Masrojana40", routed by MASROJANA40_PATCH through a virtual
+ *   "La Masrojana" discount category (default 40%), so the whole line is
+ *   a flat 40% off retail for every buyer. MASROJANA40_PATCH is derived
+ *   from HONEY40_PATCH (identical mechanics, different tag/label/ids).
  */
 
 // 8 CordyFresh entries — Cordyceps/Lions Mane/Reishi/Chaga at 20% and 50% strengths.
@@ -122,6 +131,19 @@ const NEW_HONEY_20260904 = `
   {"name":"Hrátt Hunang með Býflugnafrjóum 450g Seiðkarlinn","price":"3.490 ISK","cat":"Hunangsafurðir","tags":["Hunang40","hunang","býflugnafrjó","engjablóm","hrátt","Serbía"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/honey-with-pollen-450g-seidkarlinn","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/1732-front-v2.jpg?v=1788269953","wholesale":"2.094 ISK"},
   {"name":"Hrátt Hunang með Býbrauði 450g Seiðkarlinn","price":"3.990 ISK","cat":"Hunangsafurðir","tags":["Hunang40","hunang","býbrauð","perga","hrátt","Serbía"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/honey-with-bee-bread-450g-seidkarlinn","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/1733-front-v2.jpg?v=1788269954","wholesale":"2.394 ISK"},
   {"name":"Hrátt Hunang með Drottningargeli 450g Seiðkarlinn","price":"4.990 ISK","cat":"Hunangsafurðir","tags":["Hunang40","hunang","drottningargel","royal jelly","akasía","hrátt","Serbía"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/honey-with-royal-jelly-450g-seidkarlinn","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/1734-front-v2.jpg?v=1788269954","wholesale":"2.994 ISK"},`;
+
+// 7 La Masrojana SKUs (1707–1713), added 2026-10-20. Retail mirrors
+// seidkarlinn.is; baked wholesale is 40% off retail (Math.round(retail*0.6))
+// as a fallback for cart paths that read p.wholesale before
+// applyPricingOverrides() runs. Idempotent guard keys on the pâté marker.
+const MASROJANA_20261020 = `
+  {"name":"Lífræn Arbequina Jómfrúar Ólífuolía 750ml La Masrojana","price":"4.500 ISK","cat":"Ólífuolíur","tags":["Masrojana40","La Masrojana","ólífuolía","arbequina","extra virgin","lífrænt","Spánn"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/arbequina-jomfruar-olifuolia-750ml","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/arbequina-jomfruar-750ml-v3.jpg?v=1787097507","wholesale":"2.700 ISK","sku":"1713"},
+  {"name":"Lífræn Arbequina Jómfrúar Ólífuolía 500ml La Masrojana","price":"3.500 ISK","cat":"Ólífuolíur","tags":["Masrojana40","La Masrojana","ólífuolía","arbequina","extra virgin","lífrænt","Spánn"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/arbequina-jomfruar-olifuolia-500ml","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/arbequina-jomfruar-500ml-v3.jpg?v=1787097506","wholesale":"2.100 ISK","sku":"1712"},
+  {"name":"Lífræn Arbequina Jómfrúar Ólífuolía 250ml La Masrojana","price":"1.990 ISK","cat":"Ólífuolíur","tags":["Masrojana40","La Masrojana","ólífuolía","arbequina","extra virgin","lífrænt","Spánn"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/arbequina-jomfruar-olifuolia-250ml","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/arbequina-jomfruar-250ml-v3.jpg?v=1787097506","wholesale":"1.194 ISK","sku":"1711"},
+  {"name":"Lífrænar Arbequina Ólífur Með Steini 215g La Masrojana","price":"899 ISK","cat":"Matvörur","tags":["Masrojana40","La Masrojana","ólífur","arbequina","lífrænt","Spánn"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/arbequina-olifur-220g","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/masrojana-arbequina-olifur-v2.jpg?v=1787173344","wholesale":"539 ISK","sku":"1707"},
+  {"name":"Lífrænar Svartar Ólífur Empeltre 220g La Masrojana","price":"999 ISK","cat":"Matvörur","tags":["Masrojana40","La Masrojana","ólífur","empeltre","svartar ólífur","lífrænt","Spánn"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/svartar-empeltre-olifur-220g","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/masrojana-svartar-empeltre-v2.jpg?v=1787173344","wholesale":"599 ISK","sku":"1708"},
+  {"name":"Lífrænar Ólífur Frá Aragóníu Með Steini 220g La Masrojana","price":"999 ISK","cat":"Matvörur","tags":["Masrojana40","La Masrojana","ólífur","empeltre","Aragónía","lífrænt","Spánn"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/marineradar-svartar-empeltre-olifur-220g","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/masrojana-arago-olifur-v2.jpg?v=1787173344","wholesale":"599 ISK","sku":"1709"},
+  {"name":"Lífrænt Arbequina Ólífumauk 100g La Masrojana","price":"999 ISK","cat":"Matvörur","tags":["Masrojana40","La Masrojana","ólífumauk","arbequina","tapenade","lífrænt","Spánn"],"desc":"","inStock":true,"url":"https://www.seidkarlinn.is/is-is/products/arbequina-olive-pate-100g","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/masrojana-olifumauk-v2.jpg?v=1787173344","wholesale":"599 ISK","sku":"1710"},`;
 
 // Stale entries that need to come back out of the deleted list, because the
 // fresh NEW_PRODUCTS_20260528 entries reuse their Shopify URLs. If we leave
@@ -517,6 +539,23 @@ const HONEY40_PATCH = `
 </script>
 `;
 
+// Runtime patch — virtual "La Masrojana" discount category (tag
+// "Masrojana40", default 40%). Built from HONEY40_PATCH so the two stay in
+// lockstep; admin can still override the percentage per customer.
+const MASROJANA40_PATCH = [
+  ['__honey40_category_patch__', '__masrojana40_category_patch__'],
+  ['"Hunang40"', '"Masrojana40"'],
+  ['"Nýtt hunang"', '"La Masrojana"'],
+  ["'Nýtt hunang '", "'La Masrojana '"],
+  ['(merki: Hunang40)', '(merki: Masrojana40)'],
+  ['__honey40Patched', '__masrojana40Patched'],
+  ['_honey40Overridden', '_masrojana40Overridden'],
+  ['data-honey40-row', 'data-masrojana40-row'],
+  ['[honey40-patch', '[masrojana40-patch'],
+  ['isHoney40', 'isMasrojana40'],
+  ['honeyDiscPct', 'masrojanaDiscPct'],
+].reduce((acc, [a, b]) => acc.split(a).join(b), HONEY40_PATCH);
+
 // Favicon <link> tags — added 2026-05-13.
 // Binary favicon files are served by the sibling edge function favicons.js
 // (HTTP-routed at /favicon.ico, /favicon-32.png, /favicon-180.png). The
@@ -597,6 +636,15 @@ export default async function handler(request, context) {
     );
   }
 
+  // 2b-ter. Inject the 7 La Masrojana SKUs from 2026-10-20 at the start of
+  //         PRODUCTS. Idempotent: keyed on the olive pâté marker.
+  if (!injected.includes('"Lífrænt Arbequina Ólífumauk 100g La Masrojana"')) {
+    injected = injected.replace(
+      'const PRODUCTS = [',
+      `const PRODUCTS = [${MASROJANA_20261020}`
+    );
+  }
+
   // 2c. Remove the stale maca block (same URL as the new Full Spectrum Maca)
   //     from the served PRODUCTS array so the listing isn't duplicated.
   //     Idempotent: regex no-ops if the block has already been removed.
@@ -640,6 +688,16 @@ export default async function handler(request, context) {
       injected = injected.slice(0, closeIdx2) + HONEY40_PATCH + injected.slice(closeIdx2);
     } else {
       injected += HONEY40_PATCH;
+    }
+  }
+
+  // 3-ter. Inject the Masrojana40 runtime patch before the final </body>.
+  if (!injected.includes('__masrojana40_category_patch__')) {
+    const closeIdx3 = injected.lastIndexOf('</body>');
+    if (closeIdx3 !== -1) {
+      injected = injected.slice(0, closeIdx3) + MASROJANA40_PATCH + injected.slice(closeIdx3);
+    } else {
+      injected += MASROJANA40_PATCH;
     }
   }
 
