@@ -76,6 +76,12 @@
  *   "La Masrojana" discount category (default 40%), so the whole line is
  *   a flat 40% off retail for every buyer. MASROJANA40_PATCH is derived
  *   from HONEY40_PATCH (identical mechanics, different tag/label/ids).
+ *
+ * 2026-10-20 (2): Product detail panel — when the AI product-info call
+ *   fails (no admin-saved text), the "Vöruupplýsingar" box no longer shows
+ *   "Vöruupplýsingar ekki tiltækar." + a reload button. It now shows
+ *   "Sjá vörulýsingu á seidkarlinn.is" linking to the product's retail page
+ *   (PRODINFO_FALLBACK_* below, string-replaced into the served HTML).
  */
 
 // 8 CordyFresh entries — Cordyceps/Lions Mane/Reishi/Chaga at 20% and 50% strengths.
@@ -556,6 +562,17 @@ const MASROJANA40_PATCH = [
   ['honeyDiscPct', 'masrojanaDiscPct'],
 ].reduce((acc, [a, b]) => acc.split(a).join(b), HONEY40_PATCH);
 
+// Product-info fallback (2026-10-20). Replaces the error branch of
+// loadProductInfo() in index.html with a link to the product on seidkarlinn.is.
+const PRODINFO_FALLBACK_FROM = `bodyEl.textContent = 'Vöruupplýsingar ekki tiltækar.';
+      if (btnEl) btnEl.style.display = 'block';`;
+const PRODINFO_FALLBACK_TO = `var _dpP = (window._currentDpProduct && window._currentDpProduct.name === name)
+        ? window._currentDpProduct
+        : ((window.PRODUCTS || []).find(function(x){ return x && x.name === name; }) || null);
+      var _dpU = (_dpP && _dpP.url) || 'https://www.seidkarlinn.is/';
+      bodyEl.innerHTML = 'Sjá vörulýsingu á <a href="' + esc(_dpU).replace(/"/g,'&quot;') + '" target="_blank" rel="noopener" style="color:var(--green);font-weight:600;text-decoration:underline">seidkarlinn.is</a>';
+      if (btnEl) btnEl.style.display = 'none';`;
+
 // Favicon <link> tags — added 2026-05-13.
 // Binary favicon files are served by the sibling edge function favicons.js
 // (HTTP-routed at /favicon.ico, /favicon-32.png, /favicon-180.png). The
@@ -665,6 +682,11 @@ export default async function handler(request, context) {
     injected = injected.split(`"${u}", `).join('');
     injected = injected.split(`, "${u}"`).join('');
   }
+
+  // 2e. Product-info fallback: link to seidkarlinn.is instead of the
+  //     "Vöruupplýsingar ekki tiltækar." error. Idempotent (no-op once
+  //     the source string is gone).
+  injected = injected.split(PRODINFO_FALLBACK_FROM).join(PRODINFO_FALLBACK_TO);
 
   // 3. Inject the runtime category-patch script just before the document's
   //    final </body>. We use lastIndexOf because index.html contains an
