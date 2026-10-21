@@ -10,6 +10,8 @@
         fær breytta pöntun (Pantanir, Afhendingarlistar, PDF, Regla-útflutningur).
    total = gamla total − (gömul línusumma) + (ný línusumma), svo annað sem
    kann að vera í total (t.d. sending) helst óbreytt.
+   "+ Bæta við vöru": leit í vörulista með verði KAUPANDANS (applyPricingOverrides
+   keyrt tímabundið sem viðkomandi kaupandi, svo flokka-/fastir afslættir gildi).
    Kaupandinn sér athugasemd "✎ Seiðkarlinn breytti pöntuninni …".
    Vafið hér af því index.html er of stórt fyrir GitHub-connectorinn.
    (2026-10-20) */
@@ -30,6 +32,28 @@
   function findOrder(id) { return orders().find(function (x) { return x && x.id === id; }); }
   function toast(m) { if (typeof showToast === 'function') showToast(m, 3000); }
   function when(iso, opts) { try { return new Date(iso).toLocaleDateString('is-IS', opts); } catch (e) { return ''; } }
+
+  // Vörulisti með verði tiltekins kaupanda: keyrir applyPricingOverrides() (með
+  // öllum wrappers: flat-discounts, Cordyfresh, Hunang40, lager…) eins og
+  // kaupandinn sé innskráður, tekur afrit og skilar admin-stöðunni aftur.
+  function catalogFor(buyer) {
+    var role = localStorage.getItem('ws_role'), auth = localStorage.getItem('ws_auth');
+    var list = [];
+    try {
+      if (buyer) { localStorage.setItem('ws_role', 'buyer'); localStorage.setItem('ws_auth', String(buyer).toLowerCase()); }
+      if (typeof window.applyPricingOverrides === 'function') window.applyPricingOverrides();
+      list = (window.PRODUCTS || []).map(function (p) {
+        return { name: p.name, price: p.wholesale || p.price, retail: p.price, sku: p.sku, cat: p.cat, inStock: p.inStock, img: p.img };
+      });
+    } catch (e) { console.warn('[ws-order-edit] catalog', e); }
+    finally {
+      if (role === null) localStorage.removeItem('ws_role'); else localStorage.setItem('ws_role', role);
+      if (auth === null) localStorage.removeItem('ws_auth'); else localStorage.setItem('ws_auth', auth);
+      try { if (typeof window.applyPricingOverrides === 'function') window.applyPricingOverrides(); } catch (e) {}
+    }
+    return list.filter(function (p) { return p.name && num(p.price) > 0; });
+  }
+  function norm(s) { return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); }
 
   var BTN = 'width:24px;height:24px;border:1px solid var(--paper3);background:var(--paper);border-radius:4px;cursor:pointer;font-size:13px;line-height:1;color:var(--ink);padding:0';
 
@@ -73,8 +97,14 @@
             '<button onclick="event.stopPropagation();wsOrdEdit.remove(' + i + ')" title="Eyða vörulínu" ' +
               'style="' + BTN + ';color:#dc2626;border-color:rgba(220,38,38,.3);background:#fee2e2">🗑</button>';
         return '<div class="od-item-row" style="align-items:center;gap:8px;' + (it._removed ? 'opacity:.45;' : '') + '">' +
-          '<span style="' + nameStyle + '">' + E(it.name) + '</span>' + right + '</div>';
+          '<span style="' + nameStyle + '">' + (it._added ? '<span style="font-size:10px;font-weight:600;color:#fff;background:var(--green);border-radius:3px;padding:1px 5px;margin-right:6px">NÝ</span>' : '') + E(it.name) + '</span>' + right + '</div>';
       }).join('') +
+      '<div style="margin-top:10px;position:relative" onclick="event.stopPropagation()">' +
+        '<input type="text" id="wsOrdAddQ" placeholder="+ Bæta við vöru — leita eftir heiti eða vörunúmeri…" autocomplete="off" ' +
+          'oninput="wsOrdEdit.search(this.value)" onkeydown="if(event.key===\'Enter\'){event.preventDefault();wsOrdEdit.pickFirst();}" ' +
+          'style="width:100%;box-sizing:border-box;height:32px;padding:0 10px;border:1.5px dashed var(--paper3);border-radius:var(--rs);font-size:12px;font-family:var(--sans);background:var(--paper);color:var(--ink)">' +
+        '<div id="wsOrdAddRes" style="display:flex;flex-direction:column;margin-top:4px"></div>' +
+      '</div>' +
       '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;font-size:12px;color:var(--ink2)">' +
         '<span>Ný upphæð</span><span><b style="color:var(--green)">' + ISK(newTotal) + '</b>' +
         (newTotal !== (o.total || 0) ? ' <span style="color:var(--ink3)">(var ' + ISK(o.total || 0) + ')</span>' : '') + '</span>' +
@@ -169,7 +199,7 @@
       note.style.color = '#B45309';
       note.innerHTML = '✎ Seiðkarlinn breytti pöntuninni ' + when(last.at, { day: '2-digit', month: 'short' }) +
         (o.origTotal ? ' (upphaflega ' + ISK(o.origTotal) + ')' : '') + ': ' +
-        changes.map(function (c) { return E(c.name) + (c.to ? ' ' + c.from + '→' + c.to : ' fjarlægð'); }).join(', ');
+        changes.map(function (c) { return E(c.name) + (!c.from ? ' bætt við (' + c.to + ')' : c.to ? ' ' + c.from + '→' + c.to : ' fjarlægð'); }).join(', ');
       var btnWrap = info.querySelector('.adm-btn') ? info.querySelector('.adm-btn').parentNode : null;
       if (btnWrap && btnWrap.parentNode === info) info.insertBefore(note, btnWrap); else info.appendChild(note);
     });
@@ -185,7 +215,9 @@
         id: id,
         items: (o.items || []).map(function (it) {
           return Object.assign({}, it, { _origQty: parseInt(it.qty, 10) || 0, _removed: false });
-        })
+        }),
+        catalog: null,
+        buyer: o.buyerUser || o.buyerEmail || ''
       };
       if (prev && prev !== id) paint(prev);
       paint(id);
@@ -203,7 +235,48 @@
       if (it.qty === 0) it._removed = true;
       paint(edit.id);
     },
-    remove: function (i) { var it = edit && edit.items[i]; if (!it) return; it._removed = true; paint(edit.id); },
+    remove: function (i) {
+      var it = edit && edit.items[i]; if (!it) return;
+      if (it._added) edit.items.splice(i, 1); else it._removed = true;
+      paint(edit.id);
+    },
+    _hits: [],
+    search: function (q) {
+      var res = document.getElementById('wsOrdAddRes');
+      if (!edit || !res) return;
+      q = norm(q).trim();
+      if (q.length < 2) { res.innerHTML = ''; api._hits = []; return; }
+      if (!edit.catalog) edit.catalog = catalogFor(edit.buyer);
+      var words = q.split(/\s+/);
+      var hits = edit.catalog.filter(function (p) {
+        var h = norm(p.name + ' ' + (p.sku || '') + ' ' + (p.cat || ''));
+        return words.every(function (w) { return h.indexOf(w) !== -1; });
+      }).slice(0, 8);
+      api._hits = hits;
+      res.innerHTML = hits.length ? hits.map(function (p, k) {
+        return '<button type="button" onclick="event.stopPropagation();wsOrdEdit.add(' + k + ')" ' +
+          'style="display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;text-align:left;padding:6px 8px;border:none;border-bottom:1px solid var(--paper3);background:var(--paper2);cursor:pointer;font-size:12px;font-family:var(--sans);color:var(--ink)">' +
+          '<span>' + E(p.name) + (p.sku ? ' <span style="color:var(--ink3);font-size:10px">#' + E(p.sku) + '</span>' : '') +
+          (p.inStock === false ? ' <span style="color:#dc2626;font-size:10px">uppselt</span>' : '') + '</span>' +
+          '<span style="color:var(--green);white-space:nowrap">' + E(p.price) + '</span></button>';
+      }).join('') : '<div style="font-size:11px;color:var(--ink3);padding:6px 2px">Engin vara fannst</div>';
+    },
+    pickFirst: function () { if (api._hits.length) api.add(0); },
+    add: function (k) {
+      var p = api._hits[k]; if (!edit || !p) return;
+      var ex = edit.items.find(function (it) { return it.name === p.name; });
+      if (ex) {
+        if (ex._removed) { ex._removed = false; ex.qty = ex._origQty || 1; }
+        else ex.qty = (parseInt(ex.qty, 10) || 0) + 1;
+      } else {
+        var item = { name: p.name, qty: 1, price: p.price, _origQty: 0, _removed: false, _added: true };
+        if (p.sku) item.sku = p.sku;
+        edit.items.push(item);
+      }
+      api._hits = [];
+      paint(edit.id);
+      var inp = document.getElementById('wsOrdAddQ'); if (inp) inp.focus();
+    },
     restore: function (i) {
       var it = edit && edit.items[i]; if (!it) return;
       it._removed = false;
@@ -241,7 +314,7 @@
       var oldSum = lineSum(o.items);
       var newItems = kept.map(function (it) {
         var c = Object.assign({}, it);
-        delete c._origQty; delete c._removed;
+        delete c._origQty; delete c._removed; delete c._added;
         c.qty = parseInt(c.qty, 10) || 0;
         return c;
       });

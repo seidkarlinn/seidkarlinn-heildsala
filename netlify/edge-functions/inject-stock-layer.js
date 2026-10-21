@@ -42,7 +42,7 @@ const SCRIPTS = [
   { src: '/ws-regla-export.js', version: '20260909b' },
   { src: '/ws-regla-api.js', version: '20260924b' },
   { src: '/ws-delivery-vat.js', version: '20260924b' },
-  { src: '/ws-order-edit.js', version: '20261020a' },
+  { src: '/ws-order-edit.js', version: '20261021a' },
 ];
 
 export default async function handler(request, context) {
