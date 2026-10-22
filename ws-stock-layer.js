@@ -105,7 +105,9 @@ var WS_STOCK_HANDLE_FIXES = {
         if (!p) return;
         var h = handleOf(p);
         if (!h) return;
-        var live = map[h];
+        // Per-variant listings (url ?variant=<id>) read "<handle>#<id>" first.
+        var vm = String(p.url || "").match(/[?&]variant=(\d+)/);
+        var live = (vm && map[h + "#" + vm[1]]) || map[h];
         if (!live) return;              // unknown to Shopify — leave untouched
         var want = live.a === 1;
         if (p.inStock !== want) { p.inStock = want; changed++; }
@@ -146,10 +148,10 @@ var WS_STOCK_HANDLE_FIXES = {
         var changed = applyLiveStock();
         console.log("[ws-stock] " + d.count + " vörur frá " + d.source +
                     (d.adminError ? " (admin ófáanlegt: " + d.adminError + ")" : "") +
-                    " — " + changed + " lagerstöður uppfærðar");
+                    " — " + changed + " lagerstaður uppfærðar");
         if (changed) repaint();
       })
-      .catch(function (e) { console.warn("[ws-stock] gat ekki sótt lagerstöðu:", e); });
+      .catch(function (e) { console.warn("[ws-stock] gat ekki sótt lagerstaðu:", e); });
   }
   window._wsReloadStock = function () { return load(true).then(repaint); };
 
