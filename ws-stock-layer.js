@@ -148,10 +148,10 @@ var WS_STOCK_HANDLE_FIXES = {
         var changed = applyLiveStock();
         console.log("[ws-stock] " + d.count + " vörur frá " + d.source +
                     (d.adminError ? " (admin ófáanlegt: " + d.adminError + ")" : "") +
-                    " — " + changed + " lagerstaður uppfærðar");
+                    " — " + changed + " lagerstöður uppfærðar");
         if (changed) repaint();
       })
-      .catch(function (e) { console.warn("[ws-stock] gat ekki sótt lagerstaðu:", e); });
+      .catch(function (e) { console.warn("[ws-stock] gat ekki sótt lagerstöðu:", e); });
   }
   window._wsReloadStock = function () { return load(true).then(repaint); };
 
