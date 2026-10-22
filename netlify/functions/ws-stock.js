@@ -47,6 +47,9 @@ const CACHE_TTL_MS = 5 * 60 * 1000;   // in-process
 const CDN_MAX_AGE = 300;              // seconds, Netlify edge
 const STORE_PUBLIC_BASE = 'https://www.seidkarlinn.is';
 
+// Products whose variants are listed separately in the wholesale catalogue.
+const VARIANT_HANDLES = ['seidkarlinn-hunangskambur-250g'];
+
 let _cache = null;   // { at: epochMs, payload: {...} }
 
 /* ── Source 1: Admin API (all product statuses) ─────────────────────────── */
@@ -104,6 +107,29 @@ async function fromAdminApi(storeDomain, adminToken) {
     cursor = json.data.products.pageInfo.endCursor;
   }
 
+  // Per-variant stock for wholesale listings that split one Shopify product
+  // into several entries (url ?variant=<id>). Keyed "<handle>#<variantId>".
+  // Separate small query so the main loop's cost stays at variants(first: 1).
+  try {
+    const vq = `query V($q: String!) { products(first: 10, query: $q) { edges { node { handle variants(first: 20) { edges { node { id sku inventoryQuantity } } } } } } }`;
+    const q = VARIANT_HANDLES.map((h) => `handle:${h}`).join(' OR ');
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Shopify-Access-Token': adminToken },
+      body: JSON.stringify({ query: vq, variables: { q } }),
+    });
+    const json = res.ok ? await res.json() : null;
+    (json?.data?.products?.edges || []).forEach((e) => {
+      const n = e.node;
+      (n?.variants?.edges || []).forEach((ve) => {
+        const v = ve.node;
+        const vid = String(v.id).split('/').pop();
+        const qty = typeof v.inventoryQuantity === 'number' ? v.inventoryQuantity : null;
+        stock[`${n.handle}#${vid}`] = { a: qty !== null && qty > 0 ? 1 : 0, q: qty, s: stock[n.handle]?.s, k: v.sku || null };
+      });
+    });
+  } catch (e) { /* per-variant stock is best-effort */ }
+
   return { source: 'admin', stock };
 }
 
@@ -128,6 +154,9 @@ async function fromPublicFeed() {
         s: 'ACTIVE',
         k: withSku ? String(withSku.sku) : null,
       };
+      (p.variants || []).forEach((v) => {
+        stock[`${p.handle}#${v.id}`] = { a: v.available ? 1 : 0, q: null, s: 'ACTIVE', k: v.sku ? String(v.sku) : null };
+      });
     });
     if (products.length < 250) break;
   }

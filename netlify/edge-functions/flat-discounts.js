@@ -58,6 +58,7 @@ const HONEY35_SLUGS = [
   'seidkarlinn-hunangsgjafaaskja-3x350gr',
   'wildesland-balance-2f1-300g-1',         // orange honey vinegar 250ml
   'vitamin-d3-dropar-30ml',                // propolis tincture 30ml
+  'seidkarlinn-hunangskambur-250g',        // hunangskambur 250/290/310/330g (2026-10-22)
 ];
 
 // 2026-10-04: Nutriest wholesale tiers (matched on Shopify URL handle).
@@ -288,6 +289,74 @@ function removeProducts(html) {
   return html;
 }
 
+// 2026-10-22: Hunangskambur Seiðkarlinn (Shopify seidkarlinn-hunangskambur-250g,
+// ACTIVE) — all four weight variants as separate listings. url carries
+// ?variant=<id> so cart/overrides/deletions stay distinct; the slug() match
+// strips the query, so HONEY35_SLUGS puts the whole line on "Hunang 35%".
+// ws-stock returns per-variant stock as "<handle>#<variantId>".
+const HONEYCOMB_20261022 = `
+  {"name":"Hunangskambur 250g Seiðkarlinn","price":"2.990 ISK","cat":"Hunangsafurðir","tags":["hunang","hunangskambur","hrátt","Seiðkarlinn"],"desc":"","inStock":true,"sku":"1566","url":"https://www.seidkarlinn.is/is-is/products/seidkarlinn-hunangskambur-250g?variant=48918139011246","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/hunangskambur_250g.jpg?v=1782422003","wholesale":"1.944 ISK"},
+  {"name":"Hunangskambur 290g Seiðkarlinn","price":"3.470 ISK","cat":"Hunangsafurðir","tags":["hunang","hunangskambur","hrátt","Seiðkarlinn"],"desc":"","inStock":true,"sku":"1566-290","url":"https://www.seidkarlinn.is/is-is/products/seidkarlinn-hunangskambur-250g?variant=48918138847406","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/hunangskambur_250g.jpg?v=1782422003","wholesale":"2.256 ISK"},
+  {"name":"Hunangskambur 310g Seiðkarlinn","price":"3.710 ISK","cat":"Hunangsafurðir","tags":["hunang","hunangskambur","hrátt","Seiðkarlinn"],"desc":"","inStock":true,"sku":"1566-310","url":"https://www.seidkarlinn.is/is-is/products/seidkarlinn-hunangskambur-250g?variant=48918138880174","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/hunangskambur_250g.jpg?v=1782422003","wholesale":"2.412 ISK"},
+  {"name":"Hunangskambur 330g Seiðkarlinn","price":"3.950 ISK","cat":"Hunangsafurðir","tags":["hunang","hunangskambur","hrátt","Seiðkarlinn"],"desc":"","inStock":true,"sku":"1566-330","url":"https://www.seidkarlinn.is/is-is/products/seidkarlinn-hunangskambur-250g?variant=48918138912942","img":"https://cdn.shopify.com/s/files/1/0657/8264/4910/files/hunangskambur_250g.jpg?v=1782422003","wholesale":"2.568 ISK"},`;
+function injectHoneycomb(html) {
+  if (html.includes('"Hunangskambur 330g Seiðkarlinn"')) return html;
+  return html.replace('const PRODUCTS = [', `const PRODUCTS = [${HONEYCOMB_20261022}`);
+}
+
+// Per-variant stock for listings whose url carries ?variant=<id>. The stock
+// overlay (ws-stock-layer.js) keys on handle only, so all variants would get
+// the product total. ws-stock now also returns "<handle>#<variantId>"; this
+// wrapper sits outside the stock overlay and re-asserts the variant figure.
+const VARIANT_STOCK_PATCH = `
+<script id="__variant_stock_patch__">
+(function(){
+  function key(p){
+    var u = String((p && p.url) || ""), i = u.indexOf("/products/"), q = u.indexOf("variant=");
+    if (i === -1 || q === -1) return null;
+    var h = u.slice(i + 10).split("?")[0].split("#")[0].split("/")[0];
+    var v = u.slice(q + 8).split("&")[0].split("#")[0];
+    return h && v ? h + "#" + v : null;
+  }
+  function apply(){
+    var map = window._wsLiveStock, n = 0;
+    if (!map) return 0;
+    ["PRODUCTS", "PRODUCTS_BASE"].forEach(function(w){
+      var a = window[w];
+      if (!Array.isArray(a)) return;
+      a.forEach(function(p){
+        var k = key(p), e = k ? map[k] : null;
+        if (!e) return;
+        var want = e.a === 1;
+        if (p.inStock !== want) { p.inStock = want; n++; }
+      });
+    });
+    return n;
+  }
+  function wrap(){
+    var f = window.applyPricingOverrides;
+    if (typeof f !== "function" || !f._liveStockWrapped || f.__variantStock) return;
+    var w = function(){ var r = f.apply(this, arguments); try { apply(); } catch(e){} return r; };
+    w._liveStockWrapped = true; w._skuWrapped = f._skuWrapped; w.__variantStock = true;
+    w.__flatRulesPatched = f.__flatRulesPatched;
+    window.applyPricingOverrides = w;
+  }
+  var last = null;
+  setInterval(function(){
+    wrap();
+    if (window._wsLiveStock && window._wsLiveStock !== last) {
+      last = window._wsLiveStock;
+      if (apply()) {
+        try { if (typeof window.rebuildLiveCatalog === "function") window.rebuildLiveCatalog(); } catch(e){}
+        try { if (typeof window.renderGrid === "function") window.renderGrid(); } catch(e){}
+        try { if (typeof window.renderProductsPanel === "function") window.renderProductsPanel(); } catch(e){}
+      }
+    }
+  }, 1000);
+})();
+</script>
+`;
+
 export default async function handler(request, context) {
   const response = await context.next();
   const contentType = response.headers.get('content-type') || '';
@@ -296,12 +365,17 @@ export default async function handler(request, context) {
   let html = await response.text();
   html = applyPriceFixes(html);
   html = removeProducts(html);
+  html = injectHoneycomb(html);
 
   // Insert before the document's FINAL </body> (index.html has an earlier
   // </body> inside a JS template literal). Idempotent.
   if (!html.includes('__flat_rules_patch__')) {
     const idx = html.lastIndexOf('</body>');
     html = idx !== -1 ? html.slice(0, idx) + FLAT_RULES_PATCH + html.slice(idx) : html + FLAT_RULES_PATCH;
+  }
+  if (!html.includes('__variant_stock_patch__')) {
+    const idx = html.lastIndexOf('</body>');
+    html = idx !== -1 ? html.slice(0, idx) + VARIANT_STOCK_PATCH + html.slice(idx) : html + VARIANT_STOCK_PATCH;
   }
 
   return new Response(html, { status: response.status, headers: response.headers });
