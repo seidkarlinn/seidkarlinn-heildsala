@@ -66,7 +66,7 @@ async function searchCustomers(q) {
   }
   const { r, ok, messages } = await regla.call('SearchCustomers',
     () => regla.toXml({ search: q, indexFrom: 0, maxRecordCount: 25 }));
-  if (!ok && !out.length) throw new Error('SearchCustomers: ' + messages.join(' | '));
+  if (!ok && !out.length && !messages.some((m) => /_NOT_FOUND;/.test(m))) throw new Error('SearchCustomers: ' + messages.join(' | '));
   const raw = r.SearchCustomersResult && r.SearchCustomersResult.Customer;
   for (const c of (Array.isArray(raw) ? raw : raw && typeof raw === 'object' ? [raw] : [])) {
     const p = portalCustomer(c);
