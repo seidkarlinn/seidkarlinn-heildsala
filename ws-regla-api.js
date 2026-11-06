@@ -9,6 +9,9 @@
      Viðskiptamenn   "⇪ Samstilla við Reglu" → creates every customer with a
                      kennitala that does not exist in Regla yet. Existing Regla
                      customers are never overwritten.
+                     "⇩ Sækja úr Reglu" (+ box at the top of the new-customer
+                     form) → search Regla by kt / name / e-mail and fill the
+                     form from the chosen Regla customer (Regla → portal).
    Stock from Regla is applied server-side in ws-stock.js — nothing here.
 
    Lines use the same matching rules as the Sölusaga CSV (ws-regla-export.js),
@@ -269,6 +272,126 @@
     });
   }
 
+
+  /* ── customers: import from Regla (Regla → portal) ─────────────────────── */
+  var _lookupTimer = null, _lookupSeq = 0;
+
+  function vmIsNew() {
+    try { return typeof vmEditId === 'undefined' || !vmEditId; } catch (e) { return true; }
+  }
+
+  function setPostnr(postnr, stadur) {
+    var sel = document.getElementById('vmPostnr');
+    if (!sel || !postnr) return;
+    var opts = Array.prototype.slice.call(sel.options);
+    var hit = opts.find(function (o) { return String(o.value).split(' ')[0] === postnr; });
+    if (!hit) {
+      hit = document.createElement('option');
+      hit.textContent = postnr + (stadur ? ' ' + stadur : '');
+      hit.value = hit.textContent;
+      sel.appendChild(hit);
+    }
+    sel.value = hit.value;
+  }
+
+  function fillFromRegla(c) {
+    function set(id, v) { var el = document.getElementById(id); if (el && v) el.value = v; }
+    set('vmKt', c.kt);
+    set('vmNafn', c.nafn);
+    set('vmHeimili', c.heimili);
+    set('vmSimi', c.simi);
+    set('vmNetfang', c.netfang);
+    setPostnr(c.postnr, c.stadur);
+    var t = document.getElementById('vmModalTitle');
+    if (t && vmIsNew()) t.textContent = c.nafn || 'Nýr viðskiptamaður';
+    var res = document.getElementById('wsReglaLookupRes');
+    if (res) res.innerHTML = '<div style="padding:6px 2px;color:var(--green,#2f5d3a);font-weight:600">✓ Sótt úr Reglu: ' + escH(c.nafn) + ' (' + escH(c.kt) + ') — veldu notandanafn og lykilorð og vistaðu.</div>';
+    var u = document.getElementById('vmUser');
+    if (u && !u.value) setTimeout(function () { u.focus(); }, 50);
+  }
+
+  function renderLookup(list, q) {
+    var res = document.getElementById('wsReglaLookupRes');
+    if (!res) return;
+    if (!list.length) { res.innerHTML = '<div style="padding:6px 2px;color:var(--ink3,#7a6a58)">Enginn viðskiptamaður í Reglu fannst fyrir „' + escH(q) + '“</div>'; return; }
+    var h = H(), mine = h.vidskmList();
+    res.innerHTML = list.map(function (c, i) {
+      var dup = mine.find(function (v) { return v && h.ktDigits(v.kt) === c.kt; });
+      return '<div class="ws-regla-hit" data-i="' + i + '" style="display:flex;justify-content:space-between;gap:10px;align-items:center;padding:7px 8px;border-top:1px solid var(--paper3,#e8dfcf);cursor:pointer">' +
+        '<div style="min-width:0"><div style="font-weight:600;color:var(--ink,#2a1f14)">' + escH(c.nafn || '—') + '</div>' +
+        '<div style="color:var(--ink3,#7a6a58);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' +
+          escH([c.kt, c.heimili, [c.postnr, c.stadur].filter(Boolean).join(' '), c.netfang].filter(Boolean).join(' · ')) + '</div></div>' +
+        (dup ? '<span style="font-size:10px;color:#92400E;white-space:nowrap">Þegar skráður: ' + escH(dup.nafn) + '</span>'
+             : '<span class="adm-btn" style="white-space:nowrap;padding:3px 10px;font-size:11px">Nota</span>') +
+      '</div>';
+    }).join('');
+    Array.prototype.forEach.call(res.querySelectorAll('.ws-regla-hit'), function (row) {
+      row.addEventListener('click', function () {
+        var c = list[parseInt(row.getAttribute('data-i'), 10)];
+        var dup = mine.find(function (v) { return v && h.ktDigits(v.kt) === c.kt; });
+        if (dup && !window.confirm(dup.nafn + ' er þegar skráður á heildsöluvefnum með þessa kennitölu. Stofna samt nýjan?')) return;
+        fillFromRegla(c);
+      });
+    });
+  }
+
+  function runLookup(q) {
+    var res = document.getElementById('wsReglaLookupRes');
+    q = String(q || '').trim();
+    if (q.length < 2) { if (res) res.innerHTML = ''; return; }
+    var seq = ++_lookupSeq;
+    if (res) res.innerHTML = '<div style="padding:6px 2px;color:var(--ink3,#7a6a58)">⏳ Leita í Reglu…</div>';
+    api({ action: 'searchCustomers', query: q }).then(function (j) {
+      if (seq !== _lookupSeq) return;
+      if (!j || !j.ok) { if (res) res.innerHTML = '<div style="padding:6px 2px;color:#B91C1C">Regla: ' + escH((j && j.error) || 'villa') + '</div>'; return; }
+      renderLookup(j.customers || [], q);
+    }).catch(function (e) {
+      if (seq !== _lookupSeq || !res) return;
+      res.innerHTML = '<div style="padding:6px 2px;color:#B91C1C">Regla: ' + escH(String(e)) + '</div>';
+    });
+  }
+
+  function decorateVmModal() {
+    var tab = document.getElementById('vmTabGrunnur');
+    if (!tab) return;
+    var box = document.getElementById('wsReglaLookup');
+    if (!box) {
+      box = document.createElement('div');
+      box.id = 'wsReglaLookup';
+      box.style.cssText = 'margin:0 0 14px;padding:10px 12px;border:1px dashed var(--green,#2f5d3a);border-radius:10px;background:rgba(47,93,58,.05);font-size:12px';
+      box.innerHTML =
+        '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px">' +
+          '<label class="vm-form-label" style="margin:0">⇩ Sækja viðskiptamann úr Reglu</label>' +
+          '<span style="font-size:10px;color:var(--ink3,#7a6a58)">Kennitala, nafn eða netfang</span></div>' +
+        '<div style="display:flex;gap:8px">' +
+          '<input class="vm-form-input" id="wsReglaLookupQ" placeholder="t.d. 5506161030 eða Gym 800" autocomplete="off" style="flex:1">' +
+          '<button type="button" class="adm-btn" id="wsReglaLookupBtn" style="background:var(--green,#2f5d3a);color:#fff;border-color:var(--green,#2f5d3a)">Leita</button></div>' +
+        '<div id="wsReglaLookupRes" style="margin-top:6px;max-height:220px;overflow:auto"></div>';
+      tab.insertBefore(box, tab.firstChild);
+      var inp = box.querySelector('#wsReglaLookupQ');
+      inp.addEventListener('input', function () {
+        clearTimeout(_lookupTimer);
+        var v = inp.value;
+        _lookupTimer = setTimeout(function () { runLookup(v); }, 450);
+      });
+      inp.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') { e.preventDefault(); clearTimeout(_lookupTimer); runLookup(inp.value); }
+      });
+      box.querySelector('#wsReglaLookupBtn').addEventListener('click', function () { clearTimeout(_lookupTimer); runLookup(inp.value); });
+    }
+    var isNew = vmIsNew();
+    box.style.display = isNew ? '' : 'none';
+    if (isNew) {
+      box.querySelector('#wsReglaLookupQ').value = '';
+      box.querySelector('#wsReglaLookupRes').innerHTML = '';
+    }
+  }
+
+  function openImport() {
+    if (typeof window.openVmModal === 'function') window.openVmModal(null);
+    setTimeout(function () { var q = document.getElementById('wsReglaLookupQ'); if (q) q.focus(); }, 60);
+  }
+
   function decorateVidskmPanel() {
     var panel = document.getElementById('panelVidskm');
     if (!panel || panel.querySelector('#wsReglaVmBtn')) return;
@@ -284,7 +407,13 @@
     var wrap = document.createElement('div');
     wrap.style.cssText = 'display:flex;gap:8px;align-items:center;flex-wrap:wrap';
     anchor.parentNode.insertBefore(wrap, anchor);
-    wrap.appendChild(b); wrap.appendChild(anchor);
+    var imp = document.createElement('button');
+    imp.id = 'wsReglaVmImportBtn';
+    imp.className = 'adm-btn';
+    imp.title = 'Stofna viðskiptamann á heildsöluvefnum út frá viðskiptamanni í Reglu';
+    imp.innerHTML = '⇩ Sækja úr Reglu';
+    imp.addEventListener('click', openImport);
+    wrap.appendChild(imp); wrap.appendChild(b); wrap.appendChild(anchor);
   }
 
   /* ── install: wrap the panel renderers ─────────────────────────────────── */
@@ -303,10 +432,11 @@
   function install() {
     wrap('renderOrdersPanel', decorateOrdersPanel);
     wrap('renderVidskm', decorateVidskmPanel);
+    wrap('openVmModal', decorateVmModal);
     if (isAdmin()) { decorateOrdersPanel(); decorateVidskmPanel(); }
   }
 
-  window.wsRegla = { pushOrders: pushOrders, syncCustomers: syncCustomers, ping: function () { return api({ action: 'ping' }); } };
+  window.wsRegla = { pushOrders: pushOrders, syncCustomers: syncCustomers, importCustomer: openImport, searchCustomers: function (q) { return api({ action: 'searchCustomers', query: q }); }, ping: function () { return api({ action: 'ping' }); } };
   install();
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', install);
   window.addEventListener('load', install);

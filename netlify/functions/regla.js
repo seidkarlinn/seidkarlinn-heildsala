@@ -7,6 +7,7 @@
 //   { action: "ping" }                         -> test login, count products
 //   { action: "status" }                       -> log of orders already sent
 //   { action: "syncCustomers", customers:[…] } -> create missing customers
+//   { action: "searchCustomers", query }       -> Regla customers by kt / text
 //   { action: "pushOrders", orders:[…], force? }
 //        each order: { id, date, kt, note, paidByCard, buyerName, buyerEmail,
 //                      customer:{kt,nafn,netfang,simi,heimili,postnr},
@@ -37,6 +38,42 @@ function resolveStore() {
 
 async function readLog(store) {
   try { const raw = await store.get(LOG_KEY); return raw ? JSON.parse(raw) : {}; } catch { return {}; }
+}
+
+// Portal-shaped view of a Regla customer record (Viðskiptamenn form fields).
+function portalCustomer(c) {
+  if (!c || typeof c !== 'object') return null;
+  const pc = c.PostalCode && typeof c.PostalCode === 'object' ? c.PostalCode : {};
+  const str = (v) => (v == null || typeof v === 'object') ? '' : String(v).trim();
+  return {
+    kt: regla.ktDigits(c.CustomerNumber),
+    nafn: str(c.Name),
+    heimili: [str(c.AddressLine1), str(c.AddressLine2)].filter(Boolean).join(', '),
+    postnr: str(pc.Value),
+    stadur: str(pc.Name) || str(c.City),
+    simi: str(c.Phone1) || str(c.Phone2),
+    netfang: str(c.Email) || str(c.InvoiceEmail),
+  };
+}
+
+// Regla customers by kennitala (exact, GetCustomer) or free text (SearchCustomers).
+async function searchCustomers(q) {
+  const out = []; const seen = new Set();
+  const kt = regla.ktDigits(q);
+  if (kt.length === 10) {
+    const c = await regla.getCustomer(kt);
+    if (c) { const p = portalCustomer(c); out.push(p); seen.add(p.kt); }
+  }
+  const { r, ok, messages } = await regla.call('SearchCustomers',
+    () => regla.toXml({ search: q, indexFrom: 0, maxRecordCount: 25 }));
+  if (!ok && !out.length) throw new Error('SearchCustomers: ' + messages.join(' | '));
+  const raw = r.SearchCustomersResult && r.SearchCustomersResult.Customer;
+  for (const c of (Array.isArray(raw) ? raw : raw && typeof raw === 'object' ? [raw] : [])) {
+    const p = portalCustomer(c);
+    if (!p || !p.kt || seen.has(p.kt)) continue;
+    seen.add(p.kt); out.push(p);
+  }
+  return out;
 }
 
 const headers = {
@@ -159,6 +196,15 @@ exports.handler = async (event) => {
 
       if (log[id]) { delete log[id]; await store.set(LOG_KEY, JSON.stringify(log)); }
       return reply(200, { ok: true, ...out });
+    }
+
+    if (action === 'searchCustomers') {
+      // Import side of the customer link: find Regla customers by kennitala
+      // or free text so the admin can create a portal customer from one.
+      const q = String(body.query || '').trim();
+      if (q.length < 2) return reply(400, { ok: false, error: 'Leitarorð vantar' });
+      const customers = await searchCustomers(q);
+      return reply(200, { ok: true, customers });
     }
 
     if (action === 'status') {
