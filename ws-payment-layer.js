@@ -15,7 +15,7 @@
      • Pantanir (admin): merki "💳 Bíður greiðslu" / "✕ Greiðsla mistókst",
        Greiðsla-lína í Upplýsingar, "🔄 Athuga greiðslu" hnappur, Senda/Vinna
        falin á ógreiddum kortapöntunum, ógreitt dregið frá Heildartekjum,
-       síur fyrir ógreiddar pantanir.
+       síur fyrir ógreiddar pantanir, "🗑 Eyða" / "🗑 Eyða ógreiddum (N)".
    Vafið hér af því index.html er of stórt fyrir GitHub-connectorinn. */
 (function () {
   if (window._wsPaymentLayer) return;
@@ -40,6 +40,7 @@
     '.pay-bad{color:var(--red,#C0392B);font-weight:600;}' +
     '.pay-wait{color:#1D4ED8;font-weight:600;}' +
     '.pay-unk{color:#92400E;font-weight:600;}' +
+    '.fulfill-btn.do-delunpaid{background:#FDECEA;color:var(--red,#C0392B);border:1px solid rgba(192,57,43,.25);}' +
     '.fulfill-btn.do-paycheck{background:#EFF6FF;color:#1D4ED8;border:1px solid rgba(29,78,216,.2);}' +
     'tr.ws-unpaid-row td{opacity:.72;}' +
     'tr.ws-unpaid-row td:last-child{opacity:1;}';
@@ -126,6 +127,69 @@
     })).then(function (res) { if (res.some(Boolean)) refresh(); });
   }
 
+  // ── 3b. Delete unpaid card orders ──────────────────────────────────────
+  //   Only card orders that never got paid (awaiting_payment / payment_failed).
+  //   Regla holds the accounting, so these are just noise in Pantanir.
+  //   Before deleting, Teya is asked once more: anything that turns out PAID
+  //   is kept. Writes like setStatus: force push -> ws_orders_lm stamped, so
+  //   buyer/admin browsers drop their copies instead of re-uploading them.
+  function serverOrders() {
+    return fetch('/.netlify/functions/ws-data?key=ws_orders', { cache: 'no-store' })
+      .then(function (r) { return r.json(); })
+      .then(function (j) { if (!j || !j.ok || !Array.isArray(j.value)) throw new Error('Náði ekki í pantanir'); return j.value; });
+  }
+
+  window.deleteUnpaidOrders = function (ids, btn) {
+    ids = (ids || []).filter(Boolean);
+    if (!ids.length) return;
+    var open = getOrders().filter(function (o) { return ids.indexOf(o.id) !== -1 && o.status === 'awaiting_payment'; }).length;
+    var msg = ids.length === 1
+      ? 'Eyða ógreiddri pöntun ' + ids[0] + ' varanlega?'
+      : 'Eyða ' + ids.length + ' ógreiddum kortapöntunum varanlega?';
+    if (open) msg += '\n\nAthugið: ' + (ids.length === 1 ? 'greiðslulota hennar er' : open + ' þeirra eru með greiðslulotu sem er') +
+      ' enn opin hjá Teya. Teya er spurt aftur rétt áður en eytt er — greiddum pöntunum er aldrei eytt.';
+    if (!window.confirm(msg)) return;
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ Eyði…'; }
+
+    Promise.all(ids.map(function (id) {
+      return verify(id).then(function (j) { return { id: id, paid: j && j.paymentStatus === 'paid' }; })
+        .catch(function () { return { id: id, paid: false }; });
+    })).then(function (checks) {
+      var keep = checks.filter(function (c) { return c.paid; }).map(function (c) { return c.id; });
+      var del = ids.filter(function (id) { return keep.indexOf(id) === -1; });
+      return serverOrders().then(function (list) {
+        var removed = [];
+        var next = list.filter(function (o) {
+          var go = o && del.indexOf(o.id) !== -1 && o.paymentStatus !== 'paid' && isUnpaid(o);
+          if (go) removed.push(o.id);
+          return !go;
+        });
+        if (!removed.length) return { removed: removed, keep: keep };
+        return fetch('/.netlify/functions/ws-data', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ key: 'ws_orders', value: next, force: true }),
+        }).then(function (r) { return r.json(); }).then(function (j) {
+          if (!j || !j.ok) throw new Error((j && j.error) || 'Vistun mistókst');
+          var local = getOrders().filter(function (o) { return removed.indexOf(o.id) === -1; });
+          if (window._wsReceiveFromServer) window._wsReceiveFromServer('ws_orders', JSON.stringify(local));
+          else localStorage.setItem('ws_orders', JSON.stringify(local));
+          return { removed: removed, keep: keep };
+        });
+      });
+    }).then(function (res) {
+      var t = res.removed.length ? '🗑 ' + res.removed.length + ' ógreidd' + (res.removed.length === 1 ? 'ri pöntun' : 'um pöntunum') + ' eytt' : 'Engu eytt';
+      if (res.keep.length) t += ' · ' + res.keep.join(', ') + ' reyndist GREIDD og var haldið';
+      toast(t, 5000);
+      if (typeof updatePendingBadge === 'function') updatePendingBadge();
+      refresh();
+    }).catch(function (e) {
+      toast('⚠️ ' + (e.message || 'Villa við eyðingu'), 5000);
+      if (btn) btn.disabled = false;
+      refresh();
+    });
+  };
+
   // ── 4. Pantanir panel decoration ───────────────────────────────────────
   function payLine(o) {
     var t = o.paymentCheckedAt ? ' · ' + new Date(o.paymentCheckedAt).toLocaleString('is-IS', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
@@ -156,14 +220,30 @@
       if (sub) sub.textContent = nUnpaid ? 'Heildsöluverð · án ' + nUnpaid + ' ógreiddra' : 'Heildsöluverð';
     }
 
+    // Bulk delete of every unpaid card order
+    var hdrBtns = panel.querySelector('.cat-hdr > div:last-child');
+    var unpaidIds = orders.filter(function (o) { return isCard(o) && isUnpaid(o) && o.paymentStatus !== 'paid'; }).map(function (o) { return o.id; });
+    var old = hdrBtns && hdrBtns.querySelector('.ws-del-unpaid');
+    if (old) old.remove();
+    if (hdrBtns && unpaidIds.length) {
+      var bulk = document.createElement('button');
+      bulk.className = 'adm-btn danger ws-del-unpaid';
+      bulk.textContent = '🗑 Eyða ógreiddum (' + unpaidIds.length + ')';
+      bulk.title = 'Eyðir öllum kortapöntunum sem aldrei voru greiddar';
+      bulk.onclick = function () { window.deleteUnpaidOrders(unpaidIds, bulk); };
+      var clr = hdrBtns.querySelector('#clearAllOrdersBtn');
+      hdrBtns.insertBefore(bulk, clr || null);
+    }
+
     // Filter buttons for unpaid card orders
     var bar = panel.querySelector('.adm-toolbar');
     if (bar && !bar.querySelector('.ws-pay-filter')) {
       ['awaiting_payment', 'payment_failed'].forEach(function (s) {
         var b = document.createElement('button');
-        b.className = 'adm-filter ws-pay-filter' + (orderFilter === s ? ' active' : '');
+        var cur = (typeof orderFilter !== 'undefined') ? orderFilter : 'all';
+        b.className = 'adm-filter ws-pay-filter' + (cur === s ? ' active' : '');
         b.textContent = s === 'awaiting_payment' ? 'Bíður greiðslu' : 'Greiðsla mistókst';
-        b.onclick = function () { orderFilter = s; window.renderOrdersPanel(); };
+        b.onclick = function () { try { orderFilter = s; } catch (e) { return; } window.renderOrdersPanel(); };
         bar.appendChild(b);
       });
     }
@@ -200,6 +280,15 @@
           var dl = info.querySelector('button[onclick*="downloadOrderPDF"]');
           if (dl) dl.style.display = 'none';
         }
+      }
+
+      if (isUnpaid(o) && o.paymentStatus !== 'paid' && actions && !actions.querySelector('.do-delunpaid')) {
+        var del = document.createElement('button');
+        del.className = 'fulfill-btn do-delunpaid';
+        del.textContent = '🗑 Eyða';
+        del.title = 'Eyða ógreiddri pöntun';
+        del.onclick = function (e) { e.stopPropagation(); window.deleteUnpaidOrders([o.id], del); };
+        actions.appendChild(del);
       }
 
       if (o.paymentStatus !== 'paid' && actions && !actions.querySelector('.do-paycheck')) {

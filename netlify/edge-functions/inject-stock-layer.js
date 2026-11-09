@@ -44,7 +44,7 @@ const SCRIPTS = [
   { src: '/ws-regla-api.js', version: '20261106a' },
   { src: '/ws-delivery-vat.js', version: '20260924b' },
   { src: '/ws-order-edit.js', version: '20261021a' },
-  { src: '/ws-payment-layer.js', version: '20261109a' },
+  { src: '/ws-payment-layer.js', version: '20261109b' },
 ];
 
 export default async function handler(request, context) {
