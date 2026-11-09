@@ -7,6 +7,7 @@
  *   silver 50ml og 1l).
  * 2026-10-15 (3): Fjarlægir Mountaindrop Bodyshape Revival krem 250ml og
  *   báðar Mountaindrop elixir sápurnar (sítrónu og shilajit myntu, 100g).
+ * 2026-11-09: Fjarlægir Seiðkarlinn skógarblóma hunang (1kg og 500g).
  *
  * Strips every product object whose "name" matches one of REMOVED_NAMES
  * from the PRODUCTS array in index.html, so the products are gone for every
@@ -26,6 +27,7 @@ const REMOVED_NAMES = [
   /colloidal silver/i,
   /^Mountaindrop Bodyshape Revival/i,
   /^Mountaindrop elixir .*s[áa]pa/i,
+  /sk[óo]garbl[óo]ma hunang/i,
 ];
 
 // One pretty-printed PRODUCTS entry: "  {" … "name": "…" … "  }," — the lazy
