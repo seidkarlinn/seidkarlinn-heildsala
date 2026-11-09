@@ -104,7 +104,8 @@ exports.handler = async (event) => {
         currency: 'ISK',
       },
       success_url:           `${SITE_URL}/success.html?order=${orderId}`,
-      cancel_url:            `${SITE_URL}/cancel.html`,
+      cancel_url:            `${SITE_URL}/cancel.html?order=${orderId}`,
+      failure_url:           `${SITE_URL}/cancel.html?order=${orderId}&failed=1`,
       post_success_payment:  'SHOW_SUCCESS_PAGE',
       ...(buyerName || buyerEmail ? {
         customer: {
@@ -116,17 +117,27 @@ exports.handler = async (event) => {
 
     console.log('Creating session, total:', total, 'ISK, orderId:', orderId);
 
-    const sessionRes = await fetch(`${TEYA_API}/v2/checkout/sessions`, {
+    const createSession = (p, key) => fetch(`${TEYA_API}/v2/checkout/sessions`, {
       method: 'POST',
       headers: {
         'Authorization':   `Bearer ${access_token}`,
         'Content-Type':    'application/json',
-        'Idempotency-Key': idempotencyKey,
+        'Idempotency-Key': key,
       },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(p),
     });
 
-    const sessionText = await sessionRes.text();
+    let sessionRes = await createSession(payload, idempotencyKey);
+    let sessionText = await sessionRes.text();
+
+    // failure_url was added 2026-11-09. On any 400, retry once without it
+    // without it so card checkout keeps working (cancel.html still verifies).
+    if (sessionRes.status === 400) {
+      console.warn('Teya rejected failure_url — retrying without it');
+      const { failure_url, ...rest } = payload;
+      sessionRes = await createSession(rest, idempotencyKey + '-r');
+      sessionText = await sessionRes.text();
+    }
     console.log('Session status:', sessionRes.status, '| body:', sessionText.substring(0, 500));
 
     if (!sessionRes.ok) {

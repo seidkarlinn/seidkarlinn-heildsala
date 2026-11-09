@@ -4,6 +4,10 @@
 [functions]
   node_bundler = "esbuild"
 
+# Teya: confirm / fail card orders that are still awaiting payment (2026-11-09)
+[functions."teya-sweep"]
+  schedule = "*/10 * * * *"
+
 [[headers]]
   for = "/*"
   [headers.values]
@@ -84,6 +88,10 @@
 #                        Always read the variable list back after changing it.
 #     RESEND_API_KEY     Alternative transport; wins over the webhook if set.
 #     ORDER_EMAIL_TO     Recipient override, default benedikt@seidkarlinn.is.
+#   checkout / refund / teya-verify / teya-sweep
+#     TEYA_CLIENT_ID / TEYA_CLIENT_SECRET / TEYA_CONTRACT_ID / SITE_URL
+#                        teya-verify needs the API client to allow scope
+#                        checkout/sessions/id/get (read a checkout session).
 #   ws-stock / oos-data
 #     SHOPIFY_STORE_DOMAIN  98d785-4a.myshopify.com  — NOT YET SET
 #     SHOPIFY_ADMIN_TOKEN   shpat_… (read_products, read_inventory, read_orders)

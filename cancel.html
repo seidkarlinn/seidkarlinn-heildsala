@@ -21,9 +21,28 @@
 <div class="card">
   <div class="icon">↩️</div>
   <h1>Greiðslu hætt við</h1>
-  <p>Greiðslunni var hætt við eða villa kom upp. Karfan þín er enn óbreytt.</p>
+  <p id="msg">Greiðslunni var hætt við eða kortinu var hafnað. Pöntunin hefur <strong>ekki</strong> verið staðfest og ekkert var skuldfært. Karfan þín er enn óbreytt.</p>
   <p>Vinsamlegast reyndu aftur eða hafðu samband við okkur ef vandinn heldur áfram.</p>
   <a href="/index.html" class="back-btn">← Til baka í verslun</a>
 </div>
+<script>
+  // Tell the portal straight away that this order was not paid, so it never
+  // shows as a confirmed order. teya-verify asks Teya itself — a hand-typed
+  // URL cannot mark a paid order unpaid.
+  (function () {
+    var p = new URLSearchParams(location.search);
+    var id = p.get('order');
+    if (p.get('failed')) {
+      document.querySelector('h1').textContent = 'Greiðsla tókst ekki';
+    }
+    if (!id) return;
+    fetch('/.netlify/functions/teya-verify?order=' + encodeURIComponent(id), { cache: 'no-store' })
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        if (j && j.paymentStatus === 'paid') location.replace('/success.html?order=' + encodeURIComponent(id));
+      })
+      .catch(function () {});
+  })();
+</script>
 </body>
 </html>

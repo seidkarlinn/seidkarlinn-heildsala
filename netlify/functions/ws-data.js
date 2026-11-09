@@ -24,6 +24,23 @@ function resolveStore() {
   return getStore("wholesale-data");
 }
 
+// Server-confirmed Teya payment results (set by teya-verify.js) win over any
+// client copy that has not caught up yet. Mutates the incoming orders in place.
+const PAY_TERMINAL = ["paid", "failed", "expired"];
+const PAY_FIELDS = ["paymentStatus", "paymentCheckedAt", "paidAt", "teyaPaymentStatus", "teyaSessionStatus"];
+function keepPaymentState(storedArr, incomingById) {
+  (storedArr || []).forEach((s) => {
+    if (!s || !s.id || !PAY_TERMINAL.includes(s.paymentStatus)) return;
+    const o = incomingById[s.id];
+    if (!o || o === s || PAY_TERMINAL.includes(o.paymentStatus)) return;
+    PAY_FIELDS.forEach((f) => { if (s[f] !== undefined) o[f] = s[f]; });
+    // Status: only correct the payment-driven values; admin choices stand.
+    if (o.status === "awaiting_payment" || (s.status === "payment_failed" && o.status === "pending")) {
+      o.status = s.status;
+    }
+  });
+}
+
 exports.handler = async (event) => {
   const headers = {
     "Access-Control-Allow-Origin": "*",
@@ -107,6 +124,9 @@ exports.handler = async (event) => {
 
         stored.forEach(addOrder);   // existing server data first
         value.forEach(addOrder);    // incoming second (wins on same or newer date)
+        // Payment state is owned by teya-verify.js — a stale client copy that
+        // still says "awaiting" must not undo a confirmed paid/failed result.
+        keepPaymentState(stored, byId);
         const merged = Object.values(byId).sort((a, b) =>
           new Date(b.date || 0) - new Date(a.date || 0)
         );
@@ -147,6 +167,13 @@ exports.handler = async (event) => {
       // For force:true ws_orders writes (admin deletions/status changes), also
       // stamp ws_orders_lm so clients can detect server-side authority and
       // replace their stale localStorage instead of merging it back up.
+      if (key === "ws_orders" && body.force && Array.isArray(value)) {
+        let prev = [];
+        try { prev = JSON.parse((await store.get("ws_orders")) || "[]"); } catch (e) { prev = []; }
+        const byIdF = {};
+        value.forEach((o) => { if (o && o.id) byIdF[o.id] = o; });
+        keepPaymentState(Array.isArray(prev) ? prev : [], byIdF);
+      }
       await store.set(key, JSON.stringify(value));
       if (key === "ws_orders" && body.force) {
         await store.set("ws_orders_lm", new Date().toISOString());

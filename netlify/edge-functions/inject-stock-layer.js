@@ -12,6 +12,7 @@
  *   ws-regla-api.js     "Senda í Reglu" (drög að reikningum) + viðskiptamenn → Regla
  *   ws-delivery-vat.js  Afhendingarlisti: "VSK kr." per unit instead of per line
  *   ws-order-edit.js    Pantanir: admin eyðir vörulínum / breytir magni í pöntun
+ *   ws-payment-layer.js Teya: kortapöntun staðfestist aðeins þegar greiðsla tókst
  *
  * Order matters: ws-vorunumer.js reads the stock map that ws-stock-layer.js
  * puts on window._wsLiveStock, and the handle-remap table it defines;
@@ -43,6 +44,7 @@ const SCRIPTS = [
   { src: '/ws-regla-api.js', version: '20261106a' },
   { src: '/ws-delivery-vat.js', version: '20260924b' },
   { src: '/ws-order-edit.js', version: '20261021a' },
+  { src: '/ws-payment-layer.js', version: '20261109a' },
 ];
 
 export default async function handler(request, context) {
