@@ -41,7 +41,7 @@ const esc = (s) =>
 // Invoice orders (reikningsviðskipti) use the sequential invoice number as the
 // order id and never have a session.
 function paymentLabel(order) {
-  if (order.teyaSessionId) return "Kortagreiðsla (Teya)";
+  if (order.teyaSessionId) return order.paymentStatus === "paid" ? "Kortagreiðsla (Teya) · GREITT" : "Kortagreiðsla (Teya)";
   if (/^\d+$/.test(String(order.id || ""))) return "Reikningsviðskipti · 14 dagar";
   return "Óþekkt greiðsluleið";
 }
@@ -178,7 +178,13 @@ async function notifyNewOrders(store, orders) {
     reason: null,
     configured: { resend: hasResend, webhook: hasWebhook },
   };
-  if (!orders || !orders.length) { result.reason = "no-new-orders"; return result; }
+  // Card orders are only worth an e-mail once Teya confirms the payment
+  // (teya-verify.js calls us again with paymentStatus "paid"). Unpaid ones are
+  // NOT written to the ledger, so the later paid call still goes through.
+  orders = (orders || []).filter(
+    (o) => !(o && ["awaiting", "failed", "expired"].includes(o.paymentStatus))
+  );
+  if (!orders.length) { result.reason = "no-new-orders"; return result; }
 
   if (!hasResend && !hasWebhook) {
     result.reason = "no-transport-configured";

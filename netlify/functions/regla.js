@@ -227,10 +227,19 @@ exports.handler = async (event) => {
       const store = resolveStore();
       const log = await readLog(store);
       const results = [];
+      // Real order status lives in ws_orders (the client payload has none).
+      const UNPAID = new Set(['payment_failed', 'awaiting_payment']);
+      const wsStatus = {};
+      try {
+        const all = JSON.parse((await store.get('ws_orders')) || '[]');
+        (Array.isArray(all) ? all : []).forEach((x) => { if (x && x.id) wsStatus[x.id] = x.status; });
+      } catch (e) { /* no status info: send as before */ }
 
       for (const o of orders) {
         if (!o || !o.id) continue;
         if (!body.force && log[o.id] && log[o.id].ok && log[o.id].number) { results.push({ id: o.id, status: 'already' }); continue; }
+        // Unpaid / declined Teya card orders never become Regla invoices (2026-11-09).
+        if (o.paidByCard && UNPAID.has((wsStatus[o.id] || ''))) { results.push({ id: o.id, status: 'invalid', messages: ['Kortagreiðsla ekki staðfest hjá Teya — ekki send'] }); continue; }
         try {
           const { invoice, errors, warnings } = await regla.buildInvoice(o);
           if (errors.length) { results.push({ id: o.id, status: 'invalid', messages: errors }); continue; }
