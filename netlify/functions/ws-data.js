@@ -9,7 +9,34 @@ const ALLOWED_KEYS = [
   "ws_orders","ws_invoice_seq","ws_buyer_accounts","ws_custom_products",
   "ws_deleted_products","ws_pricing","ws_pricing_users","ws_vidskm","ws_last_order","ws_cache_version","ws_product_info","ws_theme","ws_product_order",
   "ws_orders_lm", // last-modified timestamp — set only on force:true writes (admin deletions)
+  "ws_orders_deleted", // tombstones: ids of orders admin deleted — read-only for clients
 ];
+
+// ── Tombstones ────────────────────────────────────────────────────────────
+// Every order id that leaves ws_orders through an admin write is remembered
+// here. Stale copies in a buyer's or another admin's localStorage are pushed
+// back up on their next save (plain merge) — without tombstones the deleted
+// order comes back to life. Tombstoned ids are dropped from EVERY write and
+// every read, so a deletion is permanent.
+const TOMB_KEY = "ws_orders_deleted";
+const TOMB_MAX = 5000;
+async function readTombs(store) {
+  try { const a = JSON.parse((await store.get(TOMB_KEY)) || "[]"); return Array.isArray(a) ? a : []; }
+  catch (e) { return []; }
+}
+async function addTombs(store, ids) {
+  ids = (ids || []).filter(Boolean);
+  if (!ids.length) return;
+  const cur = await readTombs(store);
+  const set = new Set(cur);
+  ids.forEach((id) => set.add(id));
+  await store.set(TOMB_KEY, JSON.stringify(Array.from(set).slice(-TOMB_MAX)));
+}
+function dropTombed(arr, tombs) {
+  if (!Array.isArray(arr) || !tombs.length) return arr;
+  const t = new Set(tombs);
+  return arr.filter((o) => !(o && o.id && t.has(o.id)));
+}
 
 // Resolve a Blob store handle. Prefer EXPLICIT credentials because this site's
 // auto-injected context is currently rejected with 401. siteID is not secret
@@ -69,6 +96,7 @@ exports.handler = async (event) => {
             }
           })
         );
+        if (Array.isArray(result.ws_orders)) result.ws_orders = dropTombed(result.ws_orders, result[TOMB_KEY] || []);
         return { statusCode: 200, headers, body: JSON.stringify({ ok: true, data: result }) };
       }
 
@@ -81,6 +109,10 @@ exports.handler = async (event) => {
       if (raw !== null && raw !== undefined) {
         try { value = JSON.parse(raw); } catch { value = raw; }
       }
+      if (key === "ws_orders" && Array.isArray(value)) {
+        const tombs = await readTombs(store);
+        return { statusCode: 200, headers, body: JSON.stringify({ ok: true, key, value: dropTombed(value, tombs), deleted: tombs }) };
+      }
       return { statusCode: 200, headers, body: JSON.stringify({ ok: true, key, value }) };
     }
 
@@ -90,6 +122,9 @@ exports.handler = async (event) => {
 
       if (!key || !ALLOWED_KEYS.includes(key)) {
         return { statusCode: 400, headers, body: JSON.stringify({ ok: false, error: "Invalid or missing key" }) };
+      }
+      if (key === TOMB_KEY) {
+        return { statusCode: 403, headers, body: JSON.stringify({ ok: false, error: "Read-only key" }) };
       }
 
       // ws_orders: merge by order ID so out-of-order concurrent pushes
@@ -119,11 +154,13 @@ exports.handler = async (event) => {
 
         // Order ids the server had BEFORE this push — anything in the incoming
         // payload that is not here is a brand-new order and worth an email.
+        const tombs = await readTombs(store);
+        const incoming = dropTombed(value, tombs);   // stale copies of deleted orders stay dead
         const knownIds = new Set(stored.map((o) => o && o.id).filter(Boolean));
-        const newOrders = value.filter((o) => o && o.id && !knownIds.has(o.id));
+        const newOrders = incoming.filter((o) => o && o.id && !knownIds.has(o.id));
 
-        stored.forEach(addOrder);   // existing server data first
-        value.forEach(addOrder);    // incoming second (wins on same or newer date)
+        dropTombed(stored, tombs).forEach(addOrder);   // existing server data first
+        incoming.forEach(addOrder);    // incoming second (wins on same or newer date)
         // Payment state is owned by teya-verify.js — a stale client copy that
         // still says "awaiting" must not undo a confirmed paid/failed result.
         keepPaymentState(stored, byId);
@@ -167,14 +204,21 @@ exports.handler = async (event) => {
       // For force:true ws_orders writes (admin deletions/status changes), also
       // stamp ws_orders_lm so clients can detect server-side authority and
       // replace their stale localStorage instead of merging it back up.
+      let toStore = value;
       if (key === "ws_orders" && body.force && Array.isArray(value)) {
         let prev = [];
         try { prev = JSON.parse((await store.get("ws_orders")) || "[]"); } catch (e) { prev = []; }
+        if (!Array.isArray(prev)) prev = [];
+        // Orders the admin removed with this write → tombstone them.
+        const keepIds = new Set(value.map((o) => o && o.id).filter(Boolean));
+        await addTombs(store, prev.map((o) => o && o.id).filter((id) => id && !keepIds.has(id)));
+        // A force write built from a stale admin copy must not revive one either.
+        toStore = dropTombed(value, await readTombs(store));
         const byIdF = {};
-        value.forEach((o) => { if (o && o.id) byIdF[o.id] = o; });
-        keepPaymentState(Array.isArray(prev) ? prev : [], byIdF);
+        toStore.forEach((o) => { if (o && o.id) byIdF[o.id] = o; });
+        keepPaymentState(prev, byIdF);
       }
-      await store.set(key, JSON.stringify(value));
+      await store.set(key, JSON.stringify(toStore));
       if (key === "ws_orders" && body.force) {
         await store.set("ws_orders_lm", new Date().toISOString());
       }
