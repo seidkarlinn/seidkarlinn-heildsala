@@ -6,6 +6,10 @@
                      saved in Regla as a DRAFT invoice (not issued), customer
                      created first if missing. Already-sent orders are skipped
                      and marked "Regla ✓" in the table.
+                     Click the "Regla ✓" tag to re-send one order; an order
+                     edited after it was sent shows "Regla ⚠ breytt — senda
+                     aftur". Re-send deletes the old draft and saves the
+                     current order as a new draft (2026-11-12).
      Viðskiptamenn   "⇪ Samstilla við Reglu" → creates every customer with a
                      kennitala that does not exist in Regla yet. Existing Regla
                      customers are never overwritten.
@@ -123,7 +127,7 @@
     el.addEventListener('click', function (e) { if (e.target === el || e.target.id === 'wsReglaReportClose') el.remove(); });
   }
 
-  /* ── orders → draft invoices ───────────────────────────────────────────── */
+  /* ── orders → draft invoices ─────────────────────────────────────────────── */
   function customerFor(kt) {
     var h = H(); if (!h || !kt) return null;
     var hit = h.vidskmList().find(function (v) { return v && h.ktDigits(v.kt) === kt; });
@@ -139,6 +143,7 @@
       kt: kt,
       note: o.note || '',
       paidByCard: !!o.teyaSessionId,
+      total: o.total,
       buyerName: o.buyerName || o.buyerUser || '',
       buyerEmail: o.buyerEmail || '',
       customer: customerFor(kt),
@@ -215,19 +220,74 @@
     });
   }
 
+  // Order changed (✎ Breyta) after it was last sent to Regla?
+  function changedSince(o, e) {
+    if (!o || !e || !e.at) return false;
+    var last = (o.edits || []).length ? o.edits[o.edits.length - 1] : null;
+    if (last && last.at && new Date(last.at) > new Date(e.at)) return true;
+    return e.total != null && o.total != null && Math.round(e.total) !== Math.round(o.total);
+  }
+
+  function findOrder(id) {
+    var all = (typeof getOrders === 'function') ? getOrders() : [];
+    return all.find(function (x) { return x && x.id === id; });
+  }
+
+  // Re-send one order: old draft in Regla is deleted, current order saved as
+  // a new draft (server: action resendOrder).
+  function resendOrder(id, tag, allowNew) {
+    var o = findOrder(id);
+    if (!o) { toast('Pöntun ' + id + ' fannst ekki', 4000); return; }
+    var e = _log && _log[id];
+    if (!allowNew && !window.confirm('Senda ' + id + ' aftur í Reglu?\n\nEldri drögum' + (e && e.number ? ' (nr. ' + e.number + ')' : '') +
+      ' verður eytt úr Geymdum reikningum og núverandi pöntun (' + (typeof fmtISK === 'function' ? fmtISK(o.total || 0) : (o.total || 0) + ' ISK') + ') vistuð sem ný drög.')) return;
+    var label = tag ? tag.textContent : '';
+    if (tag) { tag.textContent = '⏳ Regla…'; tag.style.pointerEvents = 'none'; }
+    api({ action: 'resendOrder', order: buildOrder(o), allowNew: !!allowNew }).then(function (j) {
+      if (tag) { tag.textContent = label; tag.style.pointerEvents = ''; }
+      var r = (j && j.result) || { id: id, status: 'error', messages: [(j && j.error) || 'Villa'] };
+      if (r.status === 'issued') {
+        if (window.confirm((r.messages || []).join('\n') + '\n\nSenda samt sem NÝ drög í Reglu? (Athugaðu fyrst að útgefinn reikningur sé kreditfærður.)')) { resendOrder(id, tag, true); }
+        return;
+      }
+      var L = { sent: 'Sent aftur ✓', invalid: 'Ekki sent', error: 'Villa' };
+      showReport('Regla — ' + id, [{ key: r.id, label: L[r.status] || r.status, tone: r.status === 'sent' ? 'ok' : 'err', msgs: (r.messages || []).concat(r.warnings || []) }]);
+      _log = null;
+      Array.prototype.forEach.call(document.querySelectorAll('#panelOrders .ws-regla-tag'), function (t) { t.remove(); });
+      loadLog();
+    }).catch(function (err) {
+      if (tag) { tag.textContent = label; tag.style.pointerEvents = ''; }
+      toast('Regla: ' + err, 7000);
+    });
+  }
+
   function decorateOrders() {
     if (!_log) return;
     var cells = document.querySelectorAll('#panelOrders .order-id');
     Array.prototype.forEach.call(cells, function (c) {
-      if (c.querySelector('.ws-regla-tag')) return;
-      var id = c.textContent.trim();
+      var old = c.querySelector('.ws-regla-tag');
+      var id = (c.firstChild && c.firstChild.nodeType === 3 ? c.firstChild.textContent : c.textContent).trim().split(/\s/)[0];
       var e = _log[id];
-      if (!e || !e.ok || !e.number) return;
+      var o = e ? findOrder(id) : null;
+      var changed = !!(e && e.number && changedSince(o, e));
+      var state = !e || !e.number ? '' : (!e.ok ? 'failed' : changed ? 'changed' : 'ok');
+      if (old && old.getAttribute('data-state') === state) return;
+      if (old) old.remove();
+      if (!state) return;
       var tag = document.createElement('span');
       tag.className = 'ws-regla-tag';
-      tag.title = 'Geymdur reikningur nr. ' + e.number + ' í Reglu · ' + new Date(e.at).toLocaleString('is-IS');
-      tag.textContent = 'Regla ✓';
-      tag.style.cssText = 'display:inline-block;margin-left:6px;padding:1px 6px;border-radius:999px;font-size:9px;font-weight:600;background:#E8F0E9;color:var(--green,#2f5d3a);vertical-align:middle';
+      tag.setAttribute('data-state', state);
+      var base = 'display:inline-block;margin-left:6px;padding:1px 6px;border-radius:999px;font-size:9px;font-weight:600;vertical-align:middle;cursor:pointer;';
+      if (state === 'ok') {
+        tag.textContent = 'Regla ✓';
+        tag.title = 'Geymdur reikningur nr. ' + e.number + ' í Reglu · ' + new Date(e.at).toLocaleString('is-IS') + '\nSmelltu til að senda aftur';
+        tag.style.cssText = base + 'background:#E8F0E9;color:var(--green,#2f5d3a)';
+      } else {
+        tag.textContent = state === 'changed' ? 'Regla ⚠ breytt — senda aftur' : 'Regla ⚠ senda aftur';
+        tag.title = (state === 'changed' ? 'Pöntuninni var breytt eftir að hún fór í Reglu (drög nr. ' + e.number + '). ' : 'Endursending mistókst. ') + 'Smelltu til að senda aftur.';
+        tag.style.cssText = base + 'background:#FEF3C7;color:#92400E;border:1px solid #F59E0B';
+      }
+      tag.addEventListener('click', function (ev) { ev.stopPropagation(); ev.preventDefault(); resendOrder(id, tag); });
       c.appendChild(tag);
     });
   }
@@ -248,7 +308,7 @@
     if (_log) decorateOrders(); else loadLog();
   }
 
-  /* ── customers ─────────────────────────────────────────────────────────── */
+  /* ── customers ───────────────────────────────────────────────────────────────────── */
   function syncCustomers(btn) {
     var h = H();
     var list = (h ? h.vidskmList() : []).filter(function (v) { return v && h.ktDigits(v.kt).length === 10; });
@@ -273,7 +333,7 @@
   }
 
 
-  /* ── customers: import from Regla (Regla → portal) ─────────────────────── */
+  /* ── customers: import from Regla (Regla → portal) ───────────────────────── */
   var _lookupTimer = null, _lookupSeq = 0;
 
   function vmIsNew() {
@@ -416,7 +476,7 @@
     wrap.appendChild(imp); wrap.appendChild(b); wrap.appendChild(anchor);
   }
 
-  /* ── install: wrap the panel renderers ─────────────────────────────────── */
+  /* ── install: wrap the panel renderers ───────────────────────────────────── */
   function wrap(name, after) {
     var fn = window[name];
     if (typeof fn !== 'function' || fn._wsRegla) return;
@@ -436,7 +496,7 @@
     if (isAdmin()) { decorateOrdersPanel(); decorateVidskmPanel(); }
   }
 
-  window.wsRegla = { pushOrders: pushOrders, syncCustomers: syncCustomers, importCustomer: openImport, searchCustomers: function (q) { return api({ action: 'searchCustomers', query: q }); }, ping: function () { return api({ action: 'ping' }); } };
+  window.wsRegla = { pushOrders: pushOrders, resendOrder: resendOrder, syncCustomers: syncCustomers, importCustomer: openImport, searchCustomers: function (q) { return api({ action: 'searchCustomers', query: q }); }, ping: function () { return api({ action: 'ping' }); } };
   install();
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', install);
   window.addEventListener('load', install);
