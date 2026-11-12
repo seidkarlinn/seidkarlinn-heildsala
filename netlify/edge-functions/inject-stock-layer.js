@@ -41,7 +41,7 @@ const SCRIPTS = [
   { src: '/ws-stock-layer.js', version: '20261022a' },
   { src: '/ws-vorunumer.js', version: '20260909a' },
   { src: '/ws-regla-export.js', version: '20260909b' },
-  { src: '/ws-regla-api.js', version: '20261106a' },
+  { src: '/ws-regla-api.js', version: '20261112a' },
   { src: '/ws-delivery-vat.js', version: '20260924b' },
   { src: '/ws-order-edit.js', version: '20261021a' },
   { src: '/ws-payment-layer.js', version: '20261109b' },

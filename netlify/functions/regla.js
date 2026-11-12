@@ -15,6 +15,9 @@
 //        -> saves each as a DRAFT invoice (saved, not issued) in Regla.
 //           Already-sent orders are skipped unless force:true.
 //           The customer is created in Regla first if it does not exist.
+//   { action: "resendOrder", order:{…}, allowNew? }
+//        -> deletes our old draft of that order in Regla and saves the
+//           current (edited) order as a new draft.
 //
 // GET  /.netlify/functions/regla?action=stock   (public, cached)
 //   -> { ok, stock: { "<vörunúmer>": { q, ctl } } }
@@ -72,6 +75,65 @@ async function searchCustomers(q) {
     const p = portalCustomer(c);
     if (!p || !p.kt || seen.has(p.kt)) continue;
     seen.add(p.kt); out.push(p);
+  }
+  return out;
+}
+
+const UNPAID = new Set(['payment_failed', 'awaiting_payment']);
+
+async function orderStatuses(store) {
+  const wsStatus = {};
+  try {
+    const all = JSON.parse((await store.get('ws_orders')) || '[]');
+    (Array.isArray(all) ? all : []).forEach((x) => { if (x && x.id) wsStatus[x.id] = x.status; });
+  } catch (e) { /* no status info: send as before */ }
+  return wsStatus;
+}
+
+// Build + save one order as a Regla draft and update the log entry in place.
+async function sendOne(o, log, wsStatus) {
+  // Unpaid / declined Teya card orders never become Regla invoices (2026-11-09).
+  if (o.paidByCard && UNPAID.has((wsStatus[o.id] || ''))) return { id: o.id, status: 'invalid', messages: ['Kortagreiðsla ekki staðfest hjá Teya — ekki send'] };
+  try {
+    const { invoice, errors, warnings } = await regla.buildInvoice(o);
+    if (errors.length) return { id: o.id, status: 'invalid', messages: errors };
+
+    const cust = await regla.ensureCustomer({ ...(o.customer || {}), kt: o.kt, nafn: (o.customer && o.customer.nafn) || o.buyerName, netfang: (o.customer && o.customer.netfang) || o.buyerEmail });
+    if (cust.status === 'error') return { id: o.id, status: 'error', messages: ['Viðskiptamaður: ' + (cust.messages || []).join(' | ')] };
+
+    const full = await regla.customerForInvoice(regla.ktDigits(o.kt), (o.customer && o.customer.nafn) || o.buyerName);
+    invoice.Customer = full.customer;
+    const saved = await regla.saveDraftInvoice(invoice, full.patched);
+    const entry = { ok: saved.ok, number: saved.number, at: new Date().toISOString(), amount: invoice.Amount, total: o.total != null ? o.total : undefined, messages: saved.messages.slice(0, 12) };
+    if (saved.ok) log[o.id] = entry; else delete log[o.id];
+    const msgs = saved.ok ? ['Geymdur reikningur nr. ' + saved.number + ' í Reglu'].concat(saved.messages) : saved.messages;
+    return { id: o.id, status: saved.ok ? 'sent' : 'error', number: saved.number, customer: cust.status, messages: msgs, warnings };
+  } catch (e) {
+    return { id: o.id, status: 'error', messages: [e.message] };
+  }
+}
+
+// Remove our earlier draft of an order from Regla's saved invoices (only one
+// whose Concerning is "Heildsölupöntun <id>"). Looks up the logged number
+// first, then searches the customer's saved invoices in case it changed.
+// -> { deleted:[numbers], found:boolean, messages:[] }
+async function deleteOldDraft(id, kt, number) {
+  const concerning = 'Heildsölupöntun ' + id;
+  const out = { deleted: [], found: false, messages: [] };
+  const targets = [];
+  if (number) {
+    const { r } = await regla.call('GetSavedInvoice', () => regla.toXml({ invoiceNumber: String(number) }));
+    const inv = r.GetSavedInvoiceResult;
+    if (inv && typeof inv === 'object' && String(inv.Concerning || '') === concerning) targets.push(String(number));
+  }
+  if (!targets.length && kt) {
+    const hit = await regla.findSavedInvoice(kt, id, concerning);
+    if (hit && hit.number) targets.push(String(hit.number));
+  }
+  out.found = targets.length > 0;
+  for (const n of targets) {
+    const d = await regla.call('DeleteSavedInvoice', () => regla.toXml({ invoiceNumber: n }), 'DeleteSavedInvoiceResult');
+    if (d.ok) out.deleted.push(n); else out.messages.push('Tókst ekki að eyða drögum nr. ' + n + ': ' + d.messages.join(' | '));
   }
   return out;
 }
@@ -222,41 +284,44 @@ exports.handler = async (event) => {
       return reply(200, { ok: true, results });
     }
 
+    if (action === 'resendOrder') {
+      // Re-send one order that changed after it was sent (2026-11-12):
+      // delete our old draft in Regla, then save the current order as a new
+      // draft. If the old draft is gone from Geymdir reikningar (issued or
+      // removed in Regla) nothing is sent unless allowNew:true, so an issued
+      // invoice is never doubled by accident.
+      const o = body.order;
+      if (!o || !o.id) return reply(400, { ok: false, error: 'order vantar' });
+      const store = resolveStore();
+      const log = await readLog(store);
+      const prev = log[o.id];
+      const kt = regla.ktDigits(o.kt);
+      const del = await deleteOldDraft(o.id, kt, prev && prev.number);
+      if (del.messages.length) return reply(200, { ok: true, result: { id: o.id, status: 'error', messages: del.messages } });
+      if (!del.found && prev && prev.ok && prev.number && !body.allowNew) {
+        return reply(200, { ok: true, result: { id: o.id, status: 'issued', number: prev.number,
+          messages: ['Drög nr. ' + prev.number + ' fundust ekki lengur í Geymdum reikningum — reikningurinn hefur líklega verið gefinn út eða eytt í Reglu. Ekkert sent.'] } });
+      }
+      delete log[o.id];
+      const res = await sendOne(o, log, await orderStatuses(store));
+      if (res.status !== 'sent' && prev) log[o.id] = { ...prev, ok: false, failedResend: new Date().toISOString() };
+      if (del.deleted.length) res.messages = ['Eldri drögum eytt í Reglu (nr. ' + del.deleted.join(', ') + ')'].concat(res.messages || []);
+      await store.set(LOG_KEY, JSON.stringify(log));
+      return reply(200, { ok: true, result: res });
+    }
+
     if (action === 'pushOrders') {
       const orders = Array.isArray(body.orders) ? body.orders.slice(0, MAX_ORDERS_PER_CALL) : [];
       const store = resolveStore();
       const log = await readLog(store);
       const results = [];
       // Real order status lives in ws_orders (the client payload has none).
-      const UNPAID = new Set(['payment_failed', 'awaiting_payment']);
-      const wsStatus = {};
-      try {
-        const all = JSON.parse((await store.get('ws_orders')) || '[]');
-        (Array.isArray(all) ? all : []).forEach((x) => { if (x && x.id) wsStatus[x.id] = x.status; });
-      } catch (e) { /* no status info: send as before */ }
+      const wsStatus = await orderStatuses(store);
 
       for (const o of orders) {
         if (!o || !o.id) continue;
         if (!body.force && log[o.id] && log[o.id].ok && log[o.id].number) { results.push({ id: o.id, status: 'already' }); continue; }
-        // Unpaid / declined Teya card orders never become Regla invoices (2026-11-09).
-        if (o.paidByCard && UNPAID.has((wsStatus[o.id] || ''))) { results.push({ id: o.id, status: 'invalid', messages: ['Kortagreiðsla ekki staðfest hjá Teya — ekki send'] }); continue; }
-        try {
-          const { invoice, errors, warnings } = await regla.buildInvoice(o);
-          if (errors.length) { results.push({ id: o.id, status: 'invalid', messages: errors }); continue; }
-
-          const cust = await regla.ensureCustomer({ ...(o.customer || {}), kt: o.kt, nafn: (o.customer && o.customer.nafn) || o.buyerName, netfang: (o.customer && o.customer.netfang) || o.buyerEmail });
-          if (cust.status === 'error') { results.push({ id: o.id, status: 'error', messages: ['Viðskiptamaður: ' + (cust.messages || []).join(' | ')] }); continue; }
-
-          const full = await regla.customerForInvoice(regla.ktDigits(o.kt), (o.customer && o.customer.nafn) || o.buyerName);
-          invoice.Customer = full.customer;
-          const saved = await regla.saveDraftInvoice(invoice, full.patched);
-          const entry = { ok: saved.ok, number: saved.number, at: new Date().toISOString(), amount: invoice.Amount, messages: saved.messages.slice(0, 12) };
-          if (saved.ok) log[o.id] = entry; else delete log[o.id];
-          const msgs = saved.ok ? ['Geymdur reikningur nr. ' + saved.number + ' í Reglu'].concat(saved.messages) : saved.messages;
-          results.push({ id: o.id, status: saved.ok ? 'sent' : 'error', number: saved.number, customer: cust.status, messages: msgs, warnings });
-        } catch (e) {
-          results.push({ id: o.id, status: 'error', messages: [e.message] });
-        }
+        results.push(await sendOne(o, log, wsStatus));
       }
 
       await store.set(LOG_KEY, JSON.stringify(log));
